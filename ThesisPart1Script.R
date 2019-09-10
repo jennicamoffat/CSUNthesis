@@ -29,17 +29,17 @@ View(mydata)
 
 #Summarizing data for bargraph
 #Net photosynthesis
-SummaryByGroup <- mydata %>%
+SummaryNP <- mydata %>%
   group_by(Genotype, Temperature) %>%
   summarize(mean=mean(NetPhotoPer10000cells, na.rm=TRUE), SE=sd(NetPhotoPer10000cells, na.rm=TRUE)/sqrt(length(na.omit(NetPhotoPer10000cells))))
-SummaryByGroup
+SummaryNP
 
-NetPhotoGraph<-ggplot(SummaryByGroup, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
+NetPhotoGraph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
   theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y="Net Photosynthesis per 10,000 cells", fill="Temperature")+  #labels the x and y axes
+  labs(x="Genotype", y="Net Photo. per 10,000 cells", fill="Temperature")+  #labels the x and y axes
   scale_fill_brewer(palette = "RdYlBu")
 NetPhotoGraph
 
@@ -58,8 +58,20 @@ RespirationGraph<-ggplot(SummaryRespiration, aes(x=Genotype, y=mean, fill=factor
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Genotype", y="Respiration per 10,000 cells", fill="Temperature")+  #labels the x and y axes
-  scale_fill_brewer(palette = "RdBu")
+  scale_fill_brewer(palette = "RdYlBu")
 RespirationGraph
 
 #Gross Photosynthesis
+SummaryGP <- mydata %>%
+  group_by(Genotype, Temperature) %>%
+  summarize(mean=mean(GrossPhotoPer10000cells, na.rm=TRUE), SE=sd(GrossPhotoPer10000cells, na.rm=TRUE)/sqrt(length(na.omit(GrossPhotoPer10000cells))))
+SummaryGP
 
+GPGraph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y="Gross Photo. per 10,000 cells", fill="Temperature")+  #labels the x and y axes
+  scale_fill_brewer(palette = "RdYlBu")
+GPGraph
