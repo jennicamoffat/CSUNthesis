@@ -75,3 +75,19 @@ GPGraph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), gro
   labs(x="Genotype", y="Gross Photo. per 10,000 cells", fill="Temperature")+  #labels the x and y axes
   scale_fill_brewer(palette = "RdYlBu")
 GPGraph
+
+
+#Alright time to start some actual stats...
+View(mydata)
+#Genotype (fixed) and Temperature (fixed) on dependent variables (NP, GP, and Resp)
+
+#Make model
+model1<-aov(NetPhotoPer10000cells~Genotype*Temperature, data=mydata)
+anova(model1)
+#Check assumptions
+plot(model1)
+library("car")
+model1res<-resid(model1)
+qqp(model1res, "norm")
+#Not normal. Gotta to GLMM instead of ANOVA
+
