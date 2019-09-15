@@ -61,7 +61,7 @@ GPGraph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), gro
   scale_fill_brewer(palette = "RdYlBu")
 GPGraph
 
-
+###########################################################
 #Making new dataframe without 32*
 mydata2 <- subset(mydata, Temperature == 26 | Temperature == 30)
 View(mydata2)
@@ -81,6 +81,37 @@ GPGraphno32<-ggplot(SummaryGPno32, aes(x=Genotype, y=mean, fill=factor(Temperatu
   ggtitle("Gross Photosynthesis of Symbiont Strains at 26* and 30*")
 GPGraphno32
 
+#NetPhoto -- No 32
+SummaryNPno32 <- mydata2 %>%
+  group_by(Genotype, Temperature) %>%
+  summarize(mean=mean(NetPhotoPer10000cells, na.rm=TRUE), SE=sd(NetPhotoPer10000cells, na.rm=TRUE)/sqrt(length(na.omit(NetPhotoPer10000cells))))
+SummaryNPno32
+
+NPGraphno32<-ggplot(SummaryNPno32, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y="Net Photo. per 10,000 cells", fill="Temperature")+  #labels the x and y axes
+  scale_fill_brewer(palette = "RdYlBu")+
+  ggtitle("Net Photosynthesis of Symbiont Strains at 26* and 30*")
+NPGraphno32
+
+#Respiration -- No 32
+SummaryRespNo32 <- mydata2 %>%
+  group_by(Genotype, Temperature) %>%
+  summarize(mean=mean(RespirationPer10000cells, na.rm=TRUE), SE=sd(RespirationPer10000cells, na.rm=TRUE)/sqrt(length(na.omit(RespirationPer10000cells))))
+SummaryRespNo32
+
+RespGraphno32<-ggplot(SummaryRespNo32, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y="Respiration per 10,000 cells", fill="Temperature")+  #labels the x and y axes
+  scale_fill_brewer(palette = "RdYlBu")+
+  ggtitle("Respiration of Symbiont Strains at 26* and 30*")
+RespGraphno32
 
 #Alright time to start some actual stats...
 View(mydata)
