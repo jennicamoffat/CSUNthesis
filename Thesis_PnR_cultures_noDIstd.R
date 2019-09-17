@@ -123,7 +123,7 @@ RespGraphno32noDI<-ggplot(SummaryRespNo32noDI, aes(x=Genotype, y=mean, fill=fact
   ggtitle("Respiration of Symbiont Strains at 26* and 30*")
 RespGraphno32noDI
 
-
+###########################################################
 #Alright time to start some actual stats...
 View(mydata)
 #Genotype (fixed) and Temperature (fixed) on dependent variables (NP, GP, and Resp)
@@ -135,7 +135,17 @@ anova(model1)
 plot(model1)
 model1res<-resid(model1)
 qqp(model1res, "norm")
-#It looks less normal than with DI standards merp
+#It looks less normal than with DI standards merp. But still maybe good enough
+
+#Transforming Respiration
+mydata$logRespiration<-log(mydata$AvgResp+1)
+#Make model with logged data
+model3<-aov(logRespiration~Genotype*Temperature, data=mydata)
+model3res<-resid(model3)
+qqp(model3res, "norm")
+#Even closer
+anova(model3)
+
 
 #Make model - GP
 model2<-aov(AvgGP~Genotype*Temperature, data=mydata)
@@ -144,4 +154,22 @@ anova(model2)
 plot(model2)
 model2res<-resid(model2)
 qqp(model2res, "norm")
-#Shit, not normal
+#Not normal
+
+#gamma?
+gamma<-fitdistr(mydata$AvgGP, "gamma")
+qqp(mydata$AvgGP, "gamma", shape = gamma$estimate[[1]], rate=gamma$estimate[[2]])
+#Bad
+
+#log normal?
+qqp(mydata$AvgGP, "lnorm")
+#Nope
+
+#Log log
+mydata$loglogGP<-log(log(mydata$AvgGP+1))
+View(mydata)
+modelloglogGP<-aov(loglogGP~Genotype*Temperature, data=mydata)
+model4res<-resid(modelloglogGP)
+qqp(model4res, "norm")
+#Hmm, it's closer.
+

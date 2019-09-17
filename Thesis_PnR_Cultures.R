@@ -113,6 +113,7 @@ RespGraphno32<-ggplot(SummaryRespNo32, aes(x=Genotype, y=mean, fill=factor(Tempe
   ggtitle("Respiration of Symbiont Strains at 26* and 30*")
 RespGraphno32
 
+#########################################################################################
 #Alright time to start some actual stats...
 View(mydata)
 #Genotype (fixed) and Temperature (fixed) on dependent variables (NP, GP, and Resp)
@@ -137,7 +138,7 @@ qqp(model2res, "norm")
 
 #Transformation time
 #log transform GP
-mydata$logAvgGP<-log(mydata$AvgGP+0.5)
+mydata$logAvgGP<-log(mydata$AvgGP+1)
 View(mydata)
 
 #Make model with logged data - GP
@@ -146,21 +147,71 @@ anova(modellogGP)
 #Check assumptions
 plot(modellogGP)
 model2res<-resid(modellogGP)
-qqp(modellogGP, "norm")
+qqp(model2res, "norm")
 #Ugh that did nothing
 
 #log normal?
 qqp(mydata$AvgGP, "lnorm")
 #Ugh nope. 
 qqp(mydata$logAvgGP, "lnorm")
-#Yeah that did nothing, again. 
+#That did nothing, again. 
+
+#gamma?
+gamma<-fitdistr(mydata$AvgGP, "gamma")
+qqp(mydata$AvgGP, "gamma", shape = gamma$estimate[[1]], rate=gamma$estimate[[2]])
+#Maybe a smidge better?
+#Try gamma with logged data
+gamma2<-fitdistr(mydata$logAvgGP, "gamma")
+qqp(mydata$logAvgGP, "gamma", shape = gamma$estimate[[1]], rate=gamma$estimate[[2]])
+View(mydata)
+#Logging seems to do nothing for all distributions. 
+
+#Other transformations
+
+#Square root
+mydata$sqrtAvgGP<-sqrt(mydata$AvgGP)
+View(mydata)
+modelsqrtAvgGP<-aov(sqrtAvgGP~Genotype*Temperature, data=mydata)
+anova(modelsqrtAvgGP)
+#Check assumptions
+plot(modellogGP)
+model3res<-resid(modelsqrtAvgGP)
+qqp(model3res, "norm")
+
+#Log log
+mydata$loglogGP<-log(log(mydata$AvgGP+1))
+View(mydata)
+modelloglogGP<-aov(loglogGP~Genotype*Temperature, data=mydata)
+model4res<-resid(modelloglogGP)
+qqp(model4res, "norm")
+#Hmm, it's closer. 
+
+##Switching to NP, I give up on GP
 
 #Make model - NP
-model3<-aov(AvgNP~Genotype*Temperature, data=mydata)
-anova(model3)
+model5<-aov(AvgNP~Genotype*Temperature, data=mydata)
+anova(model5)
 #Check assumptions
-plot(model3)
-model3res<-resid(model3)
-qqp(model3res, "norm")
+plot(model5)
+model5res<-resid(model5)
+qqp(model5res, "norm")
 #Also not really normal
 
+#Log data
+mydata$logNP<-log(mydata$AvgNP)
+#Make model
+model6<-aov(logNP~Genotype*Temperature, data=mydata)
+model6res<-resid(model6)
+qqp(model6res, "norm")
+#Same as untransformed
+
+#Double log
+mydata$loglogNP<-log(log(mydata$AvgNP+1))
+model7<-aov(loglogNP~Genotype*Temperature, data=mydata)
+model7res<-resid(model7)
+qqp(model7res, "norm")
+#Didn't change
+
+#Try gamma distribution
+gamma3<-fitdistr(mydata$AvgNP, "gamma")
+qqp(mydata$AvgNP, "gamma", shape = gamma$estimate[[1]], rate=gamma$estimate[[2]])
