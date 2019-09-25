@@ -144,24 +144,86 @@ FLCassGrowth<-ggplot(subset(mydata, Genotype == "FLCass"), aes(x=Day, y=Densityx
 FLCassGrowth
 #Worked, but hard to tell. Although looks a little better than CCMP2458.
 
-FLCassGrowth26<-ggplot(subset(mydata, Genotype == "FlCass" & Temp=="26"), aes(x=Day, y=Densityx10000, color=Round))+
+FLCassGrowth26<-ggplot(subset(mydata, Genotype == "FLCass" & Temp=="26"), aes(x=Day, y=Densityx10000, color=Round))+
   geom_point()+
   theme_classic()+
   ggtitle("Growth Curve FLCass - 26*")+
   geom_smooth()
 FLCassGrowth26
 
-CCMP2458Growth30<-ggplot(subset(mydata, Genotype == "CCMP2458" & Temp=="30"), aes(x=Day, y=Densityx10000, color=Round))+
+FLCassGrowth30<-ggplot(subset(mydata, Genotype == "FLCass" & Temp=="30"), aes(x=Day, y=Densityx10000, color=Round))+
   geom_point()+
   theme_classic()+
-  ggtitle("Growth Curve CCMP2458 - 30*")+
+  ggtitle("Growth Curve FLCass - 30*")+
   geom_smooth()
-CCMP2458Growth30
+FLCassGrowth30
 
-CCMP2458Growth32<-ggplot(subset(mydata, Genotype == "CCMP2458" & Temp=="32"), aes(x=Day, y=Densityx10000, color=Round))+
+FLCassGrowth32<-ggplot(subset(mydata, Genotype == "FLCass" & Temp=="32"), aes(x=Day, y=Densityx10000, color=Round))+
   geom_point()+
   theme_classic()+
-  ggtitle("Growth Curve CCMP2458 - 32*")+
+  ggtitle("Growth Curve FLCass - 32*")+
   geom_smooth()
-CCMP2458Growth32
+FLCassGrowth32
 
+#RT362
+#Combined
+RT362Growth<-ggplot(subset(mydata, Genotype == "RT362"), aes(x=Day, y=Densityx10000, color=Temp, shape=Round))+
+  geom_point()+
+  theme_classic()+
+  ggtitle("Growth Curve RT362")+
+  geom_smooth()
+RT362Growth
+
+
+RT362Growth26<-ggplot(subset(mydata, Genotype == "RT362" & Temp=="26"), aes(x=Day, y=Densityx10000, color=Round))+
+  geom_point()+
+  theme_classic()+
+  ggtitle("Growth Curve RT362 - 26*")+
+  geom_smooth()
+RT362Growth26
+
+RT362Growth30<-ggplot(subset(mydata, Genotype == "RT362" & Temp=="30"), aes(x=Day, y=Densityx10000, color=Round))+
+  geom_point()+
+  theme_classic()+
+  ggtitle("Growth Curve RT362 - 30*")+
+  geom_smooth()
+RT362Growth30
+
+RT362Growth32<-ggplot(subset(mydata, Genotype == "RT362" & Temp=="32"), aes(x=Day, y=Densityx10000, color=Round))+
+  geom_point()+
+  theme_classic()+
+  ggtitle("Growth Curve RT362 - 32*")+
+  geom_smooth()
+RT362Growth32
+
+
+#KB8
+#Combined
+KB8Growth<-ggplot(subset(mydata, Genotype == "KB8"), aes(x=Day, y=Densityx10000, color=Temp, shape=Round))+
+  geom_point()+
+  theme_classic()+
+  ggtitle("Growth Curve KB8")+
+  geom_smooth()
+KB8Growth
+#Uh-oh. 26 sits between the two 32's...
+
+KB8Growth26<-ggplot(subset(mydata, Genotype == "KB8" & Temp=="26"), aes(x=Day, y=Densityx10000, color=Round))+
+  geom_point()+
+  theme_classic()+
+  ggtitle("Growth Curve KB8 - 26*")+
+  geom_smooth()
+KB8Growth26
+
+KB8Growth30<-ggplot(subset(mydata, Genotype == "KB8" & Temp=="30"), aes(x=Day, y=Densityx10000, color=Round))+
+  geom_point()+
+  theme_classic()+
+  ggtitle("Growth Curve KB8 - 30*")+
+  geom_smooth()
+KB8Growth30
+
+KB8Growth32<-ggplot(subset(mydata, Genotype == "KB8" & Temp=="32"), aes(x=Day, y=Densityx10000, color=Round))+
+  geom_point()+
+  theme_classic()+
+  ggtitle("Growth Curve KB8 - 32*")+
+  geom_smooth()
+KB8Growth32
