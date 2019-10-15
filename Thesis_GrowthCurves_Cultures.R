@@ -10,8 +10,9 @@ View(mydata)
 #load libraries
 library(tidyverse)
 library(RColorBrewer)
+library(ggpmisc)
 
-#Renaming Date column because it transferred weird
+#Renaming Date column because it transfered weird
 names(mydata)[1]<-"Date"
 View(mydata)
 
@@ -227,3 +228,98 @@ KB8Growth32<-ggplot(subset(mydata, Genotype == "KB8" & Temp=="32"), aes(x=Day, y
   ggtitle("Growth Curve KB8 - 32*")+
   geom_smooth()
 KB8Growth32
+
+
+###########################################################################
+#Calculating growth rates using library("growthrates")
+#Outlined here: https://cran.r-project.org/web/packages/growthrates/vignettes/Introduction.html
+library(growthrates)
+
+splitted.data <- multisplit(mydata, c("Temp", "Genotype", "Flask")) 
+#Splits data by temp, genotype, and flask so we work with one replicate of one treatement at a time
+
+dat <- splitted.data[[1]] #First subset of data is named "dat" CCMP2458, 26*, flask 1
+View(dat)
+
+fit <- fit_easylinear(dat$Day, dat$Densityx10000)
+#Can't do this for combined data, because I have repeats of days. For now will just do with June data. 
+
+#Clear the environment
+rm(list=ls())
+#Load June growth data
+mydata<-read.csv("JunePart1.csv")
+View(mydata)
+
+splitted.data <- multisplit(mydata, c("Temp", "Genotype", "Flask")) 
+#Splits data by temp, genotype, and flask so we work with one replicate of one treatement at a time
+
+dat <- splitted.data[[1]] #First subset of data is named "dat" CCMP2458, 26*, flask 1
+View(dat)
+
+fit <- fit_easylinear(dat$Day, dat$Densityx10000)
+#This method fits segments of linear models to the log-transformed data and tries to find the maximum growth rate.
+#Im not sure how it knows to log transform it, might just be part of the code.
+
+summary(fit)  #To inspect the outcome of this model fit
+#Im not sure what any of it means.
+
+coef(fit)     #exponential growth parameters
+rsquared(fit)  # coefficient of determination (of log-transformed data)
+deviance(fit)  # residual sum of squares of log-transformed data
+#I think this fits an exponential curve to the highest growth rate 
+
+#plot data
+par(mfrow = c(1, 2))
+plot(fit, log = "y")
+plot(fit)
+
+#Fit nonlinear parametric growth model (ie: logistic growth)
+
+#Vector of start parameters and intial values of growth model
+p<-c(y0=0.1,mumax=0.2,K=170)
+# unconstraied fitting
+fit1 <- fit_growthmodel(FUN = grow_logistic, p = p, dat$Day, dat$Densityx10000)
+coef(fit1)
+summary(fit1)
+
+plot(fit1, log="y")
+#I have no idea what I'm doing....
+
+
+#####Let's try something else that might make sense
+fit1 <- fit_spline(dat$Day, dat$Densityx10000)
+plot(fit1, log="y")
+plot(fit1)
+
+## derive start parameters from spline fit
+p <- coef(fit1)
+
+## use parameters from spline fit and take K from the data maximum
+p <- c(coef(fit1), K = max(dat$Densityx10000))
+fit2 <- fit_growthmodel(grow_logistic, p=p, time=dat$Day, y=dat$Densityx10000, transform="log")
+plot(fit1)
+lines(fit2, col="green")
+#???
+#Idk what this is telling me or why there are two different logistic curves. 
+
+
+#############################################################
+#Per Capita Growth curves
+#Clear the environment
+rm(list=ls())
+#Load June growth data
+mydata<-read.csv("GrowthDataCombined_r.csv")
+View(mydata)
+mydata$Temp<-as.factor(mydata$Temp)
+
+KB8Growth32<-ggplot(subset(mydata, Genotype == "KB8" & Temp=="32"), aes(x=Densityx10000, y=PerCapitaGrowthRate, color=Round))+
+  geom_point()+
+  theme_classic()+
+  ggtitle("Per Capita Growth Curve KB8 - 32*")+
+  geom_quantile(formula=y~x)+
+  stat_poly_eq(formula = y~x, 
+               aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+               parse = TRUE)
+KB8Growth32
+
+
