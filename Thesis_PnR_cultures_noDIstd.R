@@ -125,8 +125,14 @@ RespGraphno32noDI
 
 ###########################################################
 #Alright time to start some actual stats...
+#Clear the environment
+rm(list=ls())
+#Load PnR data
+mydata<-read.csv("AugustPnR_r_noDI_github.csv")
 View(mydata)
 #Genotype (fixed) and Temperature (fixed) on dependent variables (NP, GP, and Resp)
+#Renaming Temperature column cuz it transferred weird
+names(mydata)[1]<-"Temperature"
 
 #Make model - Respiration
 model1<-aov(AvgResp~Genotype*Temperature, data=mydata)
