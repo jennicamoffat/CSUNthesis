@@ -11,6 +11,7 @@ View(mydata)
 library(tidyverse)
 library(RColorBrewer)
 library(ggpmisc)
+library(car)
 
 #Renaming Date column because it transfered weird
 names(mydata)[1]<-"Date"
@@ -281,7 +282,7 @@ CCMP2458<-ggplot(subset(mydata2, Genotype == "CCMP2458"), aes(x=Day, y=Densityx1
   theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=14),
   panel.grid.major=element_blank(), panel.grid.minor=element_blank(), legend.position = "none") +
   ggtitle("CCMP2458 Growth Curve")+
-  geom_smooth(formula = y ~ x, se = TRUE)+
+  geom_smooth(formula = y ~ x, se = TRUE, size=2.5)+
   labs(x="Day", y="Density (10,000 cells/mL)")+
   scale_color_manual(values = c("skyblue3", "darkgoldenrod2"))
 CCMP2458
@@ -293,7 +294,7 @@ CCMP2464<-ggplot(subset(mydata2, Genotype == "CCMP2464" & Round == "July"), aes(
   ggtitle("CCMP2464 Growth Curve")+
   theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=14),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank(), legend.position = "none") +
-  geom_smooth(formula = y ~ x, se = TRUE)+
+  geom_smooth(formula = y ~ x, se = TRUE, size=2.5)+
   labs(x="Day", y="Density (10,000 cells/mL)")+
   scale_color_manual(values = c("skyblue3", "darkgoldenrod2"))
 CCMP2464
@@ -304,7 +305,7 @@ FLCass<-ggplot(subset(mydata2, Genotype == "FLCass"), aes(x=Day, y=Densityx10000
   ggtitle("FLCass Growth Curve")+
   theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=14),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank(), legend.position = "none") +
-  geom_smooth(formula = y ~ x, se = TRUE)+
+  geom_smooth(formula = y ~ x, se = TRUE, size=2.5)+
   labs(x="Day", y="Density (10,000 cells/mL)")+
   scale_color_manual(values = c("skyblue3", "darkgoldenrod2"))
 FLCass
@@ -315,7 +316,7 @@ RT362<-ggplot(subset(mydata2, Genotype == "RT362"), aes(x=Day, y=Densityx10000, 
   ggtitle("RT362 Growth Curve")+
   theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=14),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank(), legend.position = "none") +
-  geom_smooth(formula = y ~ x, se = TRUE)+
+  geom_smooth(formula = y ~ x, se = TRUE, size=2.5)+
   labs(x="Day", y="Density (10,000 cells/mL)")+
   scale_color_manual(values = c("skyblue3", "darkgoldenrod2"))
 RT362
@@ -326,7 +327,7 @@ KB8<-ggplot(subset(mydata2, Genotype == "KB8"), aes(x=Day, y=Densityx10000, colo
   ggtitle("KB8 Growth Curve")+
   theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=14),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank(), legend.position = "none") +
-  geom_smooth(formula = y ~ x, se = TRUE)+
+  geom_smooth(formula = y ~ x, se = TRUE, size=2.5)+
   labs(x="Day", y="Density (10,000 cells/mL)")+
   scale_color_manual(values = c("skyblue3", "darkgoldenrod2"))
 KB8
@@ -619,3 +620,79 @@ SlopesGraph<-ggplot(Summary, aes(x=Genotype, y=mean, fill=factor(Temperature), g
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2"), labels=c("26°C", "30°C"))+
   ggtitle("Logisitc Growth Rate of Symbiont Strains")
 SlopesGraph
+
+
+#####################################################################################
+#ANCOVA
+
+#Clear the environment
+rm(list=ls())
+#Load growth data
+mydata<-read.csv("GrowthDataCombined_r.csv")
+View(mydata)
+mydata$Temp<-as.factor(mydata$Temp)
+
+#New data frame with just data between days 5-15
+mydata2<-subset(mydata, Day > 4 & Day < 16)
+View(mydata2)
+
+model1<-lm(Densityx10000 ~ Genotype * Temp * Round * Day, data=mydata2)
+#Make sure that the relationship with covariate is linear
+plot(Densityx10000~Day, data=mydata2)
+#looks linear to me
+
+plot(model1)
+model1res<-resid(model1)
+qqp(model1res, "norm")
+#Hm, not very normal. 
+
+mydata2$logDensity<-log(mydata2$Densityx10000)
+model2<-lm(logDensity ~ Genotype *Round * Temp * Day, data=mydata2)
+logresid<-resid(model2)
+qqp(logresid, "norm")
+#that's better. 
+#Rest of assumptions for logged data
+plot(model2)
+plot(logDensity~Day, data=mydata2)
+#Run model
+anova(model2)
+
+#Round is signficant. Remove CCMP2464 cuz it's weird. 
+mydata3<-subset(mydata2, Genotype != "CCMP2464")
+View(mydata3)
+#Also need to remove NA's for the FLCass flask that spilled
+mydata3 <- subset(mydata3, !is.na(Densityx10000))
+View(mydata3)
+mydata3%>%count(Genotype) #Yep, 5 less FLCass counts than the other three, so it removed the NAs
+
+model3<-lm(Densityx10000 ~ Genotype * Temp * Round * Day, data=mydata3)
+model3res<-resid(model3)
+qqp(model3res, "norm")
+#Not very normal
+
+model4<-lm(logDensity ~ Genotype * Temp * Day * Round, data=mydata3)
+model4res<-resid(model4)
+qqp(model4res, "norm")
+#Okay, that's normal
+
+anova(model4, type="II")
+#All of the round interactions are significant...
+
+model5<-lm(logDensity ~ Genotype * Temp * Day, data=mydata3)
+model5res<-resid(model5)
+qqp(model5res, "norm")
+#Close enough for now
+anova(model5)
+
+
+predBF<-predict(model4) #Gets the predicted values from the regression lines in the ANCOVA
+graph.data<-cbind(mydata3, predBF) #attaches those predictions to the dataset
+
+library(ggplot2)
+ggplot(data=graph.data, aes(logT, logBF, color=species)) +
+  theme_bw()+
+  theme(legend.title=element_text(colour="black", size=14), axis.text.x=element_text(face="bold", color="black", size=16), axis.text.y=element_text(face="bold", color="black", size=13), axis.title.x = element_text(color="black", size=18, face="bold"), axis.title.y = element_text(color="black", size=18, face="bold"),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_point() + geom_line(aes(y=predBF)) + 
+  labs(x="Log Thickness", y="Log Break Force", fill="Species")+ #Fill=two colors for species
+  scale_color_manual(values=c("steelblue", "salmon"), name="Species", labels=c("C. cripus", "M. stellatus")) #Edits legend for not a bargraph
+
