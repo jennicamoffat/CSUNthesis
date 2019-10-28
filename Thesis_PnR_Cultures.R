@@ -6,6 +6,7 @@ rm(list=ls())
 #Load PnR data
 mydata<-read.csv("AugustPnR_r_github.csv")
 View(mydata)
+
 #load libraries
 library(tidyverse)
 library(car)
@@ -13,6 +14,13 @@ library(MASS)
 library(RColorBrewer)
 library(broman)
 
+#Current PnR values are actually X umol of O2 per 10,000,000 (or 10^7) cells  (per minute)
+#To get it to be a more reasonable number on the x-axis, and per 10,000 cells instead, 
+#multiply the values by 100 (turns PER 10^7 cells into PER 10^5 cells)
+
+mydata$AvgRespPer100000<-mydata$AvgResp*100
+mydata$AvgNPPer100000<-100*mydata$AvgNP
+mydata$AvgGPPer100000<-100*mydata$AvgGP
 
 ##################################
 #All data Graphs
@@ -72,53 +80,56 @@ View(mydata2)
 
 SummaryGPno32 <- mydata2 %>%
   group_by(Genotype, Temperature) %>%
-  summarize(mean=mean(AvgGP, na.rm=TRUE), SE=sd(AvgGP, na.rm=TRUE)/sqrt(length(na.omit(AvgGP))))
+  summarize(mean=mean(AvgGPPer100000, na.rm=TRUE), SE=sd(AvgGPPer100000, na.rm=TRUE)/sqrt(length(na.omit(AvgGPPer100000))))
 SummaryGPno32
 
 GPGraphno32<-ggplot(SummaryGPno32, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=14),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  scale_y_continuous(expand=c(0,0), limits=c(0, 0.095))+
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  scale_y_continuous(expand=c(0,0), limits=c(0, 9.5))+
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y="Gross Photo. per 10,000 cells ("~O[2]~" µmol/L/min)", fill="Temperature")+  #labels the x and y axes
+  labs(x="Genotype", y=expression(Gross~Photosynthesis~(µmol~O[2]/10^{"5"}~cells/min)), fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2"), labels=c("26°C", "30°C"))+
-  ggtitle("Gross Photosynthesis of Symbiont Strains at 26°C and 30°C")
+  ggtitle("Gross Photosynthesis of Symbiont Strains at 26°C and 30°C")+
+  ggsave("Graphs/PnR/GPGraph_no32.pdf", width=10, height=6.19, dpi=300, unit="in")
 GPGraphno32
-
+ 
 
 #NetPhoto -- No 32
 SummaryNPno32 <- mydata2 %>%
   group_by(Genotype, Temperature) %>%
-  summarize(mean=mean(AvgNP, na.rm=TRUE), SE=sd(AvgNP, na.rm=TRUE)/sqrt(length(na.omit(AvgNP))))
+  summarize(mean=mean(AvgNPPer100000, na.rm=TRUE), SE=sd(AvgNPPer100000, na.rm=TRUE)/sqrt(length(na.omit(AvgNPPer100000))))
 SummaryNPno32
 
 NPGraphno32<-ggplot(SummaryNPno32, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=14),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  scale_y_continuous(expand=c(0,0), limits=c(0,0.13)) +
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  scale_y_continuous(expand=c(0,0), limits=c(0,13)) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y="Net Photo. per 10,000 cells ("~O[2]~" µmol/L/min)", fill="Temperature")+  #labels the x and y axes
+  labs(x="Genotype", y=expression(Net~Photosynthesis~(µmol~O[2]/10^{"5"}~cells/min)), fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2"), labels=c("26°C", "30°C"))+
-  ggtitle("Net Photosynthesis of Symbiont Strains at 26°C and 30°C")
+  ggtitle("Net Photosynthesis of Symbiont Strains at 26°C and 30°C")+
+  ggsave("Graphs/PnR/NPGraph_no32.pdf", width=11, height=6.19, dpi=300, unit="in")
 NPGraphno32
 
 #Respiration -- No 32
 SummaryRespNo32 <- mydata2 %>%
   group_by(Genotype, Temperature) %>%
-  summarize(mean=mean(AvgResp, na.rm=TRUE), SE=sd(AvgResp, na.rm=TRUE)/sqrt(length(na.omit(AvgResp))))
+  summarize(mean=mean(AvgRespPer100000, na.rm=TRUE), SE=sd(AvgRespPer100000, na.rm=TRUE)/sqrt(length(na.omit(AvgRespPer100000))))
 SummaryRespNo32
 
 RespGraphno32<-ggplot(SummaryRespNo32, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=14),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  scale_y_continuous(expand=c(0,0), limits=c(-0.036, 0))+
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  scale_y_continuous(expand=c(0,0), limits=c(-3.6, 0))+
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y="Respiration per 10,000 cells ("~O[2]~" µmol/L/min)", fill="Temperature")+  #labels the x and y axes
+  labs(x="Genotype", y=expression(Respiration~(µmol~O[2]/10^{"5"}~cells/min)), fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2"), labels=c("26°C", "30°C"))+
-  ggtitle("Respiration of Symbiont Strains at 26°C and 30°C")
+  ggtitle("Respiration of Symbiont Strains at 26°C and 30°C")+
+  ggsave("Graphs/PnR/RespGraph_no32.pdf", width=11, height=6.19, dpi=300, unit="in")
 RespGraphno32
 
 ##################################
@@ -374,3 +385,32 @@ qqp(model5res, "norm")
 #Check assumptions
 plot(model5)
 anova(model5)
+
+
+
+#####October Photosynthesis
+#Clear the environment
+rm(list=ls())
+#Load PnR data
+mydata<-read.csv("OctoberPnR_r.csv")
+View(mydata)
+mydata$Temperature<-as.factor(mydata$Temperature)
+
+#load libraries
+library(tidyverse)
+library(car)
+library(MASS)
+
+#Genotype (fixed) and Temperature (fixed) on dependent variables (NP, GP, and Resp)
+#Repiration
+model1<-aov(AvgRespPerCell~Genotype*Temperature, data=mydata)
+#Check assumptions
+model1res<-resid(model1)
+qqp(model1res, "norm")
+#The ends are out of the CI 
+
+#Log transform
+mydata$logRespPerCell<-log(mydata$AvgRespPerCell+0.1)
+model1<-aov(logRespPerCell~Genotype*Temperature, data=mydata)
+model1res<-resid(model1)
+qqp(model1res, "norm")
