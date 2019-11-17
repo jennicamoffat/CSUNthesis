@@ -6,6 +6,7 @@ library(tidyverse)
 library(RColorBrewer)
 library(ggpmisc)
 library(car)
+library(agricolae)
 
 library(reshape2)
 library(growthcurver)
@@ -80,6 +81,7 @@ KB8Growth<-ggplot(subset(mydata, Genotype == "KB8"), aes(x=Day, y=Densityx10000,
   ggtitle("Growth Curve KB8")+
   geom_smooth()
 KB8Growth
+
 
 
 #Graphs of combined data#####
@@ -342,14 +344,15 @@ KB8
 
 
 
-#Logisitc Graphs for 26 and 30#####
+
+#Exponential Graphs for 26 and 30#####
 
 #New data frame without 32, and days 5-15
 rm(list=ls())
 mydata<-read.csv("GrowthDataCombined_r.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 mydata2 <- subset(mydata, Temp == 26 | Temp == 30)
-mydata2<- subset(mydata2, Day>4 & Day <16)
+mydata2<- subset(mydata2, Day <16)
 View(mydata2)
 
 
@@ -361,7 +364,7 @@ CCMP2458<-ggplot(subset(mydata2, Genotype == "CCMP2458"), aes(x=Day, y=Densityx1
   ggtitle("CCMP2458 Growth Curve")+
   labs(x="Day", y="Density (10,000 cells/mL)")+
   scale_color_manual(values = c("skyblue3", "darkgoldenrod2"))+
-  geom_smooth(method = "glm", se = FALSE) 
+  geom_smooth(method = "glm", se = TRUE, size = 2) 
 CCMP2458
 
 CCMP2464<-ggplot(subset(mydata2, Genotype == "CCMP2464" & Round == "July"), aes(x=Day, y=Densityx10000, color=Temp))+
@@ -370,7 +373,7 @@ CCMP2464<-ggplot(subset(mydata2, Genotype == "CCMP2464" & Round == "July"), aes(
   ggtitle("CCMP2464 Growth Curve")+
   theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=14),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank(), legend.position = "none") +
-  geom_smooth(formula = y ~ x, se = TRUE, size=2.5)+
+  geom_smooth(method = "glm", se = TRUE, size=2)+
   labs(x="Day", y="Density (10,000 cells/mL)")+
   scale_color_manual(values = c("skyblue3", "darkgoldenrod2"))
 CCMP2464
@@ -381,7 +384,7 @@ FLCass<-ggplot(subset(mydata2, Genotype == "FLCass"), aes(x=Day, y=Densityx10000
   ggtitle("FLCass Growth Curve")+
   theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=14),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank(), legend.position = "none") +
-  geom_smooth(formula = y ~ x, se = TRUE, size=2.5)+
+  geom_smooth(method = "glm", se = TRUE, size=2)+
   labs(x="Day", y="Density (10,000 cells/mL)")+
   scale_color_manual(values = c("skyblue3", "darkgoldenrod2"))
 FLCass
@@ -392,7 +395,7 @@ RT362<-ggplot(subset(mydata2, Genotype == "RT362"), aes(x=Day, y=Densityx10000, 
   ggtitle("RT362 Growth Curve")+
   theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=14),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank(), legend.position = "none") +
-  geom_smooth(formula = y ~ x, se = TRUE, size=2.5)+
+  geom_smooth(method = "glm", se = TRUE, size=2)+
   labs(x="Day", y="Density (10,000 cells/mL)")+
   scale_color_manual(values = c("skyblue3", "darkgoldenrod2"))
 RT362
@@ -403,10 +406,11 @@ KB8<-ggplot(subset(mydata2, Genotype == "KB8"), aes(x=Day, y=Densityx10000, colo
   ggtitle("KB8 Growth Curve")+
   theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=14),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank(), legend.position = "none") +
-  geom_smooth(formula = y ~ x, se = TRUE, size=2.5)+
+  geom_smooth(method = "glm", se = TRUE, size=2)+
   labs(x="Day", y="Density (10,000 cells/mL)")+
   scale_color_manual(values = c("skyblue3", "darkgoldenrod2"))
 KB8
+
 
 #Calculating growth rates using library("growthrates")#####
 #Outlined here: https://cran.r-project.org/web/packages/growthrates/vignettes/Introduction.html
@@ -512,26 +516,41 @@ rm(list=ls())
 mydata<-read.csv("GrowthDataCombined_r.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 mydata$Flask<-as.factor(mydata$Flask)
-mydata2 <- subset(mydata, Temp == 26 | Temp == 30)
-View(mydata2)
+View(mydata)
+
 
 #To run growthcurver package, each treatment/replicate needs its own row. 
 #Try to pivot data
-DensityTimeData<-pivot_wider(mydata2, id_cols = NULL, names_from = c(Genotype,Flask,Temp),
+DensityTimeData<-pivot_wider(mydata, id_cols = NULL, names_from = c(Genotype,Flask,Temp,Round),
                       names_prefix = "", names_repair = "check_unique",
-                      values_from = Densityx10000, values_fill = NULL, values_fn = NULL)
+                      values_from = Density_cellspermL, values_fill = NULL, values_fn = NULL)
 View(DensityTimeData)
-#SO this added new columns for each Genotype_Flask#_Temp, with the values for each day of Densityx10000
+
+#SO this added new columns for each Genotype_Flask#_Temp_Round, with the values for each day of Density (cells per mL)
 #Lot's of NA's because I didn't tell it to combine by day. So there is still one row for each replicate day. 
 
 #Going to try to run the model for one replicate
-model.FLCass_1_26 <- SummarizeGrowth(DensityTimeData$Day, DensityTimeData$FLCass_1_26)
+model.FLCass_1_26_MayJune <- SummarizeGrowth(DensityTimeData$Day, DensityTimeData$FLCass_1_26_MayJune)
 #Let's see how it looks.
-plot(model.FLCass_1_26)
+plot(model.FLCass_1_26_MayJune)
+#Did not work. I need to remove the NA's. 
 
+#Making a data frame of just FLCass_1_26_MayJune
+FLCass_1_26_MayJune<- subset(DensityTimeData, select = c(Day, FLCass_1_26_MayJune))
+View(FLCass_1_26_MayJune)
+#Remove NA's
+data1<-na.omit(FLCass_1_26_MayJune)
+View(data1)
 
+#Going to try to run the model 
+model.FLCass_1_26_MayJune <- SummarizeGrowth(data1$Day, data1$FLCass_1_26_MayJune)
+#Let's see how it looks.
+plot(model.FLCass_1_26_MayJune)
+#To get the output
+model.FLCass_1_26_MayJune
+#Well it worked!
 
-#Per capita growth cruves from hand calculated growth rates#####
+#Per capita growth curves from hand calculated growth rates#####
 
 #Clear the environment
 rm(list=ls())
@@ -573,6 +592,7 @@ CCMP2458PerCap26F1
 #2.5555556 2.2217903 0.3080364 0.4543499 
 
 
+
 #Calculating logistic growth rates#####
 #New strategy
 #Looking at all of the graphs, they are all in logistic growth from day 5-15, so I'm 
@@ -584,6 +604,7 @@ rm(list=ls())
 mydata<-read.csv("GrowthDataCombined_r.csv")
 View(mydata)
 mydata$Temp<-as.factor(mydata$Temp)
+
 
 CCMP2458<-ggplot(subset(mydata, Genotype == "CCMP2458" & Temp=="26" & Flask=="1" & Day > 4 & Day < 16), aes(x=Densityx10000, y=PerCapitaGrowthRate, color=Round))+
   geom_point()+
@@ -622,88 +643,94 @@ ggplotRegression <- function (fit) {
                        " Slope =",signif(fit$coef[[2]], 5),
                        " P =",signif(summary(fit)$coef[2,4], 5)))
 }
-fit1 <- lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16))
+fit1 <- lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="26" & Flask =="1" & Day < 16))
 ggplotRegression(fit1)
 #Slope=6.8501, Intercept = -27.1, Adj R2 = 0.61124
 #Both methods give me the same values!! Hooray!!
 #Second method is less code, so I'm going to do that. 
 
 #CCMP2458, 26*, flask 1-4
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="26" & Flask =="1" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="26" & Flask =="2" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="26" & Flask =="3" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="26" & Flask =="4" & Day > 3 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="26" & Flask =="1" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="26" & Flask =="2" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="26" & Flask =="3" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="26" & Flask =="4" & Day < 16)))
 
 #CCMP2458, 30*, flask 1-4
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="30" & Flask =="1" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="30" & Flask =="2" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="30" & Flask =="3" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="30" & Flask =="4" & Day > 3 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="30" & Flask =="1" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="30" & Flask =="2" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="30" & Flask =="3" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="30" & Flask =="4" & Day < 16)))
 
 #CCMP2464, 26*, flask 1-4 (July only!)
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="26" & Flask =="1" & Day > 3 & Day < 16 & Round == "July")))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="26" & Flask =="2" & Day > 3 & Day < 16 & Round == "July")))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="26" & Flask =="3" & Day > 3 & Day < 16 & Round == "July")))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="26" & Flask =="4" & Day > 3 & Day < 16 & Round == "July")))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="26" & Flask =="1" & Day < 16 & Round == "July")))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="26" & Flask =="2" & Day < 16 & Round == "July")))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="26" & Flask =="3" & Day < 16 & Round == "July")))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="26" & Flask =="4" & Day < 16 & Round == "July")))
 
 #CCMP2464, 30*, flask 1-4 (July only!)
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="30" & Flask =="1" & Day > 3 & Day < 16 & Round == "July")))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="30" & Flask =="2" & Day > 3 & Day < 16 & Round == "July")))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="30" & Flask =="3" & Day > 3 & Day < 16 & Round == "July")))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="30" & Flask =="4" & Day > 3 & Day < 16 & Round == "July")))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="30" & Flask =="1" & Day < 16 & Round == "July")))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="30" & Flask =="2" & Day < 16 & Round == "July")))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="30" & Flask =="3" & Day < 16 & Round == "July")))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="30" & Flask =="4" & Day < 16 & Round == "July")))
 
 #FLCass, 26*, flask 1-4
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="26" & Flask =="1" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="26" & Flask =="2" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="26" & Flask =="3" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="26" & Flask =="4" & Day > 3 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="26" & Flask =="1" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="26" & Flask =="2" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="26" & Flask =="3" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="26" & Flask =="4" & Day < 16)))
 
 #FLCass, 30*, flask 1-4
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="30" & Flask =="1" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="30" & Flask =="2" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="30" & Flask =="3" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="30" & Flask =="4" & Day > 3 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="30" & Flask =="1" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="30" & Flask =="2" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="30" & Flask =="3" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="30" & Flask =="4" & Day < 16)))
 
 #KB8, 26*, flask 1-4
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="26" & Flask =="1" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="26" & Flask =="2" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="26" & Flask =="3" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="26" & Flask =="4" & Day > 3 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="26" & Flask =="1" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="26" & Flask =="2" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="26" & Flask =="3" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="26" & Flask =="4" & Day < 16)))
 
 #KB8, 30*, flask 1-4
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="30" & Flask =="1" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="30" & Flask =="2" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="30" & Flask =="3" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="30" & Flask =="4" & Day > 3 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="30" & Flask =="1" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="30" & Flask =="2" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="30" & Flask =="3" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="30" & Flask =="4" & Day < 16)))
 
 #RT362, 26*, flask 1-4
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="26" & Flask =="1" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="26" & Flask =="2" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="26" & Flask =="3" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="26" & Flask =="4" & Day > 3 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="26" & Flask =="1" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="26" & Flask =="2" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="26" & Flask =="3" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="26" & Flask =="4" & Day < 16)))
 
 #RT362, 30*, flask 1-4
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="30" & Flask =="1" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="30" & Flask =="2" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="30" & Flask =="3" & Day > 3 & Day < 16)))
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="30" & Flask =="4" & Day > 3 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="30" & Flask =="1" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="30" & Flask =="2" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="30" & Flask =="3" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="30" & Flask =="4" & Day < 16)))
 
 #Created new data with all of those values
 #Clear the environment
 rm(list=ls())
 #Load growth data
-mydata<-read.csv("LogisticGrowthRates_Combined.csv")
+mydata<-read.csv("ExponentialGrowthRates_Day1to15.csv")
+mydata$Temperature<-as.factor(mydata$Temperature)
 View(mydata)
 
 #Make a model
 #Genotype(fixed) and Temperature(fixed) on Slope (ie: growth rate, NOT PER CAPITA, problem?)
-model1<-aov(Slope~Genotype*Temperature, data=mydata)
+model1<-lm(Slope~Genotype*Temperature, data=mydata)
 model1res<-resid(model1)
 qqp(model1res, "norm")
+
+TukeyHSD(aov(model1))
+
 #Normal. Dope.
 plot(model1)
 anova(model1)
 #Very significant interaction between temp and geno. Cool beans. 
+
+HSD.test(model1, ~Temperature)
 
 #Barplot of slopes
 Summary <- mydata %>%
@@ -713,13 +740,14 @@ Summary
 
 SlopesGraph<-ggplot(Summary, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(legend.position = "none", plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=14),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  scale_y_continuous(expand=c(0,0), limits=c(0, 12.5))+
+  theme(legend.position = "none", plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=12), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  scale_y_continuous(expand=c(0,0), limits=c(0, 10))+
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y="Logistic Growth Rate (cells/mL/day)", fill="Temperature")+  #labels the x and y axes
+  labs(x="Genotype", y="Exponential Phase Growth Rate (10,000 cells/mL/day)", fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2"), labels=c("26°C", "30°C"))+
-  ggtitle("Logisitc Growth Rate of Symbiont Strains")
+  ggtitle("Growth Rates of Symbiont Strains at 26°C and 30°C")+
+  ggsave("ExponentialGrowthGraph.pdf", width=10, height=6.19, dpi=300, unit="in")
 SlopesGraph
 
 
