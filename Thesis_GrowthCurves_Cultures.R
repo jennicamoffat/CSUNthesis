@@ -539,16 +539,41 @@ plot(model.FLCass_1_26_MayJune)
 FLCass_1_26_MayJune<- subset(DensityTimeData, select = c(Day, FLCass_1_26_MayJune))
 View(FLCass_1_26_MayJune)
 #Remove NA's
-data1<-na.omit(FLCass_1_26_MayJune)
-View(data1)
+data.FLCass.1.26.MayJune<-na.omit(FLCass_1_26_MayJune)
+View(data.FLCass.1.26.MayJune)
 
 #Going to try to run the model 
-model.FLCass_1_26_MayJune <- SummarizeGrowth(data1$Day, data1$FLCass_1_26_MayJune)
+model.FLCass.1.26.MayJune <- SummarizeGrowth(data.FLCass.1.26.MayJune$Day, data.FLCass.1.26.MayJune$FLCass_1_26_MayJune)
 #Let's see how it looks.
-plot(model.FLCass_1_26_MayJune)
+plot(model.FLCass.1.26.MayJune)
 #To get the output
-model.FLCass_1_26_MayJune
+model.FLCass.1.26.MayJune
 #Well it worked!
+# To see all the available metrics 
+str(model.FLCass_1_26_MayJune$vals)
+
+#Okay, now I want to try to use the growthcurver for multiple replicates at once. 
+#Need to make a second df for next replicate
+#Making a data frame of just FLCass_2_26_MayJune
+data.FLCass.2.26.MayJune<- subset(DensityTimeData, select = c(Day, FLCass_2_26_MayJune))
+View(data.FLCass.2.26.MayJune)
+#Remove NA's
+data.FLCass.2.26.MayJune<-na.omit(data.FLCass.2.26.MayJune)
+View(data.FLCass.2.26.MayJune)
+
+combined.data<-merge(data.FLCass.1.26.MayJune,
+                     data.FLCass.2.26.MayJune,
+                     by="Day")
+View(combined.data)
+#Okay, combined dataframe looks good. 
+#Need to rename "Day" column to "time" for the package. 
+names(combined.data)[1]<-"time"
+
+# Now, we'll use Growthcurver to summarize the growth curve data for the entire
+# plate using the default background correction method ("min").
+gc_out <- SummarizeGrowthByPlate(combined.data, plot_fit = TRUE)
+head(gc_out)
+
 
 #Per capita growth curves from hand calculated growth rates#####
 
