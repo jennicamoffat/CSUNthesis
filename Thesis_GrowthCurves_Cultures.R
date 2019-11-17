@@ -518,6 +518,8 @@ mydata$Temp<-as.factor(mydata$Temp)
 mydata$Flask<-as.factor(mydata$Flask)
 View(mydata)
 
+MayJuneData<-subset(mydata, Round=="MayJune")
+JulyData<-subset(mydata,Round == "July")
 
 #To run growthcurver package, each treatment/replicate needs its own row. 
 #Try to pivot data
@@ -573,6 +575,32 @@ names(combined.data)[1]<-"time"
 # plate using the default background correction method ("min").
 gc_out <- SummarizeGrowthByPlate(combined.data, plot_fit = TRUE)
 head(gc_out)
+#Dope. Okay I guess I just have to create 120 dataframes and combine them all. Great. 
+
+#To remove NA's, and group by Day
+data <- DensityTimeData %>% group_by(Day) %>% summarise_all(funs( na.omit(unique(.)) ))
+#Did not work. I need to remove all of the extra columns.
+GrowthData <- DensityTimeData[ -c(1,3:17) ]
+View(GrowthData)
+data <- GrowthData %>% group_by(Day) %>% summarise_all(funs( na.omit(unique(.)) ))
+
+#Let's try one round at a time
+MayJuneData<-subset(mydata, Round=="MayJune")
+View(MayJuneData)
+MayJuneGrowthData<-pivot_wider(MayJuneData, id_cols = NULL, names_from = c(Genotype,Flask,Temp),
+                             names_prefix = "", names_repair = "check_unique",
+                             values_from = Density_cellspermL, values_fill = NULL, values_fn = NULL)
+View(MayJuneGrowthData)
+MayJuneGrowthData <- MayJuneGrowthData[ -c(1,2,4:18) ]
+View(MayJuneGrowthData)
+
+data<-MayJuneGrowthData %>%
+  gather(var, val, -Day, na.rm = TRUE) %>%
+  group_by(Day, var) %>%
+  distinct(val) %>%
+  spread(var, val)
+View(data)
+#IT WOOOOOOOOORKED
 
 
 #Per capita growth curves from hand calculated growth rates#####
