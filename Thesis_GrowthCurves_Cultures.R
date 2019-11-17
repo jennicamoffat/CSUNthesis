@@ -518,89 +518,84 @@ mydata$Temp<-as.factor(mydata$Temp)
 mydata$Flask<-as.factor(mydata$Flask)
 View(mydata)
 
-MayJuneData<-subset(mydata, Round=="MayJune")
-JulyData<-subset(mydata,Round == "July")
-
-#To run growthcurver package, each treatment/replicate needs its own row. 
-#Try to pivot data
-DensityTimeData<-pivot_wider(mydata, id_cols = NULL, names_from = c(Genotype,Flask,Temp,Round),
-                      names_prefix = "", names_repair = "check_unique",
-                      values_from = Density_cellspermL, values_fill = NULL, values_fn = NULL)
-View(DensityTimeData)
-
-#SO this added new columns for each Genotype_Flask#_Temp_Round, with the values for each day of Density (cells per mL)
-#Lot's of NA's because I didn't tell it to combine by day. So there is still one row for each replicate day. 
-
-#Going to try to run the model for one replicate
-model.FLCass_1_26_MayJune <- SummarizeGrowth(DensityTimeData$Day, DensityTimeData$FLCass_1_26_MayJune)
-#Let's see how it looks.
-plot(model.FLCass_1_26_MayJune)
-#Did not work. I need to remove the NA's. 
-
-#Making a data frame of just FLCass_1_26_MayJune
-FLCass_1_26_MayJune<- subset(DensityTimeData, select = c(Day, FLCass_1_26_MayJune))
-View(FLCass_1_26_MayJune)
-#Remove NA's
-data.FLCass.1.26.MayJune<-na.omit(FLCass_1_26_MayJune)
-View(data.FLCass.1.26.MayJune)
-
-#Going to try to run the model 
-model.FLCass.1.26.MayJune <- SummarizeGrowth(data.FLCass.1.26.MayJune$Day, data.FLCass.1.26.MayJune$FLCass_1_26_MayJune)
-#Let's see how it looks.
-plot(model.FLCass.1.26.MayJune)
-#To get the output
-model.FLCass.1.26.MayJune
-#Well it worked!
-# To see all the available metrics 
-str(model.FLCass_1_26_MayJune$vals)
-
-#Okay, now I want to try to use the growthcurver for multiple replicates at once. 
-#Need to make a second df for next replicate
-#Making a data frame of just FLCass_2_26_MayJune
-data.FLCass.2.26.MayJune<- subset(DensityTimeData, select = c(Day, FLCass_2_26_MayJune))
-View(data.FLCass.2.26.MayJune)
-#Remove NA's
-data.FLCass.2.26.MayJune<-na.omit(data.FLCass.2.26.MayJune)
-View(data.FLCass.2.26.MayJune)
-
-combined.data<-merge(data.FLCass.1.26.MayJune,
-                     data.FLCass.2.26.MayJune,
-                     by="Day")
-View(combined.data)
-#Okay, combined dataframe looks good. 
-#Need to rename "Day" column to "time" for the package. 
-names(combined.data)[1]<-"time"
-
-# Now, we'll use Growthcurver to summarize the growth curve data for the entire
-# plate using the default background correction method ("min").
-gc_out <- SummarizeGrowthByPlate(combined.data, plot_fit = TRUE)
-head(gc_out)
-#Dope. Okay I guess I just have to create 120 dataframes and combine them all. Great. 
-
-#To remove NA's, and group by Day
-data <- DensityTimeData %>% group_by(Day) %>% summarise_all(funs( na.omit(unique(.)) ))
-#Did not work. I need to remove all of the extra columns.
-GrowthData <- DensityTimeData[ -c(1,3:17) ]
-View(GrowthData)
-data <- GrowthData %>% group_by(Day) %>% summarise_all(funs( na.omit(unique(.)) ))
-
-#Let's try one round at a time
+#Getting rid of NA's, but can only do one round at a time.
 MayJuneData<-subset(mydata, Round=="MayJune")
 View(MayJuneData)
+#Pivoting data to use growthcurver package
 MayJuneGrowthData<-pivot_wider(MayJuneData, id_cols = NULL, names_from = c(Genotype,Flask,Temp),
-                             names_prefix = "", names_repair = "check_unique",
-                             values_from = Density_cellspermL, values_fill = NULL, values_fn = NULL)
-View(MayJuneGrowthData)
+                               names_prefix = "", names_repair = "check_unique",
+                               values_from = Density_cellspermL, values_fill = NULL, values_fn = NULL)
+#removing unnecessary columns
 MayJuneGrowthData <- MayJuneGrowthData[ -c(1,2,4:18) ]
 View(MayJuneGrowthData)
-
-data<-MayJuneGrowthData %>%
+#Getting rid of NA's
+#From stack overflow response "Here it, first, performs a wide-to-long data-transformation, excluding the "A" column and removing the missing values. Second, it groups by "A" column and the variable names. Third, it removes the duplicate values. Finally, it returns the data to its original wide format."
+MayJuneData<-MayJuneGrowthData %>%
   gather(var, val, -Day, na.rm = TRUE) %>%
   group_by(Day, var) %>%
   distinct(val) %>%
   spread(var, val)
-View(data)
+View(MayJuneData)
 #IT WOOOOOOOOORKED
+
+ggplot(data=MayJuneData,aes(x = time, y=CCMP2464_1_32))+geom_point()
+
+#Need to rename "Day" column to "time" for the package. 
+names(MayJuneData)[1]<-"time"
+
+# Now, we'll use Growthcurver to summarize the growth curve data for the entire
+# plate using the default background correction method ("min").
+gc_out <- SummarizeGrowthByPlate(MayJuneData, plot_fit = TRUE, plot_file="MayJuneGrowthValues.pdf")
+head(gc_out)
+View(gc_out)
+#CCMP data are the only data that can't be fit, cuz it didn't grow.
+
+#Going to try to run the model for one replicate
+model.FLCass_1_26 <- SummarizeGrowth(MayJuneData$time, MayJuneData$FLCass_1_26)
+#Let's see how it looks.
+plot(model.FLCass_1_26)
+# To see all the available metrics 
+str(model.FLCass_1_26$vals)
+
+model.FLCass_2_26 <- SummarizeGrowth(MayJuneData$time, MayJuneData$FLCass_2_26)
+plot(model.FLCass_2_26)
+
+model.FLCass_3_26 <- SummarizeGrowth(MayJuneData$time, MayJuneData$FLCass_3_26)
+plot(model.FLCass_3_26)
+
+model.FLCass_4_26 <- SummarizeGrowth(MayJuneData$time, MayJuneData$FLCass_4_26)
+plot(model.FLCass_4_26)
+
+
+####So now the whole thing for July
+JulyData<-subset(mydata,Round == "July")
+
+
+#Pivoting data to use growthcurver package
+JulyGrowthData<-pivot_wider(JulyData, id_cols = NULL, names_from = c(Genotype,Flask,Temp),
+                               names_prefix = "", names_repair = "check_unique",
+                               values_from = Density_cellspermL, values_fill = NULL, values_fn = NULL)
+#removing unnecessary columns
+JulyGrowthData <- JulyGrowthData[ -c(1,2,4:18) ]
+View(JulyGrowthData)
+#Getting rid of NA's
+#From stack overflow response "Here it, first, performs a wide-to-long data-transformation, excluding the "A" column and removing the missing values. Second, it groups by "A" column and the variable names. Third, it removes the duplicate values. Finally, it returns the data to its original wide format."
+JulyData<-JulyGrowthData %>%
+  gather(var, val, -Day, na.rm = TRUE) %>%
+  group_by(Day, var) %>%
+  distinct(val) %>%
+  spread(var, val)
+View(JulyData)
+#IT WOOOOOOOOORKED
+
+#Need to rename "Day" column to "time" for the package. 
+names(JulyData)[1]<-"time"
+
+# Now, we'll use Growthcurver to summarize the growth curve data for the entire
+# plate using the default background correction method ("min").
+gc_out <- SummarizeGrowthByPlate(JulyData, plot_fit = TRUE, plot_file="JulyGrowthValues.pdf")
+head(gc_out)
+View(gc_out)
 
 
 #Per capita growth curves from hand calculated growth rates#####
