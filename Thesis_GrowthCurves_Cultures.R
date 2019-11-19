@@ -4,6 +4,7 @@
 #load libraries
 library(tidyverse)
 library(RColorBrewer)
+library("wesanderson")
 library(ggpmisc)
 library(car)
 library(agricolae)
@@ -550,6 +551,11 @@ head(gc_out)
 View(gc_out)
 #CCMP data are the only data that can't be fit, cuz it didn't grow.
 
+#Export to excel file
+library("xlsx")
+write.xlsx(gc_out, file = "GrowthcurverData.xlsx",
+           sheetName = "MayJune", append = FALSE)
+
 #Going to try to run the model for one replicate
 model.FLCass_1_26 <- SummarizeGrowth(MayJuneData$time, MayJuneData$FLCass_1_26)
 #Let's see how it looks.
@@ -593,10 +599,110 @@ names(JulyData)[1]<-"time"
 
 # Now, we'll use Growthcurver to summarize the growth curve data for the entire
 # plate using the default background correction method ("min").
-gc_out <- SummarizeGrowthByPlate(JulyData, plot_fit = TRUE, plot_file="JulyGrowthValues.pdf")
-head(gc_out)
-View(gc_out)
+gc_out2 <- SummarizeGrowthByPlate(JulyData, plot_fit = TRUE, plot_file="JulyGrowthValues.pdf")
+head(gc_out2)
+View(gc_out2)
+#Export to same excel file
+write.xlsx(gc_out2, file = "GrowthcurverData.xlsx",
+           sheetName = "July", append = TRUE)
 
+
+#Running an ANOVA on data output from growthcurver#####
+rm(list=ls())
+mydata<-read.csv("GrowthcurverData_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
+View(mydata)
+#going to remove CCMP2464 from MayJune
+mydata2<-mydata[-c(13:24),]
+View(mydata2)
+
+#Make a model
+#Genotype(fixed), Temperature(fixed), and Round (fixed) on K, r, or n0
+model1<-lm(k~Genotype*Temp*Round, data=mydata2)
+model1res<-resid(model1)
+qqp(model1res, "norm")
+
+#Super not normal
+mydata2$logk<-log(mydata2$k)
+model1<-lm(logk~Genotype*Temp*Round, data=mydata2)
+model1res<-resid(model1)
+qqp(model1res, "norm")
+#Even worse
+
+mydata2$sqrtk<-sqrt(mydata2$k)
+model1<-lm(sqrtk~Genotype*Temp*Round, data=mydata2)
+model1res<-resid(model1)
+qqp(model1res, "norm")
+
+mydata2$fourthrtk<-sqrt(mydata2$sqrtk)
+model1<-lm(fourthrtk~Genotype*Temp*Round, data=mydata2)
+model1res<-resid(model1)
+qqp(model1res, "norm")
+
+hist(mydata$k)
+Summary <- mydata2 %>%
+  group_by(Genotype, Temp, Round) %>%
+  summarize(mean=mean(k, na.rm=TRUE), SE=sd(k, na.rm=TRUE)/sqrt(length(na.omit(k))))
+View(Summary)
+
+Graph<-ggplot(Summary, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y="k", fill="Temperature") #labels the x and y axes
+  scale_fill_brewer(palette = "RdYlBu")
+Graph
+
+mydata3<-subset(mydata2, Genotype != "CCMP2458" & Genotype != "RT362")
+View(mydata3)
+
+model1<-lm(k~Genotype*Temp*Round, data=mydata3)
+model1res<-resid(model1)
+qqp(model1res, "norm")
+
+Summary3 <- mydata3 %>%
+  group_by(Genotype, Temp, Round) %>%
+  summarize(mean=mean(k, na.rm=TRUE), SE=sd(k, na.rm=TRUE)/sqrt(length(na.omit(k))))
+View(Summary3)
+
+Graph<-ggplot(Summary3, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y="k", fill="Temperature")+#labels the x and y axes
+  facet_wrap(  ~ Round)+
+  scale_fill_manual(values = wes_palette("Royal2"))
+Graph
+#Well the carrying capacity is useless. I needed to take more and longer data. Varies completely from one round to another
+
+
+#Trying r because k is useless#####
+rm(list=ls())
+mydata<-read.csv("GrowthcurverData_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
+View(mydata)
+#going to remove CCMP2464 from MayJune
+mydata2<-mydata[-c(13:24),]
+View(mydata2)
+
+Summary2 <- mydata2 %>%
+  group_by(Genotype, Temp, Round) %>%
+  summarize(mean=mean(r, na.rm=TRUE), SE=sd(r, na.rm=TRUE)/sqrt(length(na.omit(r))))
+View(Summary2)
+
+Graph<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y="r", fill="Temperature")+#labels the x and y axes
+  facet_wrap(  ~ Round)+
+  scale_fill_manual(values = wes_palette("Moonrise3"))
+Graph
 
 #Per capita growth curves from hand calculated growth rates#####
 
