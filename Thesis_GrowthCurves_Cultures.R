@@ -646,14 +646,18 @@ Summary <- mydata2 %>%
   summarize(mean=mean(k, na.rm=TRUE), SE=sd(k, na.rm=TRUE)/sqrt(length(na.omit(k))))
 View(Summary)
 
-Graph<-ggplot(Summary, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+Summary$Round <- factor(Summary$Round,levels = c("MayJune", "July"))
+
+kGraph<-ggplot(Summary, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  theme(axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y="k", fill="Temperature") #labels the x and y axes
-  scale_fill_brewer(palette = "RdYlBu")
-Graph
+  labs(x="Genotype", y="k", fill="Temperature")+ #labels the x and y axes
+  facet_wrap(  ~ Round)+
+  scale_fill_manual(values = wes_palette("Royal2"))
+kGraph
+kGraph + ggsave("GrowthCurverGraph_carrycapacity.pdf", width=10, height=6.19, dpi=300, unit="in")
 
 mydata3<-subset(mydata2, Genotype != "CCMP2458" & Genotype != "RT362")
 View(mydata3)
@@ -666,16 +670,20 @@ Summary3 <- mydata3 %>%
   group_by(Genotype, Temp, Round) %>%
   summarize(mean=mean(k, na.rm=TRUE), SE=sd(k, na.rm=TRUE)/sqrt(length(na.omit(k))))
 View(Summary3)
+Summary3$Round <- factor(Summary3$Round,levels = c("MayJune", "July"))
 
-Graph<-ggplot(Summary3, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+
+kGraph_noCCMP2458orRT362<-ggplot(Summary3, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  theme(axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Genotype", y="k", fill="Temperature")+#labels the x and y axes
   facet_wrap(  ~ Round)+
   scale_fill_manual(values = wes_palette("Royal2"))
-Graph
+kGraph_noCCMP2458orRT362
+kGraph_noCCMP2458orRT362 + ggsave("GrowthCurverGraph_carrycapacity2.pdf", width=10, height=6.19, dpi=300, unit="in")
+
 #Well the carrying capacity is useless. I needed to take more and longer data. Varies completely from one round to another
 
 
@@ -693,17 +701,39 @@ Summary2 <- mydata2 %>%
   group_by(Genotype, Temp, Round) %>%
   summarize(mean=mean(r, na.rm=TRUE), SE=sd(r, na.rm=TRUE)/sqrt(length(na.omit(r))))
 View(Summary2)
+Summary2$Round <- factor(Summary2$Round,levels = c("MayJune", "July"))
 
-Graph<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+rGraph<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  theme(axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Genotype", y="r", fill="Temperature")+#labels the x and y axes
   facet_wrap(  ~ Round)+
   scale_fill_manual(values = wes_palette("Moonrise3"))
-Graph
+rGraph
+rGraph+ggsave("GrowthCurverGraph_growthrate.pdf", width=10, height=6.19, dpi=300, unit="in")
 
+model1<-lm(r~Genotype*Temp*Round, data=mydata2)
+model1res<-resid(model1)
+qqp(model1res, "norm")
+
+Summary3 <- mydata2 %>%
+  group_by(Genotype, Temp, Round) %>%
+  summarize(mean=mean(ExcelExp, na.rm=TRUE), SE=sd(ExcelExp, na.rm=TRUE)/sqrt(length(na.omit(ExcelExp))))
+
+View(Summary3)
+Summary2$Round <- factor(Summary2$Round,levels = c("MayJune", "July"))
+
+ExcelExpGraph<-ggplot(Summary3, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y="Excel Exponential", fill="Temperature")+#labels the x and y axes
+  facet_wrap(  ~ Round)+
+  scale_fill_manual(values = wes_palette("Moonrise3"))
+ExcelExpGraph
 #Per capita growth curves from hand calculated growth rates#####
 
 #Clear the environment
@@ -815,6 +845,13 @@ ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="30" & Flask =="3" & Day < 16)))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="30" & Flask =="4" & Day < 16)))
 
+#CCMP2458, 32*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="32" & Flask =="1" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="32" & Flask =="2" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="32" & Flask =="3" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2458" & Temp =="32" & Flask =="4" & Day < 16)))
+
+
 #CCMP2464, 26*, flask 1-4 (July only!)
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="26" & Flask =="1" & Day < 16 & Round == "July")))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="26" & Flask =="2" & Day < 16 & Round == "July")))
@@ -826,6 +863,13 @@ ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="30" & Flask =="2" & Day < 16 & Round == "July")))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="30" & Flask =="3" & Day < 16 & Round == "July")))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="30" & Flask =="4" & Day < 16 & Round == "July")))
+
+#CCMP2464, 32*, flask 1-4 (July only!)
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="32" & Flask =="1" & Day < 16 & Round == "July")))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="32" & Flask =="2" & Day < 16 & Round == "July")))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="32" & Flask =="3" & Day < 16 & Round == "July")))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "CCMP2464" & Temp =="32" & Flask =="4" & Day < 16 & Round == "July")))
+
 
 #FLCass, 26*, flask 1-4
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="26" & Flask =="1" & Day < 16)))
@@ -839,6 +883,13 @@ ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCa
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="30" & Flask =="3" & Day < 16)))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="30" & Flask =="4" & Day < 16)))
 
+#FLCass, 32*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="32" & Flask =="1" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="32" & Flask =="2" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="32" & Flask =="3" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "FLCass" & Temp =="32" & Flask =="4" & Day < 16)))
+
+
 #KB8, 26*, flask 1-4
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="26" & Flask =="1" & Day < 16)))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="26" & Flask =="2" & Day < 16)))
@@ -851,6 +902,13 @@ ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8"
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="30" & Flask =="3" & Day < 16)))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="30" & Flask =="4" & Day < 16)))
 
+#KB8, 32*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="32" & Flask =="1" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="32" & Flask =="2" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="32" & Flask =="3" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "KB8" & Temp =="32" & Flask =="4" & Day < 16)))
+
+
 #RT362, 26*, flask 1-4
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="26" & Flask =="1" & Day < 16)))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="26" & Flask =="2" & Day < 16)))
@@ -862,6 +920,13 @@ ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT36
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="30" & Flask =="2" & Day < 16)))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="30" & Flask =="3" & Day < 16)))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="30" & Flask =="4" & Day < 16)))
+
+#RT362, 32*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="32" & Flask =="1" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="32" & Flask =="2" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="32" & Flask =="3" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(mydata, Genotype == "RT362" & Temp =="32" & Flask =="4" & Day < 16)))
+
 
 #Created new data with all of those values
 #Clear the environment
@@ -899,7 +964,7 @@ SlopesGraph<-ggplot(Summary, aes(x=Genotype, y=mean, fill=factor(Temperature), g
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Genotype", y="Exponential Phase Growth Rate (10,000 cells/mL/day)", fill="Temperature")+  #labels the x and y axes
-  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2"), labels=c("26°C", "30°C"))+
+  scale_fill_manual(values = wes_palette("Moonrise3"), labels=c("26°C", "30°C", "32°C"))+
   ggtitle("Growth Rates of Symbiont Strains at 26°C and 30°C")+
   ggsave("ExponentialGrowthGraph.pdf", width=10, height=6.19, dpi=300, unit="in")
 SlopesGraph

@@ -388,7 +388,7 @@ anova(model5)
 
 
 
-#####October Photosynthesis
+#October Photosynthesis#####
 #Clear the environment
 rm(list=ls())
 #Load PnR data
@@ -401,16 +401,139 @@ library(tidyverse)
 library(car)
 library(MASS)
 
+
+#October PnR graphs#####
+
+#Gross photosynthesis. GP = gross photo umol O2 per billion cells
+mydata$GP<-1000000*mydata$AvgGPPer1000Cell
+
+SummaryGP <- mydata %>%
+  group_by(Genotype, Temperature) %>%
+  summarize(mean=mean(GP, na.rm=TRUE), SE=sd(GP, na.rm=TRUE)/sqrt(length(na.omit(GP))))
+SummaryGP
+
+GPGraph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  scale_y_continuous(expand=c(0,0), limits=c(0, 5.5))+
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y=expression(Gross~Photosynthesis~(µmol~O[2]/10^{"9"}~cells/min)), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Gross Photosynthesis of Symbiont Strains")+
+  ggsave("Graphs/PnR/GPGraph_Oct.pdf", width=11, height=6.19, dpi=300, unit="in")
+GPGraph
+
+
+#Net Photo. NP = umol O2 per billion cells. 
+mydata$NP<-1000000*mydata$AvgNPPer1000Cell
+
+SummaryNP <- mydata %>%
+  group_by(Genotype, Temperature) %>%
+  summarize(mean=mean(NP, na.rm=TRUE), SE=sd(NP, na.rm=TRUE)/sqrt(length(na.omit(NP))))
+SummaryNP
+
+NPGraph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  scale_y_continuous(expand=c(0,0), limits=c(0, 7))+
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y=expression(Net~Photosynthesis~(µmol~O[2]/10^{"9"}~cells/min)), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Net Photosynthesis of Symbiont Strains")+
+  ggsave("Graphs/PnR/NPGraph_Oct.pdf", width=11, height=6.19, dpi=300, unit="in")
+NPGraph
+
+#Right now, data is really small number per 1000 cells. To get it to be 
+#a more resonible number, times it by 1,000,000 to get resp per billion cells. Resp = umol O2 per billion cells per min
+mydata$Resp<-1000000*mydata$AvgRespPer1000Cell
+
+SummaryResp <- mydata %>%
+  group_by(Genotype, Temperature) %>%
+  summarize(mean=mean(Resp, na.rm=TRUE), SE=sd(Resp, na.rm=TRUE)/sqrt(length(na.omit(Resp))))
+SummaryResp
+
+RespGraph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  scale_y_continuous(expand=c(0,0), limits=c(-1.8,0))+
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y=expression(Respiration~(µmol~O[2]/10^{"9"}~cells/min)), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Respiration of Symbiont Strains")+
+  ggsave("Graphs/PnR/RespGraph_Oct.pdf", width=11, height=6.19, dpi=300, unit="in")
+RespGraph
+
+#Stats#####
+
+
 #Genotype (fixed) and Temperature (fixed) on dependent variables (NP, GP, and Resp)
 #Repiration
-model1<-aov(AvgRespPerCell~Genotype*Temperature, data=mydata)
+#Right now, data is really small number per 1000 cells. To get it to be 
+#a more resonible number, times it by 1,000,000 to get resp per billion cells. 
+mydata$Resp<-1000000*mydata$AvgRespPer1000Cell
+
+
+model1<-aov(Resp~Genotype*Temperature, data=mydata)
 #Check assumptions
 model1res<-resid(model1)
 qqp(model1res, "norm")
 #The ends are out of the CI 
 
 #Log transform
-mydata$logRespPerCell<-log(mydata$AvgRespPerCell+0.1)
-model1<-aov(logRespPerCell~Genotype*Temperature, data=mydata)
+mydata$logResp<-log(mydata$Resp+3)
+model1<-aov(logResp~Genotype*Temperature, data=mydata)
 model1res<-resid(model1)
 qqp(model1res, "norm")
+#Different, but not better?
+
+#Square root
+mydata$sqrtResp<-sqrt(mydata$Resp+3)
+model1<-aov(sqrtResp~Genotype*Temperature, data=mydata)
+model1res<-resid(model1)
+qqp(model1res, "norm")
+#Not better
+
+
+#Net Photo. NP = umol O2 per billion cells. 
+mydata$NP<-1000000*mydata$AvgNPPer1000Cell
+
+
+model1<-aov(NP~Genotype*Temperature, data=mydata)
+#Check assumptions
+model1res<-resid(model1)
+qqp(model1res, "norm")
+
+#Square root
+mydata$sqrtNP<-sqrt(mydata$NP)
+model1<-aov(sqrtNP~Genotype*Temperature, data=mydata)
+model1res<-resid(model1)
+qqp(model1res, "norm")
+#Better
+
+#Fourth root
+mydata$fourthrtNP<-sqrt(sqrt(mydata$NP))
+model1<-aov(fourthrtNP~Genotype*Temperature, data=mydata)
+model1res<-resid(model1)
+qqp(model1res, "norm")
+#That's pretty much normal. Just one outlier
+anova(model1)
+
+
+#Gross photosynthesis. GP = gross photo umol O2 per billion cells
+mydata$GP<-1000000*mydata$AvgGPPer1000Cell
+
+model1<-aov(GP~Genotype*Temperature, data=mydata)
+#Check assumptions
+model1res<-resid(model1)
+qqp(model1res, "norm")
+
+#Fourth root
+mydata$fourthrtGP<-sqrt(sqrt(mydata$GP))
+model1<-aov(fourthrtGP~Genotype*Temperature, data=mydata)
+model1res<-resid(model1)
+qqp(model1res, "norm")
+#That's close to normal
+anova(model1)
