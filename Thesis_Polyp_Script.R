@@ -207,6 +207,12 @@ BudPlot+ggsave("Graphs/Polyps/BudPlot_deadremoved.pdf", width=11, height=6.19, d
 
 
 #STATS####
+#Clear the environment
+rm(list=ls())
+#Load PnR data
+mydata<-read.csv("Data/Thesis_PolypData_Summary.csv")
+View(mydata)
+
 #Total average ephyra production####
 #Removing aposymbiotic
 NoApoData <- subset(mydata, Genotype != "Aposymbiotic")
@@ -268,13 +274,112 @@ qqp(sqrtStrobmodelres, "norm")
 anova(loglogStrobmodel)
 #interesting...no interaction. Geno and temp are sig on their own, but P=0.5 for interaction.
 
-#Time to inoculation
+#Time to inoculation####
+#I need to remove the NA's
+InocData <- subset(NoApoData, Days.to.Inoculation != "NA")
+View(InocData)
+
+#Make model
+Inocmodel<-aov(Days.to.Inoculation~Genotype*Temp, data=InocData)
+#Check assumptions
+plot(Inocmodel)
+Inocmodelres<-resid(Inocmodel)
+qqp(Inocmodelres, "norm")
+#Ew. That's pretty bad. 
+
+InocData$logIDays<-log(InocData$Days.to.Inoculation)
+logInocmodel<-aov(logIDays~Genotype*Temp, data=InocData)
+logInocmodelres<-resid(logInocmodel)
+qqp(logInocmodelres, "norm")
+#Ugh, possibly worse. 
+
+#double log
+InocData$loglogIDays<-log(InocData$logIDays)
+loglogInocmodel<-aov(loglogIDays~Genotype*Temp, data=InocData)
+loglogInocmodelres<-resid(loglogInocmodel)
+qqp(loglogInocmodelres, "norm")
+#Oh that is better
+
+#triple log??
+InocData$trplogIDays<-log(InocData$loglogIDays)
+trplogInocmodel<-aov(trplogIDays~Genotype*Temp, data=InocData)
+trplogInocmodelres<-resid(trplogInocmodel)
+qqp(trplogInocmodelres, "norm")
+#Idk man. No.
+
+hist(InocData$trplogIDays)
+
+#Square root
+InocData$sqrtIDays<-sqrt(InocData$Days.to.Inoculation)
+sqrtInocmodel<-aov(sqrtIDays~Genotype*Temp, data=InocData)
+sqrtInocmodelres<-resid(sqrtInocmodel)
+qqp(sqrtInocmodelres, "norm")
+#No. 
+
+#Fourth root
+InocData$fourthrtIDays<-sqrt(InocData$sqrtIDays)
+fourthrtInocmodel<-aov(fourthrtIDays~Genotype*Temp, data=InocData)
+fourthrtInocmodelres<-resid(fourthrtInocmodel)
+qqp(fourthrtInocmodelres, "norm")
+#No.
+
+#I think I have to do a GLMM. Later....
+
+#Time to ephyra####
+#I need to remove the NA's
+TimetoEphyraData <- subset(NoApoData, Days.to.Ephyra != "NA")
+View(TimetoEphyraData)
+
+#Make model
+TEphyramodel<-aov(Days.to.Ephyra~Genotype*Temp, data=TimetoEphyraData)
+#Check assumptions
+plot(TEphyramodel)
+TEphyramodelres<-resid(TEphyramodel)
+qqp(TEphyramodelres, "norm")
+#Not too bad, but needs transforming. 
+
+hist(TimetoEphyraData$loglogEDays)
+
+#Log
+TimetoEphyraData$logEDays<-log(TimetoEphyraData$Days.to.Ephyra)
+logEphyraDaysmodel<-aov(logEDays~Genotype*Temp, data=TimetoEphyraData)
+logEphyraDaysmodelres<-resid(logEphyraDaysmodel)
+qqp(logEphyraDaysmodelres, "norm")
+#Almost. 
+
+#Double log
+TimetoEphyraData$loglogEDays<-log(TimetoEphyraData$logEDays)
+loglogEphyraDaysmodel<-aov(loglogEDays~Genotype*Temp, data=TimetoEphyraData)
+loglogEphyraDaysmodelres<-resid(loglogEphyraDaysmodel)
+qqp(loglogEphyraDaysmodelres, "norm")
+#Mehhhhhh close enough?
+anova(loglogEphyraDaysmodel)
+#Again, interaction is not significant. This one makes more sense. 
 
 
-#Time to ephyra
+#Survival####
+#To get a rate I need to tally the number that survived, divided by 24 because that's how 
+#many each group started with
+Survival<- mydata%>%group_by(Genotype, Temp, Plate, WellNum)%>%
+  tally(Survive.to.End == "Yes")
+View(Survival)
+#1 is yes survived, 0 is no did not survive
+#So average should be the survival rate?
+Survivalmodel<-aov(n~Genotype*Temp, data=Survival)
+plot(Survivalmodel)
 
+#It's bi-model. So I think I need to do something other than anova.
+#I need to do a chi-squared test I think
 
-#Survival
+#To see survival overall, not separated by geno or temp
+table(Survival$n)
+prop.table(table(Survival$n))
 
+chisq.test(Survival$n, Survival$Genotype)
+#can't do interactions with chi-squared
 
-#Bud production
+#Cochran-Mantel-Haenszel test
+mantelhaen.test(Survival$n, Survival$Temp, Survival$Genotype)
+#Order matters
+
+#Bud production####
