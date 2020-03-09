@@ -5,6 +5,7 @@
 rm(list=ls())
 #Load PnR data
 mydata<-read.csv("Data/Thesis_PolypData_Summary.csv")
+mydata$Temp<-as.factor(mydata$Temp)
 View(mydata)
 
 #load libraries
@@ -218,7 +219,6 @@ View(mydata)
 NoApoData <- subset(mydata, Genotype != "Aposymbiotic")
 View(NoApoData)
 
-
 #Genotype (fixed) and Temperature (fixed) on dependent variables (total ephyra production)
 
 #Make model
@@ -233,7 +233,7 @@ qqp(model1res, "norm")
 EphyraAnova<-anova(Ephyramodel)
 EphyraAnova
 #Yay! Significant interaction between Genotype and Temp (unsurprisingly)
-#Genotype:Temp, P=0.0008394 ***
+#Genotype:Temp, P=0.003441 ***
 
 #Time to strobilation####
 
@@ -272,7 +272,8 @@ qqp(sqrtStrobmodelres, "norm")
 
 #Using model of double logged data
 anova(loglogStrobmodel)
-#interesting...no interaction. Geno and temp are sig on their own, but P=0.5 for interaction.
+#Interaction = 0.03549*
+
 
 #Time to inoculation####
 #I need to remove the NA's
@@ -354,7 +355,7 @@ loglogEphyraDaysmodelres<-resid(loglogEphyraDaysmodel)
 qqp(loglogEphyraDaysmodelres, "norm")
 #Mehhhhhh close enough?
 anova(loglogEphyraDaysmodel)
-#Again, interaction is not significant. This one makes more sense. 
+#Interaction is not significant. This one makes sense. 
 
 
 #Survival####
@@ -383,3 +384,22 @@ mantelhaen.test(Survival$n, Survival$Temp, Survival$Genotype)
 #Order matters
 
 #Bud production####
+Budmodel<-aov(Total.Buds~Genotype*Temp, data=mydata)
+plot(Budmodel)
+Budres<-resid(Budmodel)
+qqp(Budres, "norm")
+#Beautifully normal
+
+anova(Budmodel)
+#interaction P=0.002318**
+
+NoDeadData<-subset(mydata, Survive.to.End == "Yes")
+View(NoDeadData)
+
+BudmodelNodead<-aov(Total.Buds~Genotype*Temp, data=NoDeadData)
+BudNoDeadres<-resid(BudmodelNodead)
+qqp(BudNoDeadres, "norm")
+#Still normal
+anova(BudmodelNodead)
+#Interaction P=0.001066
+TukeyHSD(aov(Budmodel))
