@@ -165,6 +165,12 @@ quadrtInocmodel<-lmer(quadrtIDays~Genotype*Temp+(1|Plate), data=InocData)
 qqp(resid(quadrtInocmodel), "norm")
 #Worse
 
+#Running it with the logged data for now
+Inoc.model2<-lm(logIDays~Genotype*Temp*Plate, data=InocData)
+anova(Inoc.model2)
+#plate has an effect. Need to use original model
+anova(log.Inoc.model)
+#interaction: P=0.009616
 
 #Gotta do generalized linear model. 
 library(MASS)
