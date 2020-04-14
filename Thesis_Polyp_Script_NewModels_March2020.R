@@ -266,14 +266,28 @@ View(Survival)
 #I have one NA for survial b/c I spilled it and lost it. Just gonna remove it. 
 mydata2<-subset(mydata, Survive.to.End != "NA")
 
-Survival<- mydata2%>%group_by(Genotype, Temp, Plate, Survive.to.End)%>%
-  tally()
-View(Survival)
-Survival$Survived<-Survival$Survive.to.End
-#The only thing missing is when there are zeroes. Dataframe just doesn't include it. 
-#Let's see if I can still run the model with it as is. 
+#Making dataframe to run chi-square test
+mydata2_df <- mydata2 %>% modify_if(is.character, as.factor)
+Survival<- mydata2_df%>%group_by(Genotype, Temp, Plate, Survive.to.End, .drop=FALSE)%>%
+  tally(name="Freq")
+#.drop=FALSE makes df keep tallies of 0's
 
-Survival.model<-glm(n~Genotype:Survived + Temp:Survived + Plate:Survived + Genotype:Temp:Survived + Genotype:Plate:Survived + Temp:Plate:Survived + Genotype:Temp:Plate:Survived, family=poisson, data=Survival)
+#Renaming Survive.to.End to Survived because I'm dumb and made a very long column name
+names(Survival)[names(Survival) == 'Survive.to.End'] <- 'Survived'
+
+#Run model
+Survival.model<-glm(Freq~Genotype:Survived + Temp:Survived + Plate:Survived + Genotype:Temp:Survived + Genotype:Plate:Survived + Temp:Plate:Survived + Genotype:Temp:Plate:Survived, family=poisson, data=Survival)
 anova(Survival.model, test="Chisq")
 #all of the interactions are 1. Only effect is Genotype, I think because they mostly all survived. 
-#I might just not use survival for CSUNposium
+#Genotype and Temp signficiantly affected survival, but no interaction. 
+
+#Trying something else. Running model and just telling it that it's bimodal
+View(mydata2)
+#Adding column with yes/no changed to 1/0
+survival_bino<-mydata2 %>% mutate(Survived = ifelse(Survive.to.End == "Yes", 1, ifelse(Survive.to.End == "No", 0, "NA")))
+View(survival_bino)
+#Logisitic regression. 
+survival.bino.model<-glm(Survived~Temp*Genotype, family=binomial, data=survival_bino)
+#Logisitic regression requires continuous predictor. So, this doesn't work. Duh. 
+
+

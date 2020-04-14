@@ -3,7 +3,7 @@
 
 #Clear the environment
 rm(list=ls())
-#Load PnR data
+#Load data
 mydata<-read.csv("Data/Thesis_PolypData_Summary.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 View(mydata)
@@ -210,8 +210,9 @@ BudPlot+ggsave("Graphs/Polyps/BudPlot_deadremoved.pdf", width=11, height=6.19, d
 #STATS####
 #Clear the environment
 rm(list=ls())
-#Load PnR data
+#Load data
 mydata<-read.csv("Data/Thesis_PolypData_Summary.csv")
+mydata$Temp<-as.factor(mydata$Temp)
 View(mydata)
 
 #Total average ephyra production####
@@ -222,7 +223,7 @@ View(NoApoData)
 #Genotype (fixed) and Temperature (fixed) on dependent variables (total ephyra production)
 
 #Make model
-Ephyramodel<-aov(Total.Ephyra.Produced~Genotype*Temp, data=NoApoData)
+Ephyramodel<-aov(Total.Ephyra.Produced~Genotype*Temp*Plate, random="Plate", data=NoApoData)
 #Check assumptions
 plot(Ephyramodel)
 model1res<-resid(Ephyramodel)
@@ -273,6 +274,7 @@ qqp(sqrtStrobmodelres, "norm")
 #Using model of double logged data
 anova(loglogStrobmodel)
 #Interaction = 0.03549*
+
 
 
 #Time to inoculation####
@@ -356,7 +358,8 @@ qqp(loglogEphyraDaysmodelres, "norm")
 #Mehhhhhh close enough?
 anova(loglogEphyraDaysmodel)
 #Interaction is not significant. This one makes sense. 
-
+#Genot and Temp on their own P=<2e-16
+#Interaction P=0.3658
 
 #Survival####
 #To get a rate I need to tally the number that survived, divided by 24 because that's how 
@@ -383,6 +386,9 @@ chisq.test(Survival$n, Survival$Genotype)
 mantelhaen.test(Survival$n, Survival$Temp, Survival$Genotype)
 #Order matters
 
+
+#Okay forget all that. I just need to do a log-linear analysis (G-test or chi-square)
+
 #Bud production####
 Budmodel<-aov(Total.Buds~Genotype*Temp, data=mydata)
 plot(Budmodel)
@@ -392,6 +398,7 @@ qqp(Budres, "norm")
 
 anova(Budmodel)
 #interaction P=0.002318**
+#Second time I run it, interaction = 0.1904
 
 NoDeadData<-subset(mydata, Survive.to.End == "Yes")
 View(NoDeadData)
