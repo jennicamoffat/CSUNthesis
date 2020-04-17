@@ -15,7 +15,7 @@ library(RColorBrewer)
 library(broman)
 
 #Current PnR values are actually X umol of O2 per 10,000,000 (or 10^7) cells  (per minute)
-#To get it to be a more reasonable number on the x-axis, and per 10,000 cells instead, 
+#To get it to be a more reasonable number on the x-axis, and per 100,000 cells instead, 
 #multiply the values by 100 (turns PER 10^7 cells into PER 10^5 cells)
 
 mydata$AvgRespPer100000<-mydata$AvgResp*100
@@ -134,6 +134,7 @@ RespGraphno32
 
 ##################################
 #Alright time to start some actual stats...
+
 #Clear the environment
 rm(list=ls())
 #Load PnR data
@@ -141,17 +142,24 @@ mydata<-read.csv("AugustPnR_r_github.csv")
 View(mydata)
 #Genotype (fixed) and Temperature (fixed) on dependent variables (NP, GP, and Resp)
 
+#Current PnR values are actually X umol of O2 per 10,000,000 (or 10^7) cells  (per minute)
+#To get it to be a more reasonable number on the x-axis, and per 100,000 cells instead, 
+#multiply the values by 100 (turns PER 10^7 cells into PER 10^5 cells)
 
-#Make model - Respiration
-model1<-aov(AvgResp~Genotype*Temperature, data=mydata)
+mydata$AvgRespPer100000<-mydata$AvgResp*100
+mydata$AvgNPPer100000<-100*mydata$AvgNP
+mydata$AvgGPPer100000<-100*mydata$AvgGP
+
+
+#Make model - Respiration####
+model1<-aov(AvgRespPerCell~Genotype*Temperature, data=mydata)
 anova(model1)
 #Check assumptions
 plot(model1)
-model1res<-resid(model1)
-qqp(model1res, "norm")
+qqp(resid(model1), "norm")
 #OMG IT'S NORMAL
 
-#Make model - GP
+#Make model - GP####
 model2<-aov(AvgGP~Genotype*Temperature, data=mydata)
 anova(model2)
 #Check assumptions
@@ -210,19 +218,24 @@ model4res<-resid(modelloglogGP)
 qqp(model4res, "norm")
 #Hmm, it's closer. 
 
-##Switching to NP, I give up on GP
+##Switching to NP, I give up on GP####
 
 #Make model - NP
-model5<-aov(AvgNP~Genotype*Temperature, data=mydata)
+model5<-aov(AvgNPPerCell~Genotype*Temperature, data=mydata)
 anova(model5)
 #Check assumptions
 plot(model5)
-model5res<-resid(model5)
-qqp(model5res, "norm")
+qqp(resid(model5), "norm")
 #Also not really normal
+hist(mydata$AvgNPPerCell)
+
+#Try with bigger numbers. Shouldn't be different, though. 
+NP.model<-aov(AvgNPPer100000~Genotype*Temperature, data=mydata)
+qqp(resid(NP.model),"norm")
+#Okay, yes it is the same. 
 
 #Log data
-mydata$logNP<-log(mydata$AvgNP)
+mydata$logNP<-log(mydata$AvgNPPer100000)
 #Make model
 model6<-aov(logNP~Genotype*Temperature, data=mydata)
 model6res<-resid(model6)
@@ -230,18 +243,22 @@ qqp(model6res, "norm")
 #Same as untransformed
 
 #Double log
-mydata$loglogNP<-log(log(mydata$AvgNP+1))
+mydata$loglogNP<-log(mydata$logNP)
 model7<-aov(loglogNP~Genotype*Temperature, data=mydata)
 model7res<-resid(model7)
 qqp(model7res, "norm")
-#Didn't change
+#Closer...
+View(mydata)
+#Triple logged
+mydata$log3NP<-log(mydata$loglogNP+3)
+log3.NP.model<-aov(log3NP~Genotype*Temperature, data=mydata)
+qqp(resid(log3.NP.model), "norm")
+#That's normal...shit ton of transformations but whatever. 
 
-#Try gamma distribution
-gamma3<-fitdistr(mydata$AvgNP, "gamma")
-qqp(mydata$AvgNP, "gamma", shape = gamma$estimate[[1]], rate=gamma$estimate[[2]])
+anova(log3.NP.model)
 
-#################################
-#Stats for 26 and 30 degree only
+
+#Stats for 26 and 30 degree only####
 #Clear the environment
 rm(list=ls())
 #Load PnR data
@@ -484,42 +501,44 @@ qqp(model1res, "norm")
 
 #Log transform
 mydata$logResp<-log(mydata$Resp+3)
-model1<-aov(logResp~Genotype*Temperature, data=mydata)
-model1res<-resid(model1)
-qqp(model1res, "norm")
+log.Resp.model<-aov(logResp~Genotype*Temperature, data=mydata)
+qqp(resid(log.Resp.model), "norm")
 #Different, but not better?
 
 #Square root
 mydata$sqrtResp<-sqrt(mydata$Resp+3)
-model1<-aov(sqrtResp~Genotype*Temperature, data=mydata)
-model1res<-resid(model1)
-qqp(model1res, "norm")
+sqrt.Resp.model<-aov(sqrtResp~Genotype*Temperature, data=mydata)
+qqp(resid(sqrt.Resp.model), "norm")
 #Not better
 
+#Fourth root
+mydata$quadrtResp<-sqrt(mydata$sqrtResp)
+quardrt.Resp.model<-aov(quadrtResp~Genotype*Temperature, data=mydata)
+qqp(resid(quardrt.Resp.model), "norm")
+#Worse than square. I'm just gonna run it with square root for now...
 
-#Net Photo. NP = umol O2 per billion cells. 
+anova(sqrt.Resp.model)
+
+#Net Photo. NP = umol O2 per billion cells. ####
 mydata$NP<-1000000*mydata$AvgNPPer1000Cell
 
 
-model1<-aov(NP~Genotype*Temperature, data=mydata)
+NP.model<-aov(NP~Genotype*Temperature, data=mydata)
 #Check assumptions
-model1res<-resid(model1)
-qqp(model1res, "norm")
+qqp(resid(NP.model), "norm")
 
 #Square root
 mydata$sqrtNP<-sqrt(mydata$NP)
-model1<-aov(sqrtNP~Genotype*Temperature, data=mydata)
-model1res<-resid(model1)
-qqp(model1res, "norm")
+sqrt.NP.model<-aov(sqrtNP~Genotype*Temperature, data=mydata)
+qqp(resid(sqrt.NP.model), "norm")
 #Better
 
 #Fourth root
 mydata$fourthrtNP<-sqrt(sqrt(mydata$NP))
-model1<-aov(fourthrtNP~Genotype*Temperature, data=mydata)
-model1res<-resid(model1)
-qqp(model1res, "norm")
+quadrt.NP.model<-aov(fourthrtNP~Genotype*Temperature, data=mydata)
+qqp(resid(quadrt.NP.model), "norm")
 #That's pretty much normal. Just one outlier
-anova(model1)
+anova(quadrt.NP.model)
 
 
 #Gross photosynthesis. GP = gross photo umol O2 per billion cells
