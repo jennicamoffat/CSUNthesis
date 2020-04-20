@@ -8,6 +8,8 @@ rm(list=ls())
 library(tidyverse)
 library(car)
 
+
+#Combining and cleaning data sets to get PnR data####
 #Load data
 pnr.data<-read.csv("Data/PnR/Jan_Polyp_PnR.csv")
 polyp.data<-read.csv("Data/Thesis_PolypData_Summary.csv")
@@ -71,4 +73,60 @@ View(pnr.data.cleaned)
 
 #Export as CSV so I don't have to go through all of that every time. 
 write.csv(pnr.data.cleaned,"Data/Polyp_PnR_data_cleaned.csv", row.names = FALSE)
+
+#PnR graphs#####
+mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
+View(mydata)
+
+#Resp
+SummaryResp <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(Resp), SE=sd(Resp)/sqrt(length(na.omit(Resp))))
+SummaryResp
+
+Resp.polyp.graph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y=expression(Respiration~((µmol~O[2]/L)/sec)/(10^{"9"}~cells/mm^{"3"})), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Respiration of Polyps by Symbiont Genotype")+
+  ggsave("Graphs/PnR/PolypResp.pdf", width=11, height=6.19, dpi=300, unit="in")
+Resp.polyp.graph
+
+#GP
+SummaryGP <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(GP), SE=sd(GP)/sqrt(length(na.omit(GP))))
+SummaryGP
+
+GP.polyp.graph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y=expression(GP~((µmol~O[2]/L)/sec)/(10^{"9"}~cells/mm^{"3"})), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Gross Photosynthesis of Polyps by Symbiont Genotype")+
+  ggsave("Graphs/PnR/PolypGP.pdf", width=11, height=6.19, dpi=300, unit="in")
+GP.polyp.graph
+
+#NP
+SummaryNP <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(NP), SE=sd(NP)/sqrt(length(na.omit(NP))))
+SummaryNP
+
+NP.polyp.graph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y=expression(NP~((µmol~O[2]/L)/sec)/(10^{"9"}~cells/mm^{"3"})), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Net Photosynthesis of Polyps by Symbiont Genotype")+
+  ggsave("Graphs/PnR/PolypNP.pdf", width=11, height=6.19, dpi=300, unit="in")
+NP.polyp.graph
+
 
