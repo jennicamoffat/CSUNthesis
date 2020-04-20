@@ -22,8 +22,8 @@ mydata$AvgRespPer100000<-mydata$AvgResp*100
 mydata$AvgNPPer100000<-100*mydata$AvgNP
 mydata$AvgGPPer100000<-100*mydata$AvgGP
 
-##################################
-#All data Graphs
+
+#All data Graphs####
 #Summarizing data for bargraph
 #Net photosynthesis
 SummaryNP <- mydata %>%
@@ -73,8 +73,7 @@ GPGraph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), gro
   scale_fill_brewer(palette = "RdYlBu")
 GPGraph
 
-##################################
-#Making new dataframe without 32*
+#Making new dataframe without 32*####
 mydata2 <- subset(mydata, Temperature == 26 | Temperature == 30)
 View(mydata2)
 
@@ -132,8 +131,8 @@ RespGraphno32<-ggplot(SummaryRespNo32, aes(x=Genotype, y=mean, fill=factor(Tempe
   ggsave("Graphs/PnR/RespGraph_no32.pdf", width=11, height=6.19, dpi=300, unit="in")
 RespGraphno32
 
-##################################
-#Alright time to start some actual stats...
+
+#Alright time to start some actual stats...####
 
 #Clear the environment
 rm(list=ls())
@@ -269,8 +268,8 @@ View(mydata)
 #new dataframe without 32
 mydata2 <- subset(mydata, Temperature == 26 | Temperature == 30)
 
-#####
-#Make model - Respiration
+
+#Make model - Respiration no 32####
 model1<-aov(AvgResp~Genotype*Temperature, data=mydata2)
 anova(model1)
 #Check assumptions
@@ -358,8 +357,8 @@ summary(model1)
 #I'm an idiot and can't remember how to make sense of this output. I think I'm just
 #going to say it's "normal enough" for now and move on. 
 
-#####
-#Make model - GP
+
+#Make model - GP no 32 ####
 model2<-aov(AvgGP~Genotype*Temperature, data=mydata2)
 anova(model2)
 #Check assumptions
@@ -383,8 +382,8 @@ plot(model3)
 anova(model3)
 
 
-#####
-#Make model - NP
+
+#Make model - NP no 32 ####
 model4<-aov(AvgNP~Genotype*Temperature, data=mydata2)
 model4res<-resid(model4)
 qqp(model4res, "norm")
