@@ -7,6 +7,8 @@ rm(list=ls())
 #load libraries
 library(tidyverse)
 library(car)
+library(lme4)
+library(lmerTest)
 
 
 #Combining and cleaning data sets to get PnR data####
@@ -130,3 +132,83 @@ NP.polyp.graph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temp), gro
 NP.polyp.graph
 
 
+#Polyp PnR Stats####
+mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
+
+#Respiration
+resp.model<-lmer(Resp~Genotype*Temp+(1|Plate), data=mydata)
+#Check assumptions
+plot(resp.model)
+qqp(resid(resp.model), "norm")
+#Not really normal at ends
+
+View(mydata)
+#I want to log transform, but variables range from -12 to 10
+mydata$logResp<-log(mydata$Resp+13)
+
+logresp.model<-lmer(logResp~Genotype*Temp+(1|Plate), data=mydata)
+#Check assumptions
+plot(logresp.model)
+qqp(resid(logresp.model), "norm")
+
+mydata$loglogResp<-log(mydata$logResp+1)
+loglogresp.model<-lmer(loglogResp~Genotype*Temp+(1|Plate), data=mydata)
+plot(loglogresp.model)
+qqp(resid(loglogresp.model), "norm")
+#Well, at least it's basically normal. 
+
+anova(loglogresp.model) #nothing is is significant, because I have no power. The SE bars are huge.
+summary(loglogresp.model)
+
+resp.model2<-lm(loglogResp~Genotype*Temp, data=mydata)
+anova(resp.model2)
+
+#Why don't we try z-scores
+mydata$Resp.z<-scale(mydata$Resp, center = TRUE, scale = TRUE)
+View(mydata)
+zresp.model<-lmer(Resp.z~Genotype*Temp+(1|Plate), data=mydata)
+#Check assumptions
+plot(zresp.model)
+qqp(resid(zresp.model), "norm")
+#That's exactly the same as non-transormed? Just on a different scale. 
+#Maybe that code doesn't work. Trying it manually. 
+mydata<-mutate(mydata, Resp.z2 = (Resp - mean(Resp))/sd(Resp))
+#Okay, yes they're the same. So z-score didn't help, maybe that's not what I want. 
+
+#GP####
+GP.model<-lmer(GP~Genotype*Temp+(1|Plate), data=mydata)
+#Check assumptions
+plot(GP.model)
+qqp(resid(GP.model), "norm")
+#Not really normal at ends again
+
+#taking out plate...
+GP.model<-lm(GP~Genotype*Temp, data=mydata)
+plot(GP.model)
+qqp(resid(GP.model), "norm")
+
+
+#GP ranges from -15.3 to 7...
+mydata$logGP<-log(mydata$GP+16)
+logGP.model<-lm(logGP~Genotype*Temp+(1|Plate), data=mydata)
+plot(logGP.model)
+qqp(resid(logGP.model), "norm")
+#Just one outlier, 110
+
+anova(logGP.model)
+#Genotype is significant, nothing else. 
+
+#NP####
+NP.model<-lmer(NP~Genotype*Temp+(1|Plate), data=mydata)
+#Check assumptions
+plot(NP.model)
+qqp(resid(NP.model), "norm")
+#Not quite, but I think I may just go with it
+
+anova(NP.model)
+#Sig Temp, but not geno or interaction?
+
+np.model<-lm(NP~Genotype*Temp, data=mydata)
+qqp(resid(np.model), "norm")
+anova(np.model)
+#Same
