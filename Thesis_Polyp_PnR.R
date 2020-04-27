@@ -89,7 +89,7 @@ all.pnr.data<-subset(all.data, NP.per.bill.cell != "NA")
 View(all.pnr.data)
 
 #All I need is WellNum, Date, Genotype, Temp, Plate, Resp, GP, and NP
-pnr.data.cleaned = all.pnr.data[c("WellNum", "Date", "Genotype", "Temp", "Plate", "Resp", "GP", "NP")]
+pnr.data.cleaned = all.pnr.data[c("WellNum", "Date", "Genotype", "Temp", "Plate", "Resp", "GP", "NP", "Resp.per.bill.cell", "GP.per.bill.cell", "NP.per.bill.cell")]
 View(pnr.data.cleaned)
 
 #Export as CSV so I don't have to go through all of that every time. 
@@ -302,7 +302,7 @@ mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 mydata$Plate<-as.factor(mydata$Plate)
 
-#Respiration
+#Respiration####
 resp.model<-lmer(Resp~Genotype*Temp+(1|Plate), data=mydata)
 #Check assumptions
 plot(resp.model)
@@ -486,3 +486,138 @@ anova(loglogNP.no.apo.model)
 NP.tukey.no.apo<-emmeans(loglogNP.no.apo.model, pairwise ~ Temp | Genotype)
 NP.tukey.no.apo
 #Okay, just realized this is not showing everything, but within genotypes only
+
+
+#Stats with slopes/cell count, instead of slope/(cells/polyp area)####
+mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Plate<-as.factor(mydata$Plate)
+
+#Respiration####
+resp.model<-lmer(Resp.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
+#Check assumptions
+plot(resp.model)
+qqp(resid(resp.model), "norm")
+#Not really normal at ends (surprise, surprise)
+
+View(mydata)
+#I want to log transform, but variables range from -56 to 23
+mydata$logResp<-log(mydata$Resp.per.bill.cell+58)
+logresp.model<-lmer(logResp~Genotype*Temp+(1|Plate), data=mydata)
+#Check assumptions
+plot(logresp.model)
+qqp(resid(logresp.model), "norm")
+#Outliers: 154, 143
+
+#loglog
+mydata$loglogResp<-log(mydata$logResp)
+loglogresp.model<-lmer(loglogResp~Genotype*Temp+(1|Plate), data=mydata)
+plot(loglogresp.model)
+qqp(resid(loglogresp.model), "norm")
+#Only slightly better than just one log 
+
+anova(loglogresp.model)
+#Nothing significant
+
+
+
+#GP####
+GP.model<-lmer(GP.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
+#Check assumptions
+plot(GP.model)
+qqp(resid(GP.model), "norm")
+#Not really normal at ends again
+
+View(mydata)
+#GP ranges from -39 to 20
+#GP ranges from -15.3 to 7...
+mydata$logGP<-log(mydata$GP.per.bill.cell+40)
+logGP.model<-lmer(logGP~Genotype*Temp+(1|Plate), data=mydata)
+plot(logGP.model)
+qqp(resid(logGP.model), "norm")
+
+#loglog
+mydata$loglogGP<-log(mydata$logGP+1)
+loglogGP.model<-lmer(loglogGP~Genotype*Temp+(1|Plate), data=mydata)
+plot(loglogGP.model)
+qqp(resid(loglogGP.model), "norm")
+
+anova(loglogGP.model)
+#nothing is significant
+
+#NP####
+NP.model<-lmer(NP.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
+#Check assumptions
+plot(NP.model)
+qqp(resid(NP.model), "norm")
+#Not at ends
+
+#NP ranges from -35 to 65
+mydata$logNP<-log(mydata$NP.per.bill.cell+36)
+logNP.model<-lmer(logNP~Genotype*Temp+(1|Plate), data=mydata)
+qqp(resid(logNP.model), "norm")
+#Better
+anova(logNP.model)
+#Nothing significant
+
+#loglog
+mydata$loglogNP<-log(mydata$logNP+1)
+loglogNP.model<-lmer(loglogNP~Genotype*Temp+(1|Plate), data=mydata)
+qqp(resid(loglogNP.model), "norm")
+
+anova(loglogNP.model)
+
+#Graphs for PnR by number of cells instead of cell density####
+
+#Resp
+SummaryResp <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(Resp.per.bill.cell), SE=sd(Resp.per.bill.cell)/sqrt(length(na.omit(Resp.per.bill.cell))))
+SummaryResp
+
+Resp.polyp.graph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y=expression(Respiration~((µmol~O[2]/L)/sec)/(10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Respiration of Polyps by Symbiont Genotype")+
+  ggsave("Graphs/PnR/PolypResp.per.cell.pdf", width=11, height=6.19, dpi=300, unit="in")
+Resp.polyp.graph
+
+
+#GP
+SummaryGP <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(GP.per.bill.cell), SE=sd(GP.per.bill.cell)/sqrt(length(na.omit(GP.per.bill.cell))))
+SummaryGP
+
+GP.polyp.graph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y=expression(GP~((µmol~O[2]/L)/sec)/(10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Gross Photosynthesis of Polyps by Symbiont Genotype")+
+  ggsave("Graphs/PnR/PolypGP.per.cell.pdf", width=11, height=6.19, dpi=300, unit="in")
+GP.polyp.graph
+
+
+#NP
+SummaryNP <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(NP.per.bill.cell), SE=sd(NP.per.bill.cell)/sqrt(length(na.omit(NP.per.bill.cell))))
+SummaryNP
+
+NP.polyp.graph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y=expression(NP~((µmol~O[2]/L)/sec)/(10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Net Photosynthesis of Polyps by Symbiont Genotype")+
+  ggsave("Graphs/PnR/PolypNP.per.cell.pdf", width=11, height=6.19, dpi=300, unit="in")
+NP.polyp.graph
