@@ -66,8 +66,26 @@ all.data<-mutate(all.data, GP = (GP.per.cell.density*1000000000))
 all.data<-mutate(all.data, NP.per.cell.density = (NetPhoto/cells.per.area))
 all.data<-mutate(all.data, NP = (NP.per.cell.density*1000000000))
 
+
+#So I also want to test if I run everything without accounting for area, just doing total cells
+#Slope= (O2 umol/L)/second
+#slope/cells.per.polyp = [(O2 umol/L)/sec]/(cells)
+#Respiration
+all.data<-mutate(all.data, Resp.per.cell = (Respiration/cells.per.polyp))
+#And just because they are tiny numbers, let's multiply that by 10^9 (one billion)
+all.data<-mutate(all.data, Resp.per.bill.cell=(Resp.per.cell*1000000000))
+#So now it is [(O2 umol/L)/sec]/(10^9 cells)
+
+#Gross Photosynthesis
+all.data<-mutate(all.data, GP.per.cell = (GrossPhoto/cells.per.polyp))
+all.data<-mutate(all.data, GP.per.bill.cell = (GP.per.cell*1000000000))
+
+#Net photosynthesis
+all.data<-mutate(all.data, NP.per.cell = (NetPhoto/cells.per.polyp))
+all.data<-mutate(all.data, NP.per.bill.cell = (NP.per.cell*1000000000))
+
 #Finally, remove all NA rows so that I just have the clean PnR data
-all.pnr.data<-subset(all.data, NP != "NA")
+all.pnr.data<-subset(all.data, NP.per.bill.cell != "NA")
 View(all.pnr.data)
 
 #All I need is WellNum, Date, Genotype, Temp, Plate, Resp, GP, and NP
