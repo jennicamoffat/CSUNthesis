@@ -130,6 +130,23 @@ Resp.polyp.graph.temp<-ggplot(SummaryRespTemp, aes(x=Temp, y=mean))+  #basic plo
   ggsave("Graphs/PnR/PolypRespbyTemp.pdf", width=11, height=6.19, dpi=300, unit="in")
 Resp.polyp.graph.temp
 
+#Resp by temp, apo removed
+SummaryRespTemp.no.apo<-no.apo.data %>% 
+  group_by(Temp) %>%
+  summarize(mean=mean(Resp), SE=sd(Resp)/sqrt(length(na.omit(Resp))))
+SummaryRespTemp.no.apo
+
+Resp.polyp.graph.temp.no.apo<-ggplot(SummaryRespTemp.no.apo, aes(x=Temp, y=mean))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6, fill="mediumorchid4") + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Temp", y=expression(Respiration~((µmol~O[2]/L)/sec)/(10^{"9"}~cells/mm^{"3"})))+  #labels the x and y axes
+  ggtitle("Respiration of Polyps by Temperature (Apo removed)")+
+  ggsave("Graphs/PnR/PolypResp.Temp.no.apo.pdf", width=11, height=6.19, dpi=300, unit="in")
+
+Resp.polyp.graph.temp.no.apo
+
 #GP
 SummaryGP <- mydata %>%
   group_by(Genotype, Temp) %>%
@@ -180,6 +197,23 @@ GP.polyp.graph.temp<-ggplot(SummaryGP.temp, aes(x=Temp, y=mean))+  #basic plot
 GP.polyp.graph.temp
 
 
+#GP by temp, no APO
+no.apo.data<-subset(mydata, Genotype != "Aposymbiotic")
+SummaryGP.temp.no.apo <- no.apo.data %>%
+  group_by(Temp) %>%
+  summarize(mean=mean(GP), SE=sd(GP)/sqrt(length(na.omit(GP))))
+SummaryGP.temp.no.apo
+
+GP.polyp.graph.temp.no.apo<-ggplot(SummaryGP.temp.no.apo, aes(x=Temp, y=mean))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6, fill="mediumorchid4") + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Temperature", y=expression(GP~((µmol~O[2]/L)/sec)/(10^{"9"}~cells/mm^{"3"})))+  #labels the x and y axes
+  ggtitle("Gross Photosynthesis of Polyps by Temperature (Apo removed)")+
+  ggsave("Graphs/PnR/PolypGP.temp.no.apo.pdf", width=11, height=6.19, dpi=300, unit="in")
+GP.polyp.graph.temp.no.apo
+
 #NP
 SummaryNP <- mydata %>%
   group_by(Genotype, Temp) %>%
@@ -208,7 +242,7 @@ NP.polyp.graph.geno<-ggplot(SummaryNP.geno, aes(x=Genotype, y=mean))+  #basic pl
   theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6, fill="darkseagreen3") + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y=expression(GP~((µmol~O[2]/L)/sec)/(10^{"9"}~cells/mm^{"3"})))+  #labels the x and y axes
+  labs(x="Genotype", y=expression(NP~((µmol~O[2]/L)/sec)/(10^{"9"}~cells/mm^{"3"})))+  #labels the x and y axes
   ggtitle("Net Photosynthesis of Polyps by Symbiont Genotype")+
   ggsave("Graphs/PnR/PolypNP.geno.pdf", width=11, height=6.19, dpi=300, unit="in")
 NP.polyp.graph.geno
@@ -228,6 +262,22 @@ NP.polyp.graph.temp<-ggplot(SummaryNP.temp, aes(x=Temp, y=mean))+  #basic plot
   ggtitle("Net Photosynthesis of Polyps by Temperature")+
   ggsave("Graphs/PnR/PolypNP.temp.pdf", width=11, height=6.19, dpi=300, unit="in")
 NP.polyp.graph.temp
+
+#NP by temp, Apo removed 
+SummaryNP.temp.no.apo<- no.apo.data %>%
+  group_by(Temp) %>%
+  summarize(mean=mean(NP), SE=sd(NP)/sqrt(length(na.omit(NP))))
+SummaryNP.temp.no.apo
+
+NP.polyp.graph.temp.no.apo<-ggplot(SummaryNP.temp.no.apo, aes(x=Temp, y=mean))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6, fill="mediumorchid4") + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Temperature", y=expression(GP~((µmol~O[2]/L)/sec)/(10^{"9"}~cells/mm^{"3"})))+  #labels the x and y axes
+  ggtitle("Net Photosynthesis of Polyps by Temperature (Apo removed)")+
+  ggsave("Graphs/PnR/PolypNP.temp.no.apo.pdf", width=11, height=6.19, dpi=300, unit="in")
+NP.polyp.graph.temp.no.apo
 
 #Polyp PnR Stats####
 mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
@@ -291,7 +341,7 @@ qqp(resid(loglogResp.no.apo.model), "norm")
 #Good, just  couple outliers per usual
 
 anova(loglogResp.no.apo.model)
-#Still not significant effects
+#Still no significant effects
 
 #emmeans
 #Means averaged by genotype and then Temp, without taking into account the other. 
@@ -299,11 +349,11 @@ emmeans(loglogresp.model, "Genotype")
 emmeans(loglogresp.model, "Temp")
 
 #Contrasts using Tukey
-resp.tukey<-emmeans(loglogresp.model, pairwise ~ Temp | Genotype)
-
+resp.tukey<-emmeans(loglogresp.model, pairwise ~ Genotype | Temp)
+resp.tukey
 #Graph to visualize respiration means across temp by genotype
 emmeans.resp<-emmip(loglogresp.model, Genotype~Temp)
-
+emmeans.resp
 
 #GP####
 GP.model<-lmer(GP~Genotype*Temp+(1|Plate), data=mydata)
@@ -328,7 +378,7 @@ emmeans(logGP.model, "Genotype")
 emmeans(logGP.model, "Temp")
 
 #Contrasts using Tukey
-GP.tukey<-emmeans(logGP.model, pairwise ~ Temp | Genotype)
+GP.tukey<-emmeans(logGP.model, pairwise ~ Genotype | Temp)
 GP.tukey
 #JFC. The only one that differs is Apo 26-30 (P=0.0271) and 30-32 (P=0.0081)
 
@@ -386,7 +436,7 @@ emmeans(logNP.model, "Temp")
 #Can't use those, though.
 
 #Contrasts using Tukey
-NP.tukey<-emmeans(logNP.model, pairwise ~ Temp | Genotype)
+NP.tukey<-emmeans(logNP.model, pairwise ~ Genotype | Temp)
 NP.tukey
 #All difference is in the Apo.(26-30 and 30-32)
 
