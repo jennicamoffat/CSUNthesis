@@ -39,8 +39,9 @@ all.data$Plate<-as.factor(all.data$Plate)
 all.data <- mutate(all.data, avgct = ((Count1+Count2)/2))
 
 #Now, all pnr values divided by polyp area/count
+
 #Current count is in #cells/0.1mm3 
-# #cells/0.1mm3 * (1000 mm3/mL) = # cells/mL 
+# Convert: #cells/0.1mm3 * (1000 mm3/mL) = # cells/mL 
 all.data <- mutate(all.data, cells.per.mL = ((avgct)/0.1)*1000)
 
 # cells.per.mL * 150mL = cells per polyp (because I crushed each polyp in 150mL). No units, just a count.
@@ -88,12 +89,14 @@ all.data<-mutate(all.data, NP.per.bill.cell = (NP.per.cell*1000000000))
 all.pnr.data<-subset(all.data, NP.per.bill.cell != "NA")
 View(all.pnr.data)
 
-#All I need is WellNum, Date, Genotype, Temp, Plate, Resp, GP, and NP
+#I need WellNum, Date, Genotype, Temp, Plate, Resp, GP, and NP, and Resp,GP,NP per.cell
 pnr.data.cleaned = all.pnr.data[c("WellNum", "Date", "Genotype", "Temp", "Plate", "Resp", "GP", "NP", "Resp.per.bill.cell", "GP.per.bill.cell", "NP.per.bill.cell")]
 View(pnr.data.cleaned)
 
 #Export as CSV so I don't have to go through all of that every time. 
 write.csv(pnr.data.cleaned,"Data/Polyp_PnR_data_cleaned.csv", row.names = FALSE)
+#Exporting full pnr data, too, so I have counts and everything. 
+write.csv(all.pnr.data, "Data/Polyp_PnR_full_combined_data.csv", row.names= FALSE)
 
 #PnR graphs#####
 mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
@@ -621,3 +624,147 @@ NP.polyp.graph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temp), gro
   ggtitle("Net Photosynthesis of Polyps by Symbiont Genotype")+
   ggsave("Graphs/PnR/PolypNP.per.cell.pdf", width=11, height=6.19, dpi=300, unit="in")
 NP.polyp.graph
+
+
+
+
+#Does cell count differ between genotype/temps?####
+mydata<-read.csv("Data/Polyp_PnR_full_combined_data.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Plate<-as.factor(mydata$Plate)
+View(mydata)
+
+cell.ct.model<-lmer(cells.per.mL~Genotype*Temp+(1|Plate), data=mydata)
+#Check assumptions
+plot(cell.ct.model)
+#Merp, looks like a cone...
+qqp(resid(cell.ct.model), "norm")
+#Close to normal, though. Just higher values are outside CI. 
+
+mydata$logct<-log(mydata$cells.per.mL)
+
+logct.model<-lmer(logct~Genotype*Temp+(1|Plate), data=mydata)
+plot(logct.model)
+qqp(resid(logct.model), "norm")
+anova(logct.model)
+#Temp is sig
+
+#Graph
+SummaryCt <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(cells.per.mL), SE=sd(cells.per.mL)/sqrt(length(na.omit(cells.per.mL))))
+SummaryCt
+
+Cell.ct.graph<-ggplot(SummaryCt, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y="Cells/mL", fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Average symbiont count (cells/mL) in polyps")+
+  ggsave("Graphs/Polyps/Polyp.symbiont.cells.per.mL.pdf", width=11, height=6.19, dpi=300, unit="in")
+Cell.ct.graph
+
+#Does polyp are differ between genos/temp?####
+mydata<-read.csv("Data/Polyp_PnR_full_combined_data.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Plate<-as.factor(mydata$Plate)
+View(mydata)
+
+polyp.area.model<-lmer(Area~Genotype*Temp+(1|Plate), data=mydata, na.action="na.omit")
+#Check assumptions
+plot(polyp.area.model)
+qqp(resid(polyp.area.model), "norm")
+#Woooooow it's normal for once. 
+anova(polyp.area.model)
+
+SummaryArea <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(Area, na.rm=TRUE), SE=sd(Area, na.rm=TRUE)/sqrt(length(na.omit(Area))))
+SummaryArea
+
+Polyp.area.graph<-ggplot(SummaryArea, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y="Polyp Area (mm^2)", fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Polyp Area")+
+  ggsave("Graphs/Polyps/Polyp.area.pdf", width=11, height=6.19, dpi=300, unit="in")
+Polyp.area.graph
+
+
+
+#Does cell density (avg ct/area) differ between genos/temp?####
+#cell density = cells.per.polyp/polyp area (in mm2) = cells/mm2
+cell.density.model<-lm(cells.per.area~Genotype*Temp*Plate, data=mydata, na.action="na.omit")
+#Check assumptions
+plot(cell.density.model)
+#Merp, looks like a cone...
+qqp(resid(cell.density.model), "norm")
+#Close to normal.
+
+mydata$log.cell.density<-log(mydata$cells.per.area)
+log.cd.model<-lm(log.cell.density~Genotype*Temp*Plate, data=mydata, na.action="na.omit")
+qqp(resid(log.cd.model), "norm")
+anova(log.cd.model)
+
+#SO I get a warning with this model but it still runs
+cell.density.model<-lmer(cells.per.area~Genotype*Temp+(1|Plate), data=mydata, na.action="na.omit")
+plot(cell.density.model)
+qqp(resid(cell.density.model), "norm") #Normal
+anova(cell.density.model)
+
+
+Summary <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(cells.per.area, na.rm=TRUE), SE=sd(cells.per.area, na.rm=TRUE)/sqrt(length(na.omit(cells.per.area))))
+Summary
+
+Cells.per.area.graph<-ggplot(Summary, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y="Cells per polyp Area (mm^2)", fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Cell density in polyps")+
+  ggsave("Graphs/Polyps/Polyp.cells.per.area.pdf", width=11, height=6.19, dpi=300, unit="in")
+Cells.per.area.graph
+
+#Running PnR by cell count models with polyp area as covariate####
+mydata<-read.csv("Data/Polyp_PnR_full_combined_data.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Plate<-as.factor(mydata$Plate)
+View(mydata)
+
+model1<-lmer(Resp.per.bill.cell~Genotype*Temp*Area+(1|Plate), data=mydata)
+#Check assumptions
+plot(model1)
+#Merp, looks like a cone...
+qqp(resid(model1), "norm")
+#Noooope
+
+#I want to log transform, but variables range from -56 to 23
+mydata$logResp<-log(mydata$Resp.per.bill.cell+58)
+logresp.model<-lmer(logResp~Genotype*Temp*Area+(1|Plate), data=mydata)
+#Check assumptions
+plot(logresp.model)
+qqp(resid(logresp.model), "norm")
+#Outliers: 154, 143
+
+#loglog
+mydata$loglogResp<-log(mydata$logResp)
+loglogresp.model<-lmer(loglogResp~Genotype*Temp*Area+(1|Plate), data=mydata)
+plot(loglogresp.model)
+qqp(resid(loglogresp.model), "norm")
+#Only slightly better than just one log 
+
+anova(loglogresp.model)
+#Linear relationship?
+plot(Resp.per.bill.cell~Area, data=mydata)
+#Well, kinda. Just cuz most of the values are zero. 
+plot(avgct~Area, data=mydata)
+plot(Resp~Area, data=mydata)
