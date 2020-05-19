@@ -1349,7 +1349,7 @@ ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CC
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2458" & Temp =="32" & Flask =="4" & Day > 4 & Day < 16)))
 
 
-#CCMP2464, 26*, flask 1-4 (July only!)
+#CCMP2464, 26*, flask 1-4 
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2464" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16)))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2464" & Temp =="26" & Flask =="2" & Day > 4 & Day < 16)))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2464" & Temp =="26" & Flask =="3" & Day > 4 & Day < 16)))
@@ -1429,47 +1429,45 @@ ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "RT
 #Clear the environment
 rm(list=ls())
 #Load growth data
-mydata<-read.csv("Data/ExponentialGrowthRates_Day1to15.csv")
+mydata<-read.csv("Data/CultureSlopes_Days1and5to15.csv")
 mydata$Temperature<-as.factor(mydata$Temperature)
-mydata$Flast<-as.factor(mydata$Flask)
+mydata$Flask<-as.factor(mydata$Flask)
 View(mydata)
 #Remove combined, since I need to see it between rounds
 mydata<-subset(mydata, Round != "Combined")
+#This actually removed combined from the data
 mydata$Round <- factor(mydata$Round,levels = c("MayJune", "July"))
 
 #Make a model
 #Genotype(fixed) and Temperature(fixed) on Slope (ie: growth rate, NOT PER CAPITA, problem?)
-model1<-lm(Slope~Genotype*Temperature*Round, data=mydata)
-model1res<-resid(model1)
-qqp(model1res, "norm")
-
-TukeyHSD(aov(model1))
-
-#Normal. Dope.
+model1<-lm(Slope.5.to.15~Genotype*Temperature*Round, data=mydata)
+qqp(resid(model1), "norm")
 plot(model1)
+#So normal, wow
+
 anova(model1)
+#Everything is very significant. 
 summary(model1)
 
-HSD.test(model1, ~Temperature)
 
 #Barplot of slopes
 Summary <- mydata %>%
   group_by(Genotype, Temperature, Round) %>%
-  summarize(mean=mean(Slope, na.rm=TRUE), SE=sd(Slope, na.rm=TRUE)/sqrt(length(na.omit(Slope))))
+  summarize(mean=mean(Slope.5.to.15, na.rm=TRUE), SE=sd(Slope.5.to.15, na.rm=TRUE)/sqrt(length(na.omit(Slope.5.to.15))))
 Summary
 
 SlopesGraph<-ggplot(Summary, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
   theme(legend.position = "none", plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=12), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  scale_y_continuous(expand=c(0,0), limits=c(0, 10))+
+  scale_y_continuous(expand=c(0,0), limits=c(0, 13))+
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Genotype", y="Exponential Phase Growth Rate (10,000 cells/mL/day)", fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values = wes_palette("Moonrise3"), labels=c("26°C", "30°C", "32°C"))+
-  ggtitle("Linear Growth Rates day 1-15")+
-  facet_wrap(  ~ Round)+
-  ggsave("GrowthDay1to15_byRound.pdf", width=10, height=6.19, dpi=300, unit="in")
+  ggtitle("Linear Growth Rates day 5-15")+
+  facet_wrap(  ~ Round)
 SlopesGraph
+SlopesGraph+ggsave("Graphs/Growth/SlopesDay5to15.png",width=10, height=5 )
 
 #July growth rates day 1-15####
 #Clear the environment
@@ -1511,7 +1509,6 @@ SlopesGraph<-ggplot(Summary, aes(x=Genotype, y=mean, fill=factor(Temperature), g
   ggtitle("Linear Growth Rates day 1-15 (July only)")
 SlopesGraph
 
-SlopesGraph+ggsave("Graphs/Growth/GrowthDay1to15_July.pdf", width=10, height=6.19, dpi=300, unit="in")
 
 
 #ANCOVA#####
@@ -1522,69 +1519,76 @@ rm(list=ls())
 mydata<-read.csv("GrowthDataCombined_r.csv")
 View(mydata)
 mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
 
 #New data frame with just data between days 5-15
 mydata2<-subset(mydata, Day > 4 & Day < 16)
 View(mydata2)
+#I need to remove all of the NA's. So CCMP2464 for MayJune and FLCass Flask 1.
+noNAdata<-subset(mydata2, !is.na(Densityx10000))
+#CCMP2464 for just one round is a little tricker to remove. 
+toBeRemoved<-which(noNAdata$Genotype=="CCMP2464" & noNAdata$Round == "MayJune")
+noNAdata2<-noNAdata[-toBeRemoved,]
 
-model1<-lm(Densityx10000 ~ Genotype * Temp * Round * Day, data=mydata2)
-#Make sure that the relationship with covariate is linear
-plot(Densityx10000~Day, data=mydata2)
-#looks linear to me
+#Starting with a very simple model, just to wrap my mind around all of the interactions
+geno.model<-lm(Densityx10000 ~ Genotype*Day, data=noNAdata2)
+qqp(resid(geno.model), "norm")
+#Normal
+plot(Densityx10000~Day, data=noNAdata2)
+#I guess that's linear
 
-plot(model1)
-qqp(resid(model1), "norm")
-#Hm, not very normal. 
-
-mydata2$logDensity<-log(mydata2$Densityx10000)
-model2<-lm(logDensity ~ Genotype *Round * Temp * Day, data=mydata2)
-logresid<-resid(model2)
-qqp(logresid, "norm")
-#that's better. 
-#Rest of assumptions for logged data
-plot(model2)
-plot(logDensity~Day, data=mydata2)
-#Run model
-anova(model2)
-
-#Round is signficant. Remove CCMP2464 cuz it's weird. 
-mydata3<-subset(mydata2, Genotype != "CCMP2464")
-View(mydata3)
-#Also need to remove NA's for the FLCass flask that spilled
-mydata3 <- subset(mydata3, !is.na(Densityx10000))
-View(mydata3)
-mydata3%>%count(Genotype) #Yep, 5 less FLCass counts than the other three, so it removed the NAs
-
-model3<-lm(Densityx10000 ~ Genotype * Temp * Round * Day, data=mydata3)
-model3res<-resid(model3)
-qqp(model3res, "norm")
-#Not very normal
-
-model4<-lm(logDensity ~ Genotype * Temp * Day * Round, data=mydata3)
-model4res<-resid(model4)
-qqp(model4res, "norm")
-#Okay, that's normal
-
-anova(model4, type="III")
-#All of the round interactions are significant...
-
-model5<-lm(logDensity ~ Genotype * Temp * Day, data=mydata3)
-model5res<-resid(model5)
-qqp(model5res, "norm")
-#Close enough for now
-anova(model5)
-
-
-predBF<-predict(model4) #Gets the predicted values from the regression lines in the ANCOVA
-graph.data<-cbind(mydata3, predBF) #attaches those predictions to the dataset
+Anova(geno.model, type="II")
+#Sig relationship between geno and day. So the density changes with day differently depending on the genotype
+#Graph it
+predBF<-predict(geno.model) #Gets the predicted values from the regression lines in the ANCOVA
+graph.data<-cbind(noNAdata2, predBF) #attaches those predictions to the dataset
 
 library(ggplot2)
-ggplot(data=graph.data, aes(logT, logBF, color=species)) +
+ggplot(data=graph.data, aes(Day, Densityx10000, color=Genotype)) +
   theme_bw()+
   theme(legend.title=element_text(colour="black", size=14), axis.text.x=element_text(face="bold", color="black", size=16), axis.text.y=element_text(face="bold", color="black", size=13), axis.title.x = element_text(color="black", size=18, face="bold"), axis.title.y = element_text(color="black", size=18, face="bold"),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_point() + geom_line(aes(y=predBF)) + 
-  labs(x="Log Thickness", y="Log Break Force", fill="Species")+ #Fill=two colors for species
-  scale_color_manual(values=c("steelblue", "salmon"), name="Species", labels=c("C. cripus", "M. stellatus")) #Edits legend for not a bargraph
+  geom_point() + geom_line(aes(y=predBF), size=1) + 
+  labs(x="Day", y="Density x10,000", fill="Genotype") 
+
+#Now add in temperature
+geno.temp.model<-lm(Densityx10000~Genotype*Temp*Day, data=noNAdata2)
+qqp(resid(geno.temp.model), "norm")
+#Still normal
+Anova(geno.temp.model, type="II")
+#Again, everything is signficant.
+#Graph it
+predBF<-predict(geno.temp.model) #Gets the predicted values from the regression lines in the ANCOVA
+graph.data<-cbind(noNAdata2, predBF) #attaches those predictions to the dataset
+
+library(ggplot2)
+ggplot(data=graph.data, aes(Day, Densityx10000, color=Genotype, shape=Temp)) +
+  theme_bw()+
+  theme(legend.title=element_text(colour="black", size=14), axis.text.x=element_text(face="bold", color="black", size=16), axis.text.y=element_text(face="bold", color="black", size=13), axis.title.x = element_text(color="black", size=18, face="bold"), axis.title.y = element_text(color="black", size=18, face="bold"),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_point() + geom_line(aes(y=predBF), size=1) + 
+  labs(x="Day", y="Density x10,000", fill="Genotype", shape="Temp") 
+#Useless because it's too busy. But whatever. 
+
+#Now the full model
+full.model<-lm(Densityx10000 ~ Genotype * Temp * Round * Day, data=noNAdata2)
+qqp(resid(full.model), "norm")
+#Hm, not very normal now
+
+noNAdata2$logDensity<-log(noNAdata2$Densityx10000)
+log.full.model<-lm(logDensity ~ Genotype * Round * Temp * Day, data=noNAdata2)
+qqp(resid(log.full.model), "norm")
+#that's better. 
+#Rest of assumptions for logged data
+plot(logDensity~Day, data=noNAdata2)
+#Well, now there doesn't really look to be a relationship at all. 
+#Run model
+Anova(log.full.model, type="II")
+#Almost everything is sig. 
+#Round*Temp*Day -- the relationship between density and day varies between rounds and temp
+#Geno*Round*Day --
+#But not the four way. So round does not affect the interaction between Geno*Temp?
+#Also, not Geno*Temp*Day -- 
+summary(log.full.model)
+
 
 #ANCOVA just July#####
 
@@ -1652,4 +1656,4 @@ lineplot<-ggplot(mydata2, aes(x=ExcelExp, y=r, color=Genotype, shape=Temp))+  #b
   labs(x="Genotype", y="k", fill="Genotype", shape="Temp")+
   scale_fill_manual(values = wes_palette("Royal2"))
 lineplot
-lineplot+ggsave("Graphs/Correlation.growthcurver.ExcelExp.png",width=10, height=5 )
+lineplot+ggsave("Graphs/Correlation.growthcurver.ExcelExp.png",width=10, height=5)
