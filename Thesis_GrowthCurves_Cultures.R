@@ -462,7 +462,7 @@ plot(fit1, log="y")
 #I have no idea what I'm doing....
 
 
-#####Let's try something else that might make sense
+#Let's try something else that might make sense
 fit1 <- fit_spline(dat$Day, dat$Densityx10000)
 plot(fit1, log="y")
 plot(fit1)
@@ -609,7 +609,7 @@ write.xlsx(gc_out2, file = "GrowthcurverData.xlsx",
 
 #Running an ANOVA on data output from growthcurver#####
 rm(list=ls())
-mydata<-read.csv("GrowthcurverData_r.csv")
+mydata<-read.csv("Data/GrowthcurverData_r.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 mydata$Flask<-as.factor(mydata$Flask)
 View(mydata)
@@ -659,6 +659,7 @@ kGraph<-ggplot(Summary, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(
 kGraph
 kGraph + ggsave("GrowthCurverGraph_carrycapacity.pdf", width=10, height=6.19, dpi=300, unit="in")
 
+#CCMP2458 and RT362 have much higher values, dwarfing everything else
 mydata3<-subset(mydata2, Genotype != "CCMP2458" & Genotype != "RT362")
 View(mydata3)
 
@@ -689,7 +690,7 @@ kGraph_noCCMP2458orRT362 + ggsave("GrowthCurverGraph_carrycapacity2.pdf", width=
 
 #Trying r because k is useless#####
 rm(list=ls())
-mydata<-read.csv("GrowthcurverData_r.csv")
+mydata<-read.csv("Data/GrowthcurverData_r.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 mydata$Flask<-as.factor(mydata$Flask)
 View(mydata)
@@ -719,7 +720,75 @@ model1<-lm(r~Genotype*Temp*Round, data=mydata2)
 model1res<-resid(model1)
 qqp(model1res, "norm")
 
-Summary3 <- mydata2 %>%
+mydata2$logr<-log(mydata2$r)
+
+logr.model<-lm(logr~Genotype*Temp*Round, data=mydata2)
+qqp(resid(logr.model), "norm")
+#Pretty close
+
+mydata2$loglogr<-log(mydata2$logr+3)
+loglogr.model<-lm(loglogr~Genotype*Temp*Round, data=mydata2)
+qqp(resid(loglogr.model), "norm")
+#Same as one log
+
+mydata2$sqrtr<-sqrt(mydata2$r)
+sqrtr.model<-lm(sqrtr~Genotype*Temp*Round, data=mydata2)
+qqp(resid(sqrtr.model), "norm")
+#Not as good as log
+
+anova(logr.model)
+#Round is significant
+
+logr.model2<-lmer(logr~Genotype*Temp+(1|Round), data=mydata2)
+summary(logr.model2)
+
+#Removing CCMP2464 altogether
+lessdata<-subset(mydata2, Genotype !="CCMP2464")
+View(lessdata)
+
+No2464.model<-lm(r~Genotype*Temp*Round, data=lessdata)
+qqp(resid(No2464.model), "norm")
+
+logNo2464.model<-lm(logr~Genotype*Temp*Round, data=lessdata)
+qqp(resid(logNo2464.model), "norm")
+#Good
+anova(logNo2464.model)
+#No different conclusions. 
+
+#Graphing growthcurver max growthrate
+mydata<-read.csv("Data/GrowthcurverData_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
+View(mydata)
+#going to remove CCMP2464 from MayJune
+mydata2<-mydata[-c(13:24),]
+View(mydata2)
+
+Summary2 <- mydata2 %>%
+  group_by(Genotype, Temp, Round) %>%
+  summarize(mean=mean(r, na.rm=TRUE), SE=sd(r, na.rm=TRUE)/sqrt(length(na.omit(r))))
+View(Summary2)
+Summary2$Round <- factor(Summary2$Round,levels = c("MayJune", "July"))
+
+Growthcurver.r.Graph<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y="Excel Exponential", fill="Temperature")+#labels the x and y axes
+  facet_wrap(  ~ Round)+
+  scale_fill_manual(values = wes_palette("Moonrise3"))+
+  ggtitle("Exponential Growth Rates from growthcruver package")
+Growthcurver.r.Graph
+Growthcurver.r.Graph+ggsave("GrowthCurverGraph_growthrates.pdf", width=10, height=6.19, dpi=300, unit="in")
+
+#Graphing values I got using excel to calculate exponential growth####
+#exponenant from exponential equation
+mydata<-read.csv("Data/GrowthcurverData_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
+
+Summary3 <- mydata %>%
   group_by(Genotype, Temp, Round) %>%
   summarize(mean=mean(ExcelExp, na.rm=TRUE), SE=sd(ExcelExp, na.rm=TRUE)/sqrt(length(na.omit(ExcelExp))))
 
@@ -734,9 +803,29 @@ ExcelExpGraph<-ggplot(Summary3, aes(x=Genotype, y=mean, fill=factor(Temp), group
   labs(x="Genotype", y="Excel Exponential", fill="Temperature")+#labels the x and y axes
   facet_wrap(  ~ Round)+
   scale_fill_manual(values = wes_palette("Moonrise3"))+
-  ggtitle("Exponential Growth Rates calculated from Excel")+
-  ggsave("ExpGrowthfromExcel.pdf", width=10, height=6.19, dpi=300, unit="in")
+  ggtitle("Exponential Growth Rates calculated from Excel")
 ExcelExpGraph
+ExcelExpGraph+ggsave("ExpGrowthfromExcel.pdf", width=10, height=6.19, dpi=300, unit="in")
+
+
+#Stats on Excel exp growth values####
+#Clear the environment
+rm(list=ls())
+mydata<-read.csv("Data/GrowthcurverData_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
+
+#Remove CCMP2464 MayJune
+mydata2<-mydata[-c(13:24),]
+
+excel.model<-lm(ExcelExp~Genotype*Temp*Round, data=mydata2)
+qqp(resid(excel.model), "norm")
+#Wow, it's normal
+anova(excel.model)
+summary(excel.model)
+
+#
+
 #Per capita growth curves from hand calculated growth rates#####
 
 #Clear the environment
@@ -942,6 +1031,16 @@ MayJuneData <- subset(mydata, Round == "MayJune")
 JulyData<- subset(mydata, Round =="July")
 
 
+plot(Densityx10000~Day, data=mydata)
+
+plot(Densityx10000~Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16))
+mod <- lm(Densityx10000~Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16))
+summary(mod)
+mod
+abline(lm(Densityx10000~Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16)))
+
+
+
 ggplotRegression <- function (fit) {
   
   require(ggplot2)
@@ -957,7 +1056,7 @@ ggplotRegression <- function (fit) {
 
 #MayJune data#####
 #CCMP2458, 26*, flask 1-4
-ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="26" & Flask =="1" & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16)))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="26" & Flask =="2" & Day < 16)))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="26" & Flask =="3" & Day < 16)))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="26" & Flask =="4" & Day < 16)))
@@ -1128,12 +1227,211 @@ ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "RT
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "RT362" & Temp =="32" & Flask =="3" & Day < 16)))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "RT362" & Temp =="32" & Flask =="4" & Day < 16)))
 
+
+#Slope from day 5-15 (logistic growth)####
+#Clear the environment
+rm(list=ls())
+#Load growth data
+mydata<-read.csv("Data/GrowthDataCombined_r.csv")
+View(mydata)
+mydata$Temp<-as.factor(mydata$Temp)
+
+MayJuneData <- subset(mydata, Round == "MayJune")
+JulyData<- subset(mydata, Round =="July")
+
+ggplotRegression <- function (fit) {
+  
+  require(ggplot2)
+  
+  ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) + 
+    geom_point() +
+    stat_smooth(method = "lm", col = "red") +
+    labs(title = paste("Adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
+                       "Intercept =",signif(fit$coef[[1]],5 ),
+                       " Slope =",signif(fit$coef[[2]], 5),
+                       " P =",signif(summary(fit)$coef[2,4], 5)))
+}
+
+#MayJune data#####
+#CCMP2458, 26*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="26" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="26" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="26" & Flask =="4" & Day > 4 & Day < 16)))
+
+#CCMP2458, 30*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="30" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="30" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="30" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="30" & Flask =="4" & Day > 4 & Day < 16)))
+
+#CCMP2458, 32*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="32" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="32" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="32" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="32" & Flask =="4" & Day > 4 & Day < 16)))
+
+#No CCMP2464 for MayJune
+
+#FLCass, 26*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "FLCass" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "FLCass" & Temp =="26" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "FLCass" & Temp =="26" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "FLCass" & Temp =="26" & Flask =="4" & Day > 4 & Day < 16)))
+
+#FLCass, 30*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "FLCass" & Temp =="30" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "FLCass" & Temp =="30" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "FLCass" & Temp =="30" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "FLCass" & Temp =="30" & Flask =="4" & Day > 4 & Day < 16)))
+
+#FLCass, 32*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "FLCass" & Temp =="32" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "FLCass" & Temp =="32" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "FLCass" & Temp =="32" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "FLCass" & Temp =="32" & Flask =="4" & Day > 4 & Day < 16)))
+
+
+#KB8, 26*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "KB8" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "KB8" & Temp =="26" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "KB8" & Temp =="26" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "KB8" & Temp =="26" & Flask =="4" & Day > 4 & Day < 16)))
+
+#KB8, 30*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "KB8" & Temp =="30" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "KB8" & Temp =="30" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "KB8" & Temp =="30" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "KB8" & Temp =="30" & Flask =="4" & Day > 4 & Day < 16)))
+
+#KB8, 32*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "KB8" & Temp =="32" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "KB8" & Temp =="32" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "KB8" & Temp =="32" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "KB8" & Temp =="32" & Flask =="4" & Day > 4 & Day < 16)))
+
+
+#RT362, 26*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "RT362" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "RT362" & Temp =="26" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "RT362" & Temp =="26" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "RT362" & Temp =="26" & Flask =="4" & Day > 4 & Day < 16)))
+
+#RT362, 30*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "RT362" & Temp =="30" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "RT362" & Temp =="30" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "RT362" & Temp =="30" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "RT362" & Temp =="30" & Flask =="4" & Day > 4 & Day < 16)))
+
+#RT362, 32*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "RT362" & Temp =="32" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "RT362" & Temp =="32" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "RT362" & Temp =="32" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "RT362" & Temp =="32" & Flask =="4" & Day > 4 & Day < 16)))
+
+#July data, day 5-15#####
+#CCMP2458, 26*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2458" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2458" & Temp =="26" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2458" & Temp =="26" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2458" & Temp =="26" & Flask =="4" & Day > 4 & Day < 16)))
+
+#CCMP2458, 30*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2458" & Temp =="30" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2458" & Temp =="30" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2458" & Temp =="30" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2458" & Temp =="30" & Flask =="4" & Day > 4 & Day < 16)))
+
+#CCMP2458, 32*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2458" & Temp =="32" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2458" & Temp =="32" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2458" & Temp =="32" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2458" & Temp =="32" & Flask =="4" & Day > 4 & Day < 16)))
+
+
+#CCMP2464, 26*, flask 1-4 (July only!)
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2464" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2464" & Temp =="26" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2464" & Temp =="26" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2464" & Temp =="26" & Flask =="4" & Day > 4 & Day < 16)))
+
+#CCMP2464, 30*, flask 1-4 (July only!)
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2464" & Temp =="30" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2464" & Temp =="30" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2464" & Temp =="30" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2464" & Temp =="30" & Flask =="4" & Day > 4 & Day < 16)))
+
+#CCMP2464, 32*, flask 1-4 (July only!)
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2464" & Temp =="32" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2464" & Temp =="32" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2464" & Temp =="32" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "CCMP2464" & Temp =="32" & Flask =="4" & Day > 4 & Day < 16)))
+
+
+#FLCass, 26*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "FLCass" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "FLCass" & Temp =="26" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "FLCass" & Temp =="26" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "FLCass" & Temp =="26" & Flask =="4" & Day > 4 & Day < 16)))
+
+#FLCass, 30*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "FLCass" & Temp =="30" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "FLCass" & Temp =="30" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "FLCass" & Temp =="30" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "FLCass" & Temp =="30" & Flask =="4" & Day > 4 & Day < 16)))
+
+#FLCass, 32*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "FLCass" & Temp =="32" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "FLCass" & Temp =="32" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "FLCass" & Temp =="32" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "FLCass" & Temp =="32" & Flask =="4" & Day > 4 & Day < 16)))
+
+
+#KB8, 26*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "KB8" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "KB8" & Temp =="26" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "KB8" & Temp =="26" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "KB8" & Temp =="26" & Flask =="4" & Day > 4 & Day < 16)))
+
+#KB8, 30*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "KB8" & Temp =="30" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "KB8" & Temp =="30" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "KB8" & Temp =="30" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "KB8" & Temp =="30" & Flask =="4" & Day > 4 & Day < 16)))
+
+#KB8, 32*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "KB8" & Temp =="32" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "KB8" & Temp =="32" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "KB8" & Temp =="32" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "KB8" & Temp =="32" & Flask =="4" & Day > 4 & Day < 16)))
+
+
+#RT362, 26*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "RT362" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "RT362" & Temp =="26" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "RT362" & Temp =="26" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "RT362" & Temp =="26" & Flask =="4" & Day > 4 & Day < 16)))
+
+#RT362, 30*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "RT362" & Temp =="30" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "RT362" & Temp =="30" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "RT362" & Temp =="30" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "RT362" & Temp =="30" & Flask =="4" & Day > 4 & Day < 16)))
+
+#RT362, 32*, flask 1-4
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "RT362" & Temp =="32" & Flask =="1" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "RT362" & Temp =="32" & Flask =="2" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "RT362" & Temp =="32" & Flask =="3" & Day > 4 & Day < 16)))
+ggplotRegression(lm(Densityx10000 ~ Day, data = subset(JulyData, Genotype == "RT362" & Temp =="32" & Flask =="4" & Day > 4 & Day < 16)))
+
+
 #Created new data with all of those values####
 #Clear the environment
 rm(list=ls())
 #Load growth data
-mydata<-read.csv("ExponentialGrowthRates_Day1to15.csv")
+mydata<-read.csv("Data/ExponentialGrowthRates_Day1to15.csv")
 mydata$Temperature<-as.factor(mydata$Temperature)
+mydata$Flast<-as.factor(mydata$Flask)
 View(mydata)
 #Remove combined, since I need to see it between rounds
 mydata<-subset(mydata, Round != "Combined")
@@ -1150,7 +1448,6 @@ TukeyHSD(aov(model1))
 #Normal. Dope.
 plot(model1)
 anova(model1)
-#Very significant interaction between temp and geno. Cool beans. 
 summary(model1)
 
 HSD.test(model1, ~Temperature)
@@ -1174,11 +1471,11 @@ SlopesGraph<-ggplot(Summary, aes(x=Genotype, y=mean, fill=factor(Temperature), g
   ggsave("GrowthDay1to15_byRound.pdf", width=10, height=6.19, dpi=300, unit="in")
 SlopesGraph
 
-#July growth rates day 5-15####
+#July growth rates day 1-15####
 #Clear the environment
 rm(list=ls())
 #Load growth data
-mydata<-read.csv("ExponentialGrowthRates_Day1to15.csv")
+mydata<-read.csv("Data/ExponentialGrowthRates_Day1to15.csv")
 mydata$Temperature<-as.factor(mydata$Temperature)
 JulyData<-subset(mydata, Round == "July")
 JulyData<-subset(JulyData, Slope != "NA")
@@ -1211,11 +1508,10 @@ SlopesGraph<-ggplot(Summary, aes(x=Genotype, y=mean, fill=factor(Temperature), g
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Genotype", y="Exponential Phase Growth Rate (10,000 cells/mL/day)", fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "brown3"), labels=c("26°C", "30°C", "32°C"))+
-  ggtitle("Linear Growth Rates day 5-15")
+  ggtitle("Linear Growth Rates day 1-15 (July only)")
 SlopesGraph
 
-SlopesGraph+ggsave("Graphs/Growth/GrowthDay5to15_July.pdf", width=10, height=6.19, dpi=300, unit="in")
-
+SlopesGraph+ggsave("Graphs/Growth/GrowthDay1to15_July.pdf", width=10, height=6.19, dpi=300, unit="in")
 
 
 #ANCOVA#####
@@ -1339,3 +1635,21 @@ ggplot(data=graph.data, aes(logT, logBF, color=species)) +
   geom_point() + geom_line(aes(y=predBF)) + 
   labs(x="Log Thickness", y="Log Break Force", fill="Species")+ #Fill=two colors for species
   scale_color_manual(values=c("steelblue", "salmon"), name="Species", labels=c("C. cripus", "M. stellatus")) #Edits legend for not a bargraph
+
+
+#Are growthcruver values and Exp excel values correlated?####
+mydata<-read.csv("Data/GrowthcurverData_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
+View(mydata)
+mydata2<-mydata[-c(13:24),]
+
+plot(ExcelExp~r, data=mydata2)
+lineplot<-ggplot(mydata2, aes(x=ExcelExp, y=r, color=Genotype, shape=Temp))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_point(size=3)+ 
+  labs(x="Genotype", y="k", fill="Genotype", shape="Temp")+
+  scale_fill_manual(values = wes_palette("Royal2"))
+lineplot
+lineplot+ggsave("Graphs/Correlation.growthcurver.ExcelExp.png",width=10, height=5 )
