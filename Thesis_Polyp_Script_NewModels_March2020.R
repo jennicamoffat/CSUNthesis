@@ -101,13 +101,13 @@ plot(loglogStrobmodel)
 StrobilatedData$sqrtStrob.Days<-sqrt(StrobilatedData$Days.to.Strobilation)
 sqrtStrobmodel<-lmer(sqrtStrob.Days~Genotype*Temp+(1|Plate), data=StrobilatedData)
 qqp(resid(sqrtStrobmodel), "norm")
+#No
 
 #Fourth root
 StrobilatedData$fourthrt.Strob.Days<-sqrt(StrobilatedData$sqrtStrob.Days)
 fourthrtStrobmodel<-lmer(fourthrt.Strob.Days~Genotype*Temp+(1|Plate), data=StrobilatedData)
 qqp(resid(fourthrtStrobmodel), "norm")
 #No different from square root
-
 
 anova(loglogStrobmodel)
 #Interaction: P=0.02743
@@ -251,6 +251,8 @@ anova(Budmodel4)
 
 AIC(Budmodel) #1580
 AIC(Budmodel2) #1567
+AIC(Budmodel3)#1569
+AIC(Budmodel4)#1631
 #Without plate is best
 anova(Budmodel2)
 #Interaction: P=0.002318
@@ -261,7 +263,6 @@ anova(Budmodel2)
 #Columns: Geno, Temp, Plate, Survived (yes or no), and Frequency (count of that combo)
 Survival<- mydata%>%group_by(Genotype, Temp, Plate, Survive.to.End)%>%
   tally(Survive.to.End == "Yes")
-View(Survival)
 
 #I have one NA for survial b/c I spilled it and lost it. Just gonna remove it. 
 mydata2<-subset(mydata, Survive.to.End != "NA")
@@ -274,12 +275,18 @@ Survival<- mydata2_df%>%group_by(Genotype, Temp, Plate, Survive.to.End, .drop=FA
 
 #Renaming Survive.to.End to Survived because I'm dumb and made a very long column name
 names(Survival)[names(Survival) == 'Survive.to.End'] <- 'Survived'
+View(Survival)
 
 #Run model
 Survival.model<-glm(Freq~Genotype:Survived + Temp:Survived + Plate:Survived + Genotype:Temp:Survived + Genotype:Plate:Survived + Temp:Plate:Survived + Genotype:Temp:Plate:Survived, family=poisson, data=Survival)
 anova(Survival.model, test="Chisq")
-#all of the interactions are 1. Only effect is Genotype, I think because they mostly all survived. 
+#all of the interactions are 1 or very close to one. Only effect is Genotype, I think because they mostly all survived. 
 #Genotype and Temp signficiantly affected survival, but no interaction. 
+
+#In the output, we're interested in the effect of Season, which is the Season:Fruit interaction
+#and the effect of Treatment, which is Treatment:Fruit
+#and the interactions between Season and Treatment, which is Season:Treatment:Fruit
+
 
 #Trying something else. Running model and just telling it that it's bimodal
 View(mydata2)

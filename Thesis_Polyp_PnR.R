@@ -100,6 +100,7 @@ write.csv(all.pnr.data, "Data/Polyp_PnR_full_combined_data.csv", row.names= FALS
 
 #PnR graphs#####
 mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
+mydata$Temp<-as.factor(mydata$Temp)
 View(mydata)
 
 #Resp
@@ -152,6 +153,7 @@ Resp.polyp.graph.temp<-ggplot(SummaryRespTemp, aes(x=Temp, y=mean))+  #basic plo
 Resp.polyp.graph.temp
 
 #Resp by temp, apo removed
+no.apo.data<-subset(mydata, Genotype != "Aposymbiotic")
 SummaryRespTemp.no.apo<-no.apo.data %>% 
   group_by(Temp) %>%
   summarize(mean=mean(Resp), SE=sd(Resp)/sqrt(length(na.omit(Resp))))
@@ -163,7 +165,7 @@ Resp.polyp.graph.temp.no.apo<-ggplot(SummaryRespTemp.no.apo, aes(x=Temp, y=mean)
   geom_bar(stat="identity", position="dodge", size=0.6, fill="mediumorchid4") + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Temp", y=expression(Respiration~((µmol~O[2]/L)/sec)/(10^{"9"}~cells/mm^{"3"})))+  #labels the x and y axes
-  ggtitle("Respiration of Polyps by Temperature (Apo removed)")+
+  ggtitle("Respiration of Polyps by Temperature (Apo removed)")
   ggsave("Graphs/PnR/PolypResp.Temp.no.apo.pdf", width=11, height=6.19, dpi=300, unit="in")
 
 Resp.polyp.graph.temp.no.apo
@@ -231,7 +233,7 @@ GP.polyp.graph.temp.no.apo<-ggplot(SummaryGP.temp.no.apo, aes(x=Temp, y=mean))+ 
   geom_bar(stat="identity", position="dodge", size=0.6, fill="mediumorchid4") + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Temperature", y=expression(GP~((µmol~O[2]/L)/sec)/(10^{"9"}~cells/mm^{"3"})))+  #labels the x and y axes
-  ggtitle("Gross Photosynthesis of Polyps by Temperature (Apo removed)")+
+  ggtitle("Gross Photosynthesis of Polyps by Temperature (Apo removed)")
   ggsave("Graphs/PnR/PolypGP.temp.no.apo.pdf", width=11, height=6.19, dpi=300, unit="in")
 GP.polyp.graph.temp.no.apo
 
@@ -304,6 +306,8 @@ NP.polyp.graph.temp.no.apo
 mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 mydata$Plate<-as.factor(mydata$Plate)
+
+no.apo.data<-subset(mydata, Genotype != "Aposymbiotic")
 
 #Respiration####
 resp.model<-lmer(Resp~Genotype*Temp+(1|Plate), data=mydata)
@@ -410,8 +414,20 @@ emmeans.GP
 
 #So let's run the stats without Apo
 no.apo.data<-subset(mydata, Genotype != "Aposymbiotic")
+no.apo.data$Temp<-as.factor(no.apo.data$Temp)
+no.apo.data$Plate<-as.factor(no.apo.data$Plate)
+
 
 GP.no.apo.model<-lmer(GP~Genotype*Temp+(1|Plate), data=no.apo.data)
+#Singular fit error.
+summary(GP.no.apo.model)
+
+summary<-no.apo.data%>%
+  group_by(Genotype, Temp, Plate)%>%
+  summarize(tally=n())
+View(summary)
+#I think it's because some plates only have two reps 
+
 #Check assumptions
 plot(GP.no.apo.model)
 qqp(resid(GP.no.apo.model), "norm")
@@ -431,6 +447,17 @@ qqp(resid(loglogGP.no.apo.model), "norm")
 
 anova(loglogGP.no.apo.model)
 #Yep, now nothing is signficant
+
+#Because sometimes I get the singular fit error, and sometimes I don't
+GP.no.apo2<-lm(GP~Genotype*Temp, data=no.apo.data)
+qqp(resid(GP.no.apo2), "norm")
+
+logGP.no.apo2<-lm(logGP~Genotype*Temp, data=no.apo.data)
+qqp(resid(logGP.no.apo2), "norm")
+loglogGP.no.apo2<-lm(loglogGP~Genotype*Temp, data=no.apo.data)
+qqp(resid(loglogGP.no.apo2), "norm")
+anova(loglogGP.no.apo2)
+
 
 #NP####
 NP.model<-lmer(NP~Genotype*Temp+(1|Plate), data=mydata)
@@ -469,7 +496,7 @@ emmeans.NP
 #Okay, now let's see what happens when I remove Apo
 NP.no.apo.model<-lmer(NP~Genotype*Temp+(1|Plate), no.apo.data)
 qqp(resid(NP.no.apo.model), "norm")
-#Whoa. Not normal. 
+#Not normal. 
 
 View(no.apo.data)
 #range -5.3 to 11
@@ -489,6 +516,15 @@ anova(loglogNP.no.apo.model)
 NP.tukey.no.apo<-emmeans(loglogNP.no.apo.model, pairwise ~ Temp | Genotype)
 NP.tukey.no.apo
 #Okay, just realized this is not showing everything, but within genotypes only
+
+
+#Not including plate in model
+NPmodel2<-lm(NP~Genotype*Temp*Plate, no.apo.data)
+qqp(resid(NPmodel2), "norm")
+anova(NPmodel2)
+loglogNPmodel2<-lm(loglogNP~Genotype*Temp*Plate, no.apo.data)
+qqp(resid(loglogNPmodel2), "norm")
+anova(loglogNPmodel2)
 
 
 #Stats with slopes/cell count, instead of slope/(cells/polyp area)####
@@ -768,3 +804,9 @@ plot(Resp.per.bill.cell~Area, data=mydata)
 #Well, kinda. Just cuz most of the values are zero. 
 plot(avgct~Area, data=mydata)
 plot(Resp~Area, data=mydata)
+
+model2<-lmer(Resp.per.bill.cell~Geno*Temp+Area+(1|Plate), data=mydata)
+qqp(resid(model2), "norm")
+anova(model2)
+summary(model2)
+
