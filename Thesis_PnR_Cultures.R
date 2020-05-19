@@ -405,10 +405,12 @@ anova(model5)
 
 
 #October Photosynthesis#####
+#August PnR had weird issue with 32* because the calibration was not set up for 32*
+#So I had to rerun it in October using one-point calibration
 #Clear the environment
 rm(list=ls())
 #Load PnR data
-mydata<-read.csv("OctoberPnR_r.csv")
+mydata<-read.csv("Data/OctoberPnR_r.csv")
 View(mydata)
 mydata$Temperature<-as.factor(mydata$Temperature)
 
@@ -482,15 +484,14 @@ RespGraph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temperature),
   ggsave("Graphs/PnR/RespGraph_Oct.pdf", width=11, height=6.19, dpi=300, unit="in")
 RespGraph
 
-#Stats#####
-
+#October PnR Stats#####
 
 #Genotype (fixed) and Temperature (fixed) on dependent variables (NP, GP, and Resp)
-#Repiration
+#Respiration
 #Right now, data is really small number per 1000 cells. To get it to be 
 #a more resonible number, times it by 1,000,000 to get resp per billion cells. 
 mydata$Resp<-1000000*mydata$AvgRespPer1000Cell
-
+View(mydata)
 
 model1<-aov(Resp~Genotype*Temperature, data=mydata)
 #Check assumptions
@@ -520,7 +521,6 @@ anova(sqrt.Resp.model)
 
 #Net Photo. NP = umol O2 per billion cells. ####
 mydata$NP<-1000000*mydata$AvgNPPer1000Cell
-
 
 NP.model<-aov(NP~Genotype*Temperature, data=mydata)
 #Check assumptions
@@ -553,5 +553,7 @@ mydata$fourthrtGP<-sqrt(sqrt(mydata$GP))
 model1<-aov(fourthrtGP~Genotype*Temperature, data=mydata)
 model1res<-resid(model1)
 qqp(model1res, "norm")
-#That's close to normal
+#That's normal
 anova(model1)
+
+View(mydata)

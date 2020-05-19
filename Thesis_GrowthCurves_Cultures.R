@@ -1054,7 +1054,7 @@ ggplotRegression <- function (fit) {
                        " P =",signif(summary(fit)$coef[2,4], 5)))
 }
 
-#MayJune data#####
+#MayJune data, day 1-15#####
 #CCMP2458, 26*, flask 1-4
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16)))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="26" & Flask =="2" & Day < 16)))
@@ -1252,7 +1252,7 @@ ggplotRegression <- function (fit) {
                        " P =",signif(summary(fit)$coef[2,4], 5)))
 }
 
-#MayJune data#####
+#MayJune data, day 5-15#####
 #CCMP2458, 26*, flask 1-4
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="26" & Flask =="1" & Day > 4 & Day < 16)))
 ggplotRegression(lm(Densityx10000 ~ Day, data = subset(MayJuneData, Genotype == "CCMP2458" & Temp =="26" & Flask =="2" & Day > 4 & Day < 16)))
@@ -1449,6 +1449,15 @@ anova(model1)
 #Everything is very significant. 
 summary(model1)
 
+#Check if removing CCMP2464 altogether changes output. 
+noCCMP2464<-subset(mydata, Genotype != "CCMP2464")
+noCCMP2464$Genotype <- factor(noCCMP2464$Genotype,levels = c("CCMP2458", "FLCass", "KB8", "RT362"))
+#Genotype(fixed) and Temperature(fixed) on Slope (ie: growth rate, NOT PER CAPITA, problem?)
+model2<-lm(Slope.5.to.15~Genotype*Temperature*Round, data=noCCMP2464)
+qqp(resid(model2), "norm")
+plot(model2)
+anova(model2)
+#Nope, everything still significant
 
 #Barplot of slopes
 Summary <- mydata %>%
@@ -1517,7 +1526,6 @@ SlopesGraph
 rm(list=ls())
 #Load growth data
 mydata<-read.csv("GrowthDataCombined_r.csv")
-View(mydata)
 mydata$Temp<-as.factor(mydata$Temp)
 mydata$Flask<-as.factor(mydata$Flask)
 
@@ -1588,7 +1596,6 @@ Anova(log.full.model, type="II")
 #But not the four way. So round does not affect the interaction between Geno*Temp?
 #Also, not Geno*Temp*Day -- 
 summary(log.full.model)
-
 
 #ANCOVA just July#####
 
