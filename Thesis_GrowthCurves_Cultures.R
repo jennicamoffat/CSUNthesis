@@ -617,6 +617,19 @@ View(mydata)
 mydata2<-mydata[-c(13:24),]
 View(mydata2)
 
+summary<-mydata2%>%
+  group_by(Round)%>%
+  summarize(sigma=mean(sigma), r=mean(r))
+summary
+#"sigma is a measure of the goodnesss of fit of the parameters of the logistic equation for the data; 
+#it is the residual sum of squares from the nonlinear regression model. 
+#Smaller sigma values indicate a better fit of the logistic curve to the data than larger values."
+hist(mydata2$sigma, main = "Histogram of sigma values", xlab = "sigma")
+# Show the top 5 samples with the largest sigma value 
+#(with the worst model fit to the growth curve data)
+mydata2 %>% top_n(5, sigma) %>% arrange(desc(sigma))
+
+
 #Make a model
 #Genotype(fixed), Temperature(fixed), and Round (fixed) on K, r, or n0
 model1<-lm(k~Genotype*Temp*Round, data=mydata2)
