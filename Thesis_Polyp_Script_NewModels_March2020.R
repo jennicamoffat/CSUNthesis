@@ -4,24 +4,24 @@
 
 #Clear the environment
 rm(list=ls())
-#Load data
-mydata<-read.csv("Data/Thesis_PolypData_Summary.csv")
-mydata$Temp<-as.factor(mydata$Temp)
-mydata$Plate<-as.factor(mydata$Plate)
-View(mydata)
-
 #load libraries
 library(tidyverse)
 library(car)
 library(lme4)
 library(lmerTest)
+library(MASS)
+
+#Load data
+mydata<-read.csv("Data/Thesis_PolypData_Summary.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Plate<-as.factor(mydata$Plate)
+NoApoData <- mydata %>%
+  filter(Genotype != "Aposymbiotic") %>%
+  droplevels
 
 #Genotype (fixed) and Temperature (fixed) on dependent variables 
 
 #Total average ephyra production####
-#Removing aposymbiotic
-NoApoData <- subset(mydata, Genotype != "Aposymbiotic")
-View(NoApoData)
 
 #Make model
 Ephyramodel<-lmer(Total.Ephyra.Produced~Genotype*Temp+(1|Plate), data=NoApoData)
@@ -64,20 +64,20 @@ AIC(sqrtEphyraModel) #395.55
 AIC(Ephyra.model2) #348.4
 AIC(Ephyra.model3) #343.1
 AIC(Ephyra.model4) #342.8
-#Model with all interactions is lowest...
+#Model with all interactions is lowest.
 
 #Time to strobilation####
 
 #I need to remove the NA's
-StrobilatedData <- subset(NoApoData, Days.to.Strobilation != "NA")
-View(StrobilatedData)
+StrobilatedData <- NoApoData %>%
+  filter(Days.to.Strobilation != "NA")
 
 #Make model
 Strob.model<-lmer(Days.to.Strobilation~Genotype*Temp+(1|Plate), data=StrobilatedData)
 #Check assumptions
 plot(Strob.model)
 qqp(resid(Strob.model), "norm")
-#Not really normal
+#Not normal
 
 #Log data
 StrobilatedData$logStrob.Days<-log(StrobilatedData$Days.to.Strobilation)
@@ -128,11 +128,38 @@ AIC(Strob.model3) #-433.4
 AIC(Strob.model4) #-488.2
 #Model with all interactions is lowest again. 
 
+#GLMER 
+#lognormal distribution
+qqp(StrobilatedData$Days.to.Strobilation, "lnorm")
+#No
 
+gamma<-fitdistr(StrobilatedData$Days.to.Strobilation, "gamma")
+qqp(StrobilatedData$Days.to.Strobilation, "gamma", shape = gamma$estimate[[1]], rate=gamma$estimate[[2]])
+#Not really
+
+#Try negative binomial
+nbinom <- fitdistr(StrobilatedData$Days.to.Strobilation, "Negative Binomial")
+qqp(StrobilatedData$Days.to.Strobilation, "nbinom", size = nbinom$estimate[[1]], mu = nbinom$estimate[[2]])
+#Close.
+
+#Try poisson
+poisson <- fitdistr(StrobilatedData$Days.to.Strobilation, "Poisson")
+qqp(StrobilatedData$Days.to.Strobilation, "pois", poisson$estimate, lambda=8)
+#Probably worse than gamma?
+hist(StrobilatedData$Days.to.Strobilation)
+
+#I think negative binomial is the closest
+Strob.model<-glmer(Days.to.Strobilation ~ Genotype*Temp+(1|Plate), data = StrobilatedData, family = binomial(link = "logit"))
+strob.summary<-StrobilatedData%>%
+  group_by(Genotype, Temp)%>%
+  
+
+  
+  
 #Time to inoculation####
 #I need to remove the NA's
-InocData <- subset(NoApoData, Days.to.Inoculation != "NA")
-View(InocData)
+InocData<-NoApoData%>%
+  filter(!is.na(Days.to.Inoculation ))
 
 #Make model
 Inoc.model<-lmer(Days.to.Inoculation~Genotype*Temp+(1|Plate), data=InocData)
@@ -166,14 +193,13 @@ qqp(resid(quadrtInocmodel), "norm")
 #Worse
 
 #Running it with the logged data for now
-Inoc.model2<-lm(logIDays~Genotype*Temp*Plate, data=InocData)
+logInoc.model<-lm(logIDays~Genotype*Temp*Plate, data=InocData)
 anova(Inoc.model2)
 #plate has an effect. Need to use original model
 anova(log.Inoc.model)
 #interaction: P=0.009616
 
 #Gotta do generalized linear model. 
-library(MASS)
 #lognormal distribution
 qqp(InocData$Days.to.Inoculation, "lnorm")
 #Uh, no I don't think so. 
@@ -190,23 +216,42 @@ qqp(InocData$Days.to.Inoculation, "nbinom", size = nbinom$estimate[[1]], mu = nb
 #Try poisson
 poisson <- fitdistr(InocData$Days.to.Inoculation, "Poisson")
 qqp(InocData$Days.to.Inoculation, "pois", poisson$estimate, lambda=8)
+#I think that's the best fit. 
+hist(InocData$Days.to.Inoculation)
 
 Inoc.model<-glmer(Days.to.Inoculation ~ Genotype*Temp+(1|Plate), data = InocData, family = poisson(link = "log"))
 summary(Inoc.model)
-anova(Inoc.model)
-#I have no idea what I'm doing...
+Anova(Inoc.model, type="III")
+print(summary(Inoc.model), correlation=TRUE)
 
-Inoc.model2<-glmer(Days.to.Inoculation ~ Genotype*Temp+(1|Plate), data = InocData, family = poisson(link = "log"))
-anova(Inoc.model2)
+Inoc.model.6<-glmer(Days.to.Inoculation ~ Genotype*Temp+(1|Plate), data = InocData.6, family = poisson(link = "log"))
+Anova(Inoc.model.6, type = "III")
+
+Inoc.model2<-glm(Days.to.Inoculation ~ Genotype*Temp*Plate, data = InocData, family = poisson(link = "log"))
+Anova(Inoc.model2, type="III")
 summary(Inoc.model2)
 
-hist(InocData$Days.to.Inoculation)
+Inoc.model3<-glm(Days.to.Inoculation ~ Genotype*Temp, data = InocData, family = poisson(link = "log"))
+Anova(Inoc.model3)
 
+Inoc.model4<-glmer(Days.to.Inoculation ~ Genotype+Temp+(1|Plate), data = InocData, family = poisson(link = "log"))
+Anova(Inoc.model4)
+
+AIC(Inoc.model) #1601.8
+AIC(Inoc.model2) #1592
+AIC(Inoc.model3) #1601.7
+AIC(Inoc.model4) #1600.9
+
+#Quasipoisson
+Inoc.model.QP<-glm(Days.to.Inoculation ~ Genotype*Temp*Plate, data = InocData, family = "quasipoisson")
+Anova(Inoc.model.QP)
+summary(Inoc.model.QP)
+#Dispersion parameter is 0.97, so very close to 1. Since you can't use QP with glmer, poisson is just as good a fit. 
 
 #Time to ephyra####
 #I need to remove the NA's
-TimetoEphyraData <- subset(NoApoData, Days.to.Ephyra != "NA")
-View(TimetoEphyraData)
+TimetoEphyraData <- NoApoData %>%
+  filter(Days.to.Ephyra != "NA")
 
 #Make model
 TEphyramodel<-lmer(Days.to.Ephyra~Genotype*Temp+(1|Plate), data=TimetoEphyraData)
@@ -265,7 +310,8 @@ Survival<- mydata%>%group_by(Genotype, Temp, Plate, Survive.to.End)%>%
   tally(Survive.to.End == "Yes")
 
 #I have one NA for survial b/c I spilled it and lost it. Just gonna remove it. 
-mydata2<-subset(mydata, Survive.to.End != "NA")
+mydata2<-mydata%>%
+  filter(Survive.to.End != "NA")
 
 #Making dataframe to run chi-square test
 mydata2_df <- mydata2 %>% modify_if(is.character, as.factor)
