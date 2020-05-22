@@ -306,8 +306,11 @@ NP.polyp.graph.temp.no.apo
 mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 mydata$Plate<-as.factor(mydata$Plate)
+NoApoData <- mydata %>%
+  filter(Genotype != "Aposymbiotic") %>%
+  droplevels
 
-no.apo.data<-subset(mydata, Genotype != "Aposymbiotic")
+mydata <- mydata %>% drop_na()
 
 #Respiration####
 resp.model<-lmer(Resp~Genotype*Temp+(1|Plate), data=mydata)
@@ -315,8 +318,8 @@ resp.model<-lmer(Resp~Genotype*Temp+(1|Plate), data=mydata)
 plot(resp.model)
 qqp(resid(resp.model), "norm")
 #Not really normal at ends
+hist(mydata$Resp)
 
-View(mydata)
 #I want to log transform, but variables range from -12 to 10
 mydata$logResp<-log(mydata$Resp+13)
 
@@ -324,18 +327,33 @@ logresp.model<-lmer(logResp~Genotype*Temp+(1|Plate), data=mydata)
 #Check assumptions
 plot(logresp.model)
 qqp(resid(logresp.model), "norm")
+hist(mydata$logResp)
 
 mydata$loglogResp<-log(mydata$logResp+1)
 loglogresp.model<-lmer(loglogResp~Genotype*Temp+(1|Plate), data=mydata)
 plot(loglogresp.model)
 qqp(resid(loglogresp.model), "norm")
-#Well, at least it's basically normal. 
+#Still not good enough 
+hist(mydata$loglogResp)
 
-anova(loglogresp.model) #nothing is is significant, because I have no power. The SE bars are huge.
-summary(loglogresp.model)
+#Removing outlier
+mydata2<-mydata[-143,]
+loglogresp.model2<-lmer(loglogResp~Genotype*Temp+(1|Plate), data=mydata2)
+qqp(resid(loglogresp.model2), "norm")
+#Still  bad
 
-resp.model2<-lm(loglogResp~Genotype*Temp, data=mydata)
-anova(resp.model2)
+#Squareroot
+mydata$sqrtResp<-sqrt(mydata$Resp+13)
+sqrtresp.model<-lmer(sqrtResp~Genotype*Temp+(1|Plate), data=mydata)
+qqp(resid(sqrtresp.model), "norm")
+#No
+
+#Fourthroot
+mydata$fourthrtResp<-sqrt(mydata$sqrtResp)
+fourthrtresp.model<-lmer(fourthrtResp~Genotype*Temp+(1|Plate), data=mydata)
+qqp(resid(fourthrtresp.model), "norm")
+#Does nothing for the small values because it makes them disproportionately smaller. 
+
 
 #Why don't we try z-scores
 mydata$Resp.z<-scale(mydata$Resp, center = TRUE, scale = TRUE)
@@ -349,8 +367,33 @@ qqp(resid(zresp.model), "norm")
 mydata<-mutate(mydata, Resp.z2 = (Resp - mean(Resp))/sd(Resp))
 #Okay, yes they're the same. So z-score didn't help, maybe that's not what I want. 
 
+#GLMER
+mydata$Resp.z.pos<-mydata$Resp.z+5
+#lognormal distribution
+qqp(mydata$Resp.z.pos, "lnorm")
+#No
+
+gamma<-fitdistr(mydata$Resp.z.pos, "gamma")
+qqp(mydata$Resp.z.pos, "gamma", shape = gamma$estimate[[1]], rate=gamma$estimate[[2]])
+#NA's produced
+
+#Try negative binomial
+nbinom <- fitdistr(mydata$Resp.z.pos, "Negative Binomial")
+qqp(StrobilatedData$Days.to.Strobilation, "nbinom", size = nbinom$estimate[[1]], mu = nbinom$estimate[[2]])
+#Error
+
+#Try poisson
+poisson <- fitdistr(mydata$Resp.z.pos, "Poisson")
+qqp(mydata$Resp.z.pos, "pois", poisson$estimate, lambda=3)
+#Error
+
+
+
+
 #Try removing Apo
-no.apo.data<-subset(mydata, Genotype != "Aposymbiotic")
+NoApoData<-mydata %>%
+  filter(Genotype != "Aposymbiotic")%>%
+  droplevels
 
 Resp.no.apo.model<-lmer(Resp~Genotype*Temp+(1|Plate), data=no.apo.data)
 qqp(resid(Resp.no.apo.model), "norm")
