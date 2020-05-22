@@ -517,18 +517,15 @@ rm(list=ls())
 mydata<-read.csv("GrowthDataCombined_r.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 mydata$Flask<-as.factor(mydata$Flask)
-View(mydata)
 
 #Getting rid of NA's, but can only do one round at a time.
 MayJuneData<-subset(mydata, Round=="MayJune")
-View(MayJuneData)
 #Pivoting data to use growthcurver package
 MayJuneGrowthData<-pivot_wider(MayJuneData, id_cols = NULL, names_from = c(Genotype,Flask,Temp),
                                names_prefix = "", names_repair = "check_unique",
                                values_from = Density_cellspermL, values_fill = NULL, values_fn = NULL)
 #removing unnecessary columns
 MayJuneGrowthData <- MayJuneGrowthData[ -c(1,2,4:18) ]
-View(MayJuneGrowthData)
 #Getting rid of NA's
 #From stack overflow response "Here it, first, performs a wide-to-long data-transformation, excluding the "A" column and removing the missing values. Second, it groups by "A" column and the variable names. Third, it removes the duplicate values. Finally, it returns the data to its original wide format."
 MayJuneData<-MayJuneGrowthData %>%
@@ -536,7 +533,6 @@ MayJuneData<-MayJuneGrowthData %>%
   group_by(Day, var) %>%
   distinct(val) %>%
   spread(var, val)
-View(MayJuneData)
 #IT WOOOOOOOOORKED
 
 ggplot(data=MayJuneData,aes(x = time, y=CCMP2464_1_32))+geom_point()
@@ -560,7 +556,7 @@ write.xlsx(gc_out, file = "GrowthcurverData.xlsx",
 model.FLCass_1_26 <- SummarizeGrowth(MayJuneData$time, MayJuneData$FLCass_1_26)
 #Let's see how it looks.
 plot(model.FLCass_1_26)
-# To see all the available metrics 
+# To see all the available metrics
 str(model.FLCass_1_26$vals)
 
 model.FLCass_2_26 <- SummarizeGrowth(MayJuneData$time, MayJuneData$FLCass_2_26)
