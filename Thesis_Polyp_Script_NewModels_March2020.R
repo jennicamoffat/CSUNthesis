@@ -152,9 +152,11 @@ hist(StrobilatedData$Days.to.Strobilation)
 Strob.model<-glmer(Days.to.Strobilation ~ Genotype*Temp+(1|Plate), data = StrobilatedData, family = binomial(link = "logit"))
 strob.summary<-StrobilatedData%>%
   group_by(Genotype, Temp)%>%
-  
+  summarize(mean=mean(Days.to.Strobilation, na.rm=TRUE), SE=sd(Days.to.Strobilation, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Strobilation))), sd=sd(Days.to.Strobilation))
+strob.summary
+#HAving issues with this code. Says y-values need to be between 0 and 1?
+#I will come back to this. 
 
-  
   
 #Time to inoculation####
 #I need to remove the NA's
@@ -250,37 +252,96 @@ summary(Inoc.model.QP)
 
 #Time to ephyra####
 #I need to remove the NA's
-TimetoEphyraData <- NoApoData %>%
+TEData <- NoApoData %>%
   filter(Days.to.Ephyra != "NA")
 
 #Make model
-TEphyramodel<-lmer(Days.to.Ephyra~Genotype*Temp+(1|Plate), data=TimetoEphyraData)
+TEmodel<-lmer(Days.to.Ephyra~Genotype*Temp+(1|Plate), data=TEData)
 #Check assumptions
-plot(TEphyramodel)
-qqp(resid(TEphyramodel), "norm")
+plot(TEmodel)
+qqp(resid(TEmodel), "norm")
 
 #log transform
-TimetoEphyraData$log.E.Days<-log(TimetoEphyraData$Days.to.Ephyra)
-logTEphyramodel<-lmer(log.E.Days~Genotype*Temp+(1|Plate), data=TimetoEphyraData)
-qqp(resid(logTEphyramodel), "norm")
+TEData$log.E.Days<-log(TEData$Days.to.Ephyra)
+logTEmodel<-lmer(log.E.Days~Genotype*Temp+(1|Plate), data=TEData)
+qqp(resid(logTEmodel), "norm")
 
 #double log
-TimetoEphyraData$loglog.E.Days<-log(TimetoEphyraData$log.E.Days)
-loglogTEphyramodel<-lmer(loglog.E.Days~Genotype*Temp+(1|Plate), data=TimetoEphyraData)
-qqp(resid(loglogTEphyramodel), "norm")
-#Mehhhh close enough?
-anova(loglogTEphyramodel)
+TEData$loglog.E.Days<-log(TEData$log.E.Days)
+loglogTEmodel<-lmer(loglog.E.Days~Genotype*Temp+(1|Plate), data=TEData)
+qqp(resid(loglogTEmodel), "norm")
+#Mehhhh
+anova(loglogTEmodel)
+
+#Square root
+TEData$sqrtEDays<-sqrt(TEData$Days.to.Ephyra)
+sqrtTEmodel<-lmer(sqrtEDays~Genotype*Temp+(1|Plate), data=TEData)
+qqp(resid(sqrtTEmodel), "norm")
+#No
+
+#Fourth root
+TEData$fourthrtEDays<-sqrt(TEData$sqrtEDays)
+fourthrtTEmodel<-lmer(fourthrtEDays~Genotype*Temp+(1|Plate), data=TEData)
+qqp(resid(fourthrtTEmodel), "norm")
+#no
+
 
 #Model selection
-TEphyra.model2<-lm(loglog.E.Days~Genotype*Temp, data=TimetoEphyraData)
-TEphyra.model3<-lm(loglog.E.Days~Genotype*Temp + Plate, data=TimetoEphyraData)
-TEphyra.model4<-lm(loglog.E.Days~Genotype*Temp*Plate, data=TimetoEphyraData)
+TEphyra.model2<-lm(loglog.E.Days~Genotype*Temp, data=TEData)
+TEphyra.model3<-lm(loglog.E.Days~Genotype*Temp + Plate, data=TEData)
+TEphyra.model4<-lm(loglog.E.Days~Genotype*Temp*Plate, data=TEData)
 anova(TEphyra.model4)
 
 AIC(loglogTEphyramodel) #-452.34
 AIC(TEphyra.model2) #-538.4.7
 AIC(TEphyra.model3) #-546.5
 AIC(TEphyra.model4) #-547.6
+
+#GLMM
+#lognormal distribution
+qqp(TEData$Days.to.Ephyra, "lnorm")
+#No
+
+gamma<-fitdistr(TEData$Days.to.Ephyra, "gamma")
+qqp(TEData$Days.to.Ephyra, "gamma", shape = gamma$estimate[[1]], rate=gamma$estimate[[2]])
+#Not really
+
+#Try negative binomial
+nbinom <- fitdistr(TEData$Days.to.Ephyra, "Negative Binomial")
+qqp(TEData$Days.to.Ephyra, "nbinom", size = nbinom$estimate[[1]], mu = nbinom$estimate[[2]])
+#no
+
+#Try poisson
+poisson <- fitdistr(TEData$Days.to.Ephyra, "Poisson")
+qqp(TEData$Days.to.Ephyra, "pois", poisson$estimate, lambda=5)
+#Probably closest
+#But changes if I change lambda...
+TE.model.poi<-glmer(Days.to.Ephyra ~ Genotype*Temp+(1|Plate), data = TEData, family = poisson(link = "log"))
+summary(TE.model.poi)
+Anova(TE.model.poi)
+
+TE.model.poi2<-glm(Days.to.Ephyra ~ Genotype*Temp*Plate, data = TEData, family = poisson(link = "log"))
+Anova(TE.model.poi2)
+
+TE.model.poi3<-glm(Days.to.Ephyra ~ Genotype*Temp, data = TEData, family = poisson(link = "log"))
+Anova(TE.model.poi3)
+
+TE.model.poi4<-glm(Days.to.Ephyra ~ Genotype+Temp, data = TEData, family = poisson(link = "log"))
+Anova(TE.model.poi4)
+
+AIC(TE.model.poi) #1328
+AIC(TE.model.poi2) #1250
+AIC(TE.model.poi3) #1330
+AIC(TE.model.poi4) #1327
+#No significant effect of plate, no interaction between geno and temp.
+
+#Why don't we try z-scores
+TEData$TE.z<-scale(TEData$Days.to.Ephyra, center = TRUE, scale = TRUE)
+TE.z.model<-lmer(TE.z~Genotype*Temp+(1|Plate), data=TEData)
+#Check assumptions
+qqp(resid(TE.z.model), "norm")
+#That's exactly the same as non-transormed...Just on a different scale. 
+
 
 #Bud production####
 Budmodel<-lmer(Total.Buds~Genotype*Temp+(1|Plate), data=mydata)
