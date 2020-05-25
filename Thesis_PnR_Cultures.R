@@ -411,7 +411,6 @@ anova(model5)
 rm(list=ls())
 #Load PnR data
 mydata<-read.csv("Data/OctoberPnR_r.csv")
-View(mydata)
 mydata$Temperature<-as.factor(mydata$Temperature)
 
 #load libraries
@@ -492,9 +491,8 @@ RespGraph+ggsave("Graphs/PnR/OctCulturePnR/RespGraph_Oct.png",width=10, height=5
 #Right now, data is really small number per 1000 cells. To get it to be 
 #a more resonible number, times it by 1,000,000 to get resp per billion cells. 
 mydata$Resp<-1000000*mydata$AvgRespPer1000Cell
-View(mydata)
 
-model1<-aov(Resp~Genotype*Temperature, data=mydata)
+model1<-lm(Resp~Genotype*Temperature, data=mydata)
 #Check assumptions
 model1res<-resid(model1)
 qqp(model1res, "norm")
@@ -502,57 +500,99 @@ qqp(model1res, "norm")
 
 #Log transform
 mydata$logResp<-log(mydata$Resp+3)
-log.Resp.model<-aov(logResp~Genotype*Temperature, data=mydata)
+log.Resp.model<-lm(logResp~Genotype*Temperature, data=mydata)
 qqp(resid(log.Resp.model), "norm")
 #Different, but not better?
 
 #Square root
 mydata$sqrtResp<-sqrt(mydata$Resp+3)
-sqrt.Resp.model<-aov(sqrtResp~Genotype*Temperature, data=mydata)
+sqrt.Resp.model<-lm(sqrtResp~Genotype*Temperature, data=mydata)
 qqp(resid(sqrt.Resp.model), "norm")
 #Not better
 
 #Fourth root
 mydata$quadrtResp<-sqrt(mydata$sqrtResp)
-quardrt.Resp.model<-aov(quadrtResp~Genotype*Temperature, data=mydata)
+quardrt.Resp.model<-lm(quadrtResp~Genotype*Temperature, data=mydata)
 qqp(resid(quardrt.Resp.model), "norm")
-#Worse than square. I'm just gonna run it with square root for now...
-
+#Worse than square. I'm just gonna run it with square root for now.
 anova(sqrt.Resp.model)
+
+#Trying generalized linear model. 
+#lognormal distribution
+qqp(mydata$Resp, "lnorm")
+#No
+
+gamma<-fitdistr(mydata$Resp, "gamma")
+qqp(mydata$Resp, "gamma", shape = gamma$estimate[[1]], rate=gamma$estimate[[2]])
+#Doesn't work with negatives 
+
+#Try negative binomial
+nbinom <- fitdistr(mydata$Resp, "Negative Binomial")
+qqp(InocData$Days.to.Inoculation, "nbinom", size = nbinom$estimate[[1]], mu = nbinom$estimate[[2]])
+#Doesn't work with negatives or non-integars
+
+#Try poisson
+poisson <- fitdistr(mydata$Resp, "Poisson")
+qqp(InocData$Days.to.Inoculation, "pois", poisson$estimate, lambda=8)
+#Doesn't work with negatives or non-integars
+
+#BoxCox transformation
+#Response variable must be positive. Adding 3
+mydata$PosResp<-mydata$Resp+3
+View(mydata)
+full.resp.model<-lm(PosResp ~ Genotype*Temperature, data = mydata)
+step.resp.model<-stepAIC(full.resp.model, direction="both", trace = F)
+
+boxcox<-boxcox(step.resp.model,lambda = seq(-5, 5, 1/1000),plotit = TRUE )
+
+Selected.Power<-boxcox$x[boxcox$y==max(boxcox$y)]
+Selected.Power
+#3.051
+
+mydata$cubedResp<-(mydata$PosResp)^3.051
+hist(mydata$Resp)
+hist(mydata$PosResp)
+hist(mydata$cubedResp)
+
+cubed.resp.model<-lm(cubedResp~Genotype*Temperature, data = mydata)
+qqp(resid(cubed.resp.model), "norm")
+#Hey that's pretty damn close!
+plot(cubed.resp.model)
+Anova(cubed.resp.model, type="III")
 
 #Net Photo. NP = umol O2 per billion cells. ####
 mydata$NP<-1000000*mydata$AvgNPPer1000Cell
 
-NP.model<-aov(NP~Genotype*Temperature, data=mydata)
+NP.model<-lm(NP~Genotype*Temperature, data=mydata)
 #Check assumptions
 qqp(resid(NP.model), "norm")
 
 #Square root
 mydata$sqrtNP<-sqrt(mydata$NP)
-sqrt.NP.model<-aov(sqrtNP~Genotype*Temperature, data=mydata)
+sqrt.NP.model<-lm(sqrtNP~Genotype*Temperature, data=mydata)
 qqp(resid(sqrt.NP.model), "norm")
 #Better
 
 #Fourth root
 mydata$fourthrtNP<-sqrt(sqrt(mydata$NP))
-quadrt.NP.model<-aov(fourthrtNP~Genotype*Temperature, data=mydata)
+quadrt.NP.model<-lm(fourthrtNP~Genotype*Temperature, data=mydata)
 qqp(resid(quadrt.NP.model), "norm")
 #That's pretty much normal. Just one outlier
-anova(quadrt.NP.model)
+Anova(quadrt.NP.model, type="III")
 
 
-#Gross photosynthesis. GP = gross photo umol O2 per billion cells
+#Gross photosynthesis. GP = gross photo umol O2 per billion cells####
 mydata$GP<-1000000*mydata$AvgGPPer1000Cell
 
-model1<-aov(GP~Genotype*Temperature, data=mydata)
+model1<-lm(GP~Genotype*Temperature, data=mydata)
 #Check assumptions
 model1res<-resid(model1)
 qqp(model1res, "norm")
 
 #Fourth root
 mydata$fourthrtGP<-sqrt(sqrt(mydata$GP))
-model1<-aov(fourthrtGP~Genotype*Temperature, data=mydata)
+model1<-lm(fourthrtGP~Genotype*Temperature, data=mydata)
 model1res<-resid(model1)
 qqp(model1res, "norm")
 #That's normal
-anova(model1)
+Anova(model1, type="III")
