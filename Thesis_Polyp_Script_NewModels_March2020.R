@@ -325,9 +325,8 @@ AIC(TEphyra.model3) #-538
 AIC(TEphyra.model4) #-494
 #full model is best
 Anova(TEphyra.model2)#Plate matters
-Anova(loglogTEmodel)#Interaction is 0.08
-Anova(TEphyra.model4)
-
+Anova(loglogTEmodel, type="III")#Interaction is 0.08
+Anova(TEphyra.model4, type="III")
 
 #Boxcox
 full.TE.model<-lm(Days.to.Ephyra ~ Genotype*Temp*Plate, data=TEData)
@@ -431,7 +430,6 @@ anova(Budmodel2)
 #Columns: Geno, Temp, Plate, Survived (yes or no), and Frequency (count of that combo)
 Survival<- mydata%>%group_by(Genotype, Temp, Plate, Survive.to.End)%>%
   tally(Survive.to.End == "Yes")
-
 #I have one NA for survial b/c I spilled it and lost it. Just gonna remove it. 
 mydata2<-mydata%>%
   filter(Survive.to.End != "NA")
@@ -449,8 +447,14 @@ View(Survival)
 #Run model
 Survival.model<-glm(Freq~Genotype:Survived + Temp:Survived + Plate:Survived + Genotype:Temp:Survived + Genotype:Plate:Survived + Temp:Plate:Survived + Genotype:Temp:Plate:Survived, family=poisson, data=Survival)
 anova(Survival.model, test="Chisq")
-#all of the interactions are 1 or very close to one. Only effect is Genotype, I think because they mostly all survived. 
+summary(Survival.model)
+#all of the interactions are 1 or very close to one. I think because they mostly all survived. 
 #Genotype and Temp signficiantly affected survival, but no interaction. 
+
+Survival.model2<-glm(Freq~Genotype:Survived + Temp:Survived + Genotype:Temp:Survived, family=poisson, data=Survival)
+anova(Survival.model2, test="Chisq")
+#removing plate gives me a more normal output. Geno*Temp P=0.94245
+#But sig effect of geno and temp independently
 
 #In the output, we're interested in the effect of Season, which is the Season:Fruit interaction
 #and the effect of Treatment, which is Treatment:Fruit
