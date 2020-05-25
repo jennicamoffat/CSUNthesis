@@ -317,7 +317,7 @@ resp.model<-lmer(Resp~Genotype*Temp+(1|Plate), data=mydata)
 #Check assumptions
 plot(resp.model)
 qqp(resid(resp.model), "norm")
-#Not really normal at ends
+#Not normal at ends
 hist(mydata$Resp)
 
 #I want to log transform, but variables range from -12 to 10
@@ -354,7 +354,6 @@ fourthrtresp.model<-lmer(fourthrtResp~Genotype*Temp+(1|Plate), data=mydata)
 qqp(resid(fourthrtresp.model), "norm")
 #Does nothing for the small values because it makes them disproportionately smaller. 
 
-
 #Why don't we try z-scores
 mydata$Resp.z<-scale(mydata$Resp, center = TRUE, scale = TRUE)
 View(mydata)
@@ -366,6 +365,38 @@ qqp(resid(zresp.model), "norm")
 #Maybe that code doesn't work. Trying it manually. 
 mydata<-mutate(mydata, Resp.z2 = (Resp - mean(Resp))/sd(Resp))
 #Okay, yes they're the same. So z-score didn't help, maybe that's not what I want. 
+
+#BoxCox transformation
+#Response variable must be positive. Adding 13
+mydata$PosResp<-mydata$Resp+13
+View(mydata)
+full.resp.model<-lm(PosResp ~ Genotype*Temp*Plate, data=mydata)
+step.resp.model<-stepAIC(full.resp.model, direction="both", trace = F)
+
+boxcox<-boxcox(step.resp.model,lambda = seq(-5, 5, 1/1000),plotit = TRUE )
+
+Selected.Power<-boxcox$x[boxcox$y==max(boxcox$y)]
+Selected.Power
+#1.49
+
+mydata$Resp.trans<-(mydata$PosResp)^1.49
+trans.resp.model<-lm(Resp.trans~Genotype*Temp*Plate, data = mydata)
+qqp(resid(trans.resp.model), "norm")
+#Well that didn't work as well as I hoped. 
+hist(mydata$Resp.trans)
+Anova(trans.resp.model, type="III")
+plot(trans.resp.model)
+
+trans.resp.model2<-lmer(Resp.trans~Genotype*Temp+(1|Plate), data=mydata)
+qqp(resid(trans.resp.model2), "norm")
+Anova(trans.resp.model2, type="III")
+
+trans.resp.model3<-lmer(Resp.trans~Genotype+Temp+(1|Plate), data=mydata)
+Anova(trans.resp.model3, type="III")
+
+AIC(trans.resp.model)
+AIC(trans.resp.model2) #By far the lowest
+AIC(trans.resp.model3)
 
 #GLMER
 mydata$Resp.z.pos<-mydata$Resp.z+5
@@ -386,9 +417,6 @@ qqp(StrobilatedData$Days.to.Strobilation, "nbinom", size = nbinom$estimate[[1]],
 poisson <- fitdistr(mydata$Resp.z.pos, "Poisson")
 qqp(mydata$Resp.z.pos, "pois", poisson$estimate, lambda=3)
 #Error
-
-
-
 
 #Try removing Apo
 NoApoData<-mydata %>%
