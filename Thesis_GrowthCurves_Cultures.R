@@ -745,11 +745,12 @@ sqrtr.model<-lm(sqrtr~Genotype*Temp*Round, data=mydata2)
 qqp(resid(sqrtr.model), "norm")
 #Not as good as log
 
-anova(logr.model)
+Anova(logr.model)
 #Round is significant
 
-logr.model2<-lmer(logr~Genotype*Temp+(1|Round), data=mydata2)
-summary(logr.model2)
+logr.model2<-lmer(logr~Genotype*Temp, data=mydata2)
+Anova(logr.model2, type="III")
+#No sig interaction
 
 #Removing CCMP2464 altogether
 lessdata<-subset(mydata2, Genotype !="CCMP2464")
@@ -764,7 +765,71 @@ qqp(resid(logNo2464.model), "norm")
 anova(logNo2464.model)
 #No different conclusions. 
 
-#Graphing growthcurver max growthrate
+#Boxcox
+full.growth.model<-lm(r ~ Genotype*Temp*Round, data=mydata2)
+step.growth.model<-stepAIC(full.growth.model, direction="both", trace = F)
+
+boxcox<-boxcox(step.growth.model,lambda = seq(-5, 5, 1/1000),plotit = TRUE )
+
+Selected.Power<-boxcox$x[boxcox$y==max(boxcox$y)]
+Selected.Power
+#0.18
+
+mydata2$transf.r<-(mydata2$r)^0.18
+transf.growth.model<-lm(transf.r~Genotype*Temp*Round, data = mydata2)
+qqp(resid(transf.growth.model), "norm")
+#I think that's the same as log, so I'll just stick with log
+
+
+#Running stats on growth rate from growthcurver separated by round####
+#MayJune
+MayJuneData<-mydata2%>%
+  filter(Round=="MayJune")%>%
+  droplevels()
+
+May.model<-lm(r~Genotype*Temp, data=MayJuneData)
+qqp(resid(May.model), "norm")
+#Normal, yay!
+plot(May.model)
+Anova(May.model, type="III")
+
+#July
+JulyData<-mydata2%>%
+  filter(Round=="July")%>%
+  droplevels()
+July.model<-lm(r~Genotype*Temp, data=JulyData)
+qqp(resid(July.model), "norm")
+#Not normal
+
+JulyData$logr<-log(JulyData$r)
+logJuly.model<-lm(logr~Genotype*Temp, data=JulyData)
+qqp(resid(logJuly.model), "norm")
+#Still not good enough
+
+JulyData$loglogr<-log(JulyData$logr+3)
+loglogJuly.model<-lm(loglogr~Genotype*Temp, data=JulyData)
+qqp(resid(loglogJuly.model), "norm")
+#Hm close
+
+#BoxCox
+full.model<-lm(r ~ Genotype*Temp, data=JulyData)
+step.model<-stepAIC(full.model, direction="both", trace = F)
+
+boxcox<-boxcox(step.model,lambda = seq(-5, 5, 1/1000),plotit = TRUE )
+
+Selected.Power<-boxcox$x[boxcox$y==max(boxcox$y)]
+Selected.Power
+#0.15
+
+JulyData$transf.r<-(JulyData$r)^0.15
+transf.model<-lm(transf.r~Genotype*Temp, data = JulyData)
+qqp(resid(transf.model), "norm")
+#Worse than double log
+
+#Using double log
+Anova(loglogJuly.model, type="III")
+
+#Graphing growthcurver max growthrate####
 mydata<-read.csv("Data/GrowthcurverData_r.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 mydata$Flask<-as.factor(mydata$Flask)
