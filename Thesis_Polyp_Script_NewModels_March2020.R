@@ -128,6 +128,25 @@ AIC(Strob.model3) #-433.4
 AIC(Strob.model4) #-488.2
 #Model with all interactions is lowest again. 
 
+#Boxcox
+full.strob.model<-lm(Days.to.Strobilation ~ Genotype*Temp*Plate, data=StrobilatedData)
+step.strob.model<-stepAIC(full.strob.model, direction="both", trace = F)
+
+boxcox<-boxcox(step.strob.model,lambda = seq(-5, 5, 1/1000),plotit = TRUE )
+
+Selected.Power<-boxcox$x[boxcox$y==max(boxcox$y)]
+Selected.Power
+#-0.352
+
+StrobilatedData$Strob.trans<-(StrobilatedData$Days.to.Strobilation)^-0.352
+trans.strob.model<-lm(Strob.trans~Genotype*Temp*Plate, data = StrobilatedData)
+qqp(resid(trans.strob.model), "norm")
+#I think that's close enough
+Anova(trans.strob.model, type="III")
+#error about aliased coefficients in the model?
+trans.strob.model2<-lmer(Strob.trans~Genotype*Temp+(1|Plate), data=StrobilatedData)
+Anova(trans.strob.model2, type="III")
+
 #GLMER 
 #lognormal distribution
 qqp(StrobilatedData$Days.to.Strobilation, "lnorm")
@@ -154,8 +173,16 @@ strob.summary<-StrobilatedData%>%
   group_by(Genotype, Temp)%>%
   summarize(mean=mean(Days.to.Strobilation, na.rm=TRUE), SE=sd(Days.to.Strobilation, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Strobilation))), sd=sd(Days.to.Strobilation))
 strob.summary
-#HAving issues with this code. Says y-values need to be between 0 and 1?
+#Having issues with this code. Says y-values need to be between 0 and 1?
 #I will come back to this. 
+
+#Why don't we try z-scores
+StrobilatedData$Strob.z<-scale(StrobilatedData$Days.to.Strobilation, center = TRUE, scale = TRUE)
+zstrob.model<-lmer(Strob.z~Genotype*Temp+(1|Plate), data=StrobilatedData)
+#Check assumptions
+qqp(resid(zstrob.model), "norm")
+
+
 
   
 #Time to inoculation####
@@ -285,17 +312,52 @@ fourthrtTEmodel<-lmer(fourthrtEDays~Genotype*Temp+(1|Plate), data=TEData)
 qqp(resid(fourthrtTEmodel), "norm")
 #no
 
-
+#Double log is best
 #Model selection
-TEphyra.model2<-lm(loglog.E.Days~Genotype*Temp, data=TEData)
-TEphyra.model3<-lm(loglog.E.Days~Genotype*Temp + Plate, data=TEData)
-TEphyra.model4<-lm(loglog.E.Days~Genotype*Temp*Plate, data=TEData)
-anova(TEphyra.model4)
+loglogTEmodel<-lmer(loglog.E.Days~Genotype*Temp+(1|Plate), data=TEData)
+TEphyra.model2<-lm(loglog.E.Days~Genotype*Temp*Plate, data=TEData)
+TEphyra.model3<-lm(loglog.E.Days~Genotype*Temp, data=TEData)
+TEphyra.model4<-lmer(loglog.E.Days~Genotype+Temp+(1|Plate), data=TEData)
 
-AIC(loglogTEphyramodel) #-452.34
-AIC(TEphyra.model2) #-538.4.7
-AIC(TEphyra.model3) #-546.5
-AIC(TEphyra.model4) #-547.6
+AIC(loglogTEmodel) #-452
+AIC(TEphyra.model2) #-547
+AIC(TEphyra.model3) #-538
+AIC(TEphyra.model4) #-494
+#full model is best
+Anova(TEphyra.model2)#Plate matters
+Anova(loglogTEmodel)#Interaction is 0.08
+Anova(TEphyra.model4)
+
+
+#Boxcox
+full.TE.model<-lm(Days.to.Ephyra ~ Genotype*Temp*Plate, data=TEData)
+step.TE.model<-stepAIC(full.TE.model, direction="both", trace = F)
+
+boxcox<-boxcox(step.TE.model,lambda = seq(-5, 5, 1/1000),plotit = TRUE )
+
+Selected.Power<-boxcox$x[boxcox$y==max(boxcox$y)]
+Selected.Power
+#-0.409
+
+TEData$TE.trans<-(TEData$Days.to.Ephyra)^-0.409
+trans.TE.model<-lm(TE.trans~Genotype*Temp*Plate, data = TEData)
+qqp(resid(trans.TE.model), "norm")
+#I think that's close enough
+plot(trans.TE.model)
+Anova(trans.TE.model, type="III")
+#Aliased coefficients error?
+Anova(trans.TE.model) #Plate matters
+trans.TE.model2<-lmer(TE.trans~Genotype*Temp+(1|Plate), data = TEData)
+plot(trans.TE.model2)
+qqp(resid(trans.TE.model2), "norm")
+Anova(trans.TE.model2, Type="III")
+
+trans.TE.model3<-lmer(TE.trans~Genotype+Temp+(1|Plate), data = TEData)
+Anova(trans.TE.model3, type="III")
+
+AIC(trans.TE.model2) #-920
+AIC(trans.TE.model3) #-978
+
 
 #GLMM
 #lognormal distribution
