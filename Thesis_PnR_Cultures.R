@@ -413,12 +413,6 @@ rm(list=ls())
 mydata<-read.csv("Data/OctoberPnR_r.csv")
 mydata$Temperature<-as.factor(mydata$Temperature)
 
-#load libraries
-library(tidyverse)
-library(car)
-library(MASS)
-
-
 #October PnR graphs#####
 
 #Gross photosynthesis. GP = gross photo umol O2 per billion cells
@@ -441,6 +435,22 @@ GPGraph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), gro
 GPGraph
 GPGraph+ggsave("Graphs/PnR/OctCulturePnR/GPGraph_Oct.png",width=10, height=5)
 
+#GP Boxplot
+#boxplot
+culture.GP.boxplot<-mydata%>%
+  ggplot(aes(x=Genotype, y=GP, fill=Temperature))+
+  geom_boxplot()+
+  theme_bw()+
+  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  ggtitle("Gross Photosynthesis of Cultures")+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature", x="Genotype", y=expression(Gross~Photo.~(µmol~O[2]/min/10^{"9"}~cells)))+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+culture.GP.boxplot+ggsave("Graphs/PnR/OctCulturePnR/Oct_GP_Boxplot.png", width=10, height=5)
 
 #Net Photo. NP = umol O2 per billion cells. 
 mydata$NP<-1000000*mydata$AvgNPPer1000Cell
@@ -461,6 +471,22 @@ NPGraph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temperature), gro
   ggtitle("Net Photosynthesis of Symbiont Strains")
 NPGraph
 NPGraph+ggsave("Graphs/PnR/OctCulturePnR/NPGraph_Oct.png",width=10, height=5)
+
+#NP Boxplot
+culture.NP.boxplot<-mydata%>%
+  ggplot(aes(x=Genotype, y=NP, fill=Temperature))+
+  geom_boxplot()+
+  theme_bw()+
+  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  ggtitle("Net Photosynthesis of Cultures")+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature", x="Genotype", y=expression(Net~Photo.~(µmol~O[2]/min/10^{"9"}~cells)))+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+culture.NP.boxplot+ggsave("Graphs/PnR/OctCulturePnR/Oct_NP_boxplot.png",width=10, height=5)
 
 #Right now, data is really small number per 1000 cells. To get it to be 
 #a more resonible number, times it by 1,000,000 to get resp per billion cells. Resp = umol O2 per billion cells per min
@@ -483,6 +509,21 @@ RespGraph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temperature),
   ggsave("Graphs/PnR/RespGraph_Oct.pdf", width=11, height=6.19, dpi=300, unit="in")
 RespGraph
 RespGraph+ggsave("Graphs/PnR/OctCulturePnR/RespGraph_Oct.png",width=10, height=5)
+
+#Respiration boxplot
+culture.Resp.boxplot<-mydata%>%
+  ggplot(aes(x=Genotype, y=Resp, fill=Temperature))+
+  geom_boxplot()+
+  theme_bw()+
+  ggtitle("Respiration of Cultures")+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature", x="Genotype", y=expression(Respiration~(µmol~O[2]/min/10^{"9"}~cells)))+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+culture.Resp.boxplot+ggsave("Graphs/PnR/OctCulturePnR/Oct_Resp_Boxplot.png",width=10, height=5)
 
 #October PnR Stats#####
 
