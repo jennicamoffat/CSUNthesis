@@ -6,14 +6,17 @@ rm(list=ls())
 #Load data
 mydata<-read.csv("Data/Thesis_PolypData_Summary.csv")
 mydata$Temp<-as.factor(mydata$Temp)
-View(mydata)
+NoApoData <- mydata %>%
+  filter(Genotype != "Aposymbiotic") %>%
+  droplevels
+
 
 #load libraries
 library(tidyverse)
 library(car)
 
-#GRAPHS####
-#Graph of total average ephyra production including dead ones####
+#GRAPHS#
+#Bargraph of total average ephyra production including dead ones####
 #New data frame without Apo (since no ephyra)
 NoApoData <- subset(mydata, Genotype != "Aposymbiotic")
 
@@ -33,6 +36,44 @@ TotalEphyraPlot<-ggplot(TotalEphyra, aes(x=Genotype, y=mean, fill=factor(Temp), 
 TotalEphyraPlot
 
 TotalEphyraPlot+ggsave("Graphs/Polyps/EphyraProduced_deadincluded.pdf", width=11, height=6.19, dpi=300, unit="in")
+
+#Boxplot of total ephyra production####
+NoApoDataEphyra<-NoApoData%>%
+  filter(Total.Ephyra.Produced!="NA")
+
+boxplot<-NoApoDataEphyra%>%
+  ggplot(aes(x=Genotype, y=Total.Ephyra.Produced, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  scale_x_discrete(name = "Genotype") +
+  scale_y_continuous(name = "Total Ephyra Produced")+
+  ggtitle("Total ephyra production per polyp")+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature")+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+boxplot
+#Since they all either produced 0, 1, or 2, there's too many dots to use jitter
+#I think bargraph is best to represent this one. 
+
+violinplot<-NoApoDataEphyra%>%
+  ggplot(aes(x=Genotype, y=Total.Ephyra.Produced, fill=Temp))+
+  geom_violin()+
+  theme_bw()+
+  scale_x_discrete(name = "Genotype") +
+  scale_y_continuous(name = "Total Ephyra Produced")+
+  ggtitle("Total ephyra production per polyp")+
+  theme(plot.title = element_text(hjust=0.5, face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature")+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+violinplot
 
 
 #New dataframe without dead
@@ -78,7 +119,6 @@ EphyraifInocPlot
 EphyraifInocPlot+ggsave("Graphs/Polyps/EphyraifInoc.pdf", width=11, height=6.19, dpi=300, unit="in")
 
 
-
 #Time to strobilation####
 #Removing the NA's, which are the ones that never strobilated. Losing part of the story. 
 #How to manage?
@@ -108,6 +148,24 @@ ggplot(NoApoNoDeadData, aes(x=Genotype, y=Days.to.Strobilation, fill=factor(Temp
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "brown3"), labels=c("26°C", "30°C", "32°C"))
 #Automatically removes all NA's values, so graph is just of those that did strobilate
 
+
+strob.boxplot<-NoApoData%>%
+  ggplot(aes(x=Genotype, y=Days.to.Strobilation, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  scale_x_discrete(name = "Genotype") +
+  scale_y_continuous(name = "Days to Strobilation")+
+  ggtitle("Days to Strobilation")+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature")+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+strob.boxplot+ggsave("Graphs/Polyps/DaystoStrob.boxplot.png", width=10, height=5)
+
 #Time to inoculation (same issue as strobilation)####
 DaystoInocNoDead <- NoApoNoDeadData %>%
   group_by(Genotype, Temp) %>%
@@ -125,6 +183,24 @@ DaystoInocNoDeadPlot<-ggplot(DaystoInocNoDead, aes(x=Genotype, y=mean, fill=fact
 DaystoInocNoDeadPlot
 
 DaystoInocNoDeadPlot+ggsave("Graphs/Polyps/DaystoInoc_deadremoved.pdf", width=11, height=6.19, dpi=300, unit="in")
+
+#Time to inoculation boxplot####
+inoc.boxplot<-NoApoData%>%
+  ggplot(aes(x=Genotype, y=Days.to.Inoculation, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  scale_x_discrete(name = "Genotype") +
+  scale_y_continuous(name = "Days to Inoculation")+
+  ggtitle("Days to Inoculation")+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature")+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+inoc.boxplot+ggsave("Graphs/Polyps/Inoculation.boxplot.png", width=10, height=5)
 
 #time to ephyra####
 #same issue as above
@@ -147,6 +223,23 @@ DaystoEphyraNoDeadPlot
 
 DaystoEphyraNoDeadPlot+ggsave("Graphs/Polyps/DaystoEphyra_deadremoved.pdf", width=11, height=6.19, dpi=300, unit="in")
 
+#boxplot
+TE.boxplot<-NoApoData%>%
+  ggplot(aes(x=Genotype, y=Days.to.Ephyra, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  scale_x_discrete(name = "Genotype") +
+  scale_y_continuous(name = "Days to Ephyra")+
+  ggtitle("Days to Produce First Ephyra")+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature")+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+TE.boxplot+ggsave("Graphs/Polyps/DaystoEphyra.boxplot.png", width=10, height=5)
 
 #Survival####
 #I have one weird NA from a spilled one. Just gonna remove it. 
@@ -205,7 +298,57 @@ BudPlot
 
 BudPlot+ggsave("Graphs/Polyps/BudPlot_deadremoved.pdf", width=11, height=6.19, dpi=300, unit="in")
 
+#Boxplot
+bud.boxplot<-mydata%>%
+  ggplot(aes(x=Genotype, y=Total.Buds, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  scale_x_discrete(name = "Genotype") +
+  scale_y_continuous(name = "Number of Buds")+
+  ggtitle("Total Bud Production per Polyp")+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature")+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+bud.boxplot+ggsave("Graphs/Polyps/Bud.boxplot.png", width=10, height=5)
 
+bud.boxplot.nojitter<-mydata%>%
+  ggplot(aes(x=Genotype, y=Total.Buds, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  scale_x_discrete(name = "Genotype") +
+  scale_y_continuous(name = "Number of Buds")+
+  ggtitle("Total Bud Production per Polyp")+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature")+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+bud.boxplot.nojitter+ggsave("Graphs/Polyps/Bud.boxplot.nojitter.png", width=10, height=5)
+
+#violin
+bud.violin<-mydata%>%
+  ggplot(aes(x=Genotype, y=Total.Buds, fill=Temp))+
+  geom_violin()+
+  theme_bw()+
+  scale_x_discrete(name = "Genotype") +
+  scale_y_continuous(name = "Number of Buds")+
+  ggtitle("Total Bud Production per Polyp")+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature")+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+bud.violin
+#Nothing too crazy, but good to double check. 
 
 #STATS####
 #Clear the environment
