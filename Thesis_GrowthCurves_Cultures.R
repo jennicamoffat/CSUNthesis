@@ -4,11 +4,13 @@
 #load libraries
 library(tidyverse)
 library(RColorBrewer)
-library("wesanderson")
+library(wesanderson)
 library(ggpmisc)
 library(car)
 library(agricolae)
-
+library(hrbrthemes)
+library(viridis)
+library(PNWColors)
 library(reshape2)
 library(growthcurver)
 library(purrr)
@@ -855,6 +857,65 @@ Growthcurver.r.Graph<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp)
   ggtitle("Exponential Growth Rates from growthcruver package")
 Growthcurver.r.Graph
 Growthcurver.r.Graph+ggsave("GrowthCurverGraph_growthrates.pdf", width=10, height=6.19, dpi=300, unit="in")
+
+#Boxplot of growthercurver max growth rate####
+mydata<-read.csv("Data/GrowthcurverData_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
+View(mydata)
+#going to remove CCMP2464 from MayJune
+mydata2<-mydata[-c(13:24),]
+View(mydata2)
+#Reordering round so MayJune comes up first
+mydata2$Round<-factor(mydata2$Round, levels = c("MayJune", "July"))
+
+pal=pnw_palette("Starfish",3, type = "discrete")
+pal=wes_palette("Moonrise3", 3, type = c("discrete"))
+scale_fill_manual(values = wes_palette("Moonrise3"), labels=c("26°C", "30°C", "32°C"))
+pal
+colors(pal)
+#blue: #79CFDB
+#green: #859A51
+#pink: #DFADE1
+
+boxplot<-mydata2%>%
+  ggplot(aes(x=Genotype, y=r, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  geom_jitter(color="black", size=1, alpha=0.7)+
+  scale_x_discrete(name = "Genotype") +
+  scale_y_continuous(name = "Max growth rate (r)")+
+  ggtitle("Maximum Growth Rate (from growthcurver package)")+
+  theme(plot.title = element_text(hjust=0.5, face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature")+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))+
+  facet_wrap(  ~ Round)
+boxplot
+boxplot+ggsave("Graphs/Growth/Growthcurver.growthrate.boxplot.png", width=10, height=5)
+
+violinplot<-mydata2%>%
+  ggplot(aes(x=Genotype, y=r, fill=Temp))+
+  geom_violin()+
+  facet_wrap( ~Round)
+violinplot
+
+data %>%
+  ggplot( aes(x=name, y=value, fill=name)) +
+  geom_boxplot() +
+  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) +
+  theme_ipsum() +
+  theme(
+    legend.position="none",
+    plot.title = element_text(size=11)
+  ) +
+  ggtitle("A boxplot with jitter") +
+  xlab("")
+
 
 #Graphing values I got using excel to calculate exponential growth####
 #exponenant from exponential equation
