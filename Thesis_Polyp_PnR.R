@@ -98,12 +98,12 @@ write.csv(pnr.data.cleaned,"Data/Polyp_PnR_data_cleaned.csv", row.names = FALSE)
 #Exporting full pnr data, too, so I have counts and everything. 
 write.csv(all.pnr.data, "Data/Polyp_PnR_full_combined_data.csv", row.names= FALSE)
 
-#PnR graphs#####
+#PnR graphs by count/area (density)#####
 mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 View(mydata)
 
-#Resp
+#Resp graphs####
 SummaryResp <- mydata %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Resp), SE=sd(Resp)/sqrt(length(na.omit(Resp))))
@@ -170,7 +170,24 @@ Resp.polyp.graph.temp.no.apo<-ggplot(SummaryRespTemp.no.apo, aes(x=Temp, y=mean)
 
 Resp.polyp.graph.temp.no.apo
 
-#GP
+#Resp boxplot
+polyp.Resp.boxplot<-mydata%>%
+  ggplot(aes(x=Genotype, y=Resp, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  ggtitle("Respiration of Holobiont")+
+  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature", x="Genotype", y=expression(Respiration~(µmol~O[2]/min/10^{"9"}~cells)))+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+polyp.Resp.boxplot+ggsave("Graphs/PnR/PolypPnR/PolypRespbyArea.boxplot.png", width=10, height=5)
+
+
+#GP counts/area graphs####
 SummaryGP <- mydata %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(GP), SE=sd(GP)/sqrt(length(na.omit(GP))))
@@ -237,6 +254,24 @@ GP.polyp.graph.temp.no.apo<-ggplot(SummaryGP.temp.no.apo, aes(x=Temp, y=mean))+ 
   ggsave("Graphs/PnR/PolypGP.temp.no.apo.pdf", width=11, height=6.19, dpi=300, unit="in")
 GP.polyp.graph.temp.no.apo
 
+#GP boxplot
+polyp.GP.boxplot<-mydata%>%
+  ggplot(aes(x=Genotype, y=GP, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  ggtitle("Gross Photosynthesis of Holobiont")+
+  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature", x="Genotype", y=expression(Gross~Photo.~(µmol~O[2]/min/10^{"9"}~cells)))+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+polyp.GP.boxplot
+polyp.GP.boxplot+ggsave("Graphs/PnR/PolypPnR/PolypGPbyArea.boxplot.png", width=10, height=5)
+
+
 #NP
 SummaryNP <- mydata %>%
   group_by(Genotype, Temp) %>%
@@ -301,6 +336,10 @@ NP.polyp.graph.temp.no.apo<-ggplot(SummaryNP.temp.no.apo, aes(x=Temp, y=mean))+ 
   ggtitle("Net Photosynthesis of Polyps by Temperature (Apo removed)")+
   ggsave("Graphs/PnR/PolypNP.temp.no.apo.pdf", width=11, height=6.19, dpi=300, unit="in")
 NP.polyp.graph.temp.no.apo
+
+#GP boxplot
+
+
 
 #Polyp PnR Stats####
 mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
