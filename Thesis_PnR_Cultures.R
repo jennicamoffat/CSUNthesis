@@ -4,7 +4,7 @@
 #Clear the environment
 rm(list=ls())
 #Load PnR data
-mydata<-read.csv("AugustPnR_r_github.csv")
+mydata<-read.csv("Data/AugustPnR_r_github.csv")
 View(mydata)
 
 #load libraries
