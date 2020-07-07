@@ -9,6 +9,7 @@ mydata$Temp<-as.factor(mydata$Temp)
 NoApoData <- mydata %>%
   filter(Genotype != "Aposymbiotic") %>%
   droplevels
+NoApoNoDeadData <- subset(NoApoData, Survive.to.End == "Yes")
 
 
 #load libraries
@@ -18,7 +19,9 @@ library(car)
 #GRAPHS#
 #Bargraph of total average ephyra production including dead ones####
 #New data frame without Apo (since no ephyra)
-NoApoData <- subset(mydata, Genotype != "Aposymbiotic")
+NoApoData <- mydata %>%
+  filter(Genotype != "Aposymbiotic") %>%
+  droplevels
 
 TotalEphyra <- NoApoData %>%
   group_by(Genotype, Temp) %>%
@@ -36,6 +39,38 @@ TotalEphyraPlot<-ggplot(TotalEphyra, aes(x=Genotype, y=mean, fill=factor(Temp), 
 TotalEphyraPlot
 
 TotalEphyraPlot+ggsave("Graphs/Polyps/EphyraProduced_deadincluded.pdf", width=11, height=6.19, dpi=300, unit="in")
+
+#Just temp, not geno
+TotalEphyraTemp <- NoApoData %>%
+  group_by(Temp) %>%
+  summarize(mean=mean(Total.Ephyra.Produced, na.rm=TRUE), SE=sd(Total.Ephyra.Produced, na.rm=TRUE)/sqrt(length(na.omit(Total.Ephyra.Produced))))
+TotalEphyraTemp
+
+TotalEphyraPlotTemp<-ggplot(TotalEphyraTemp, aes(x=Temp, y=mean))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6, fill="mediumorchid4") + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Temperature", y="Average Ephyra per polyp")+  #labels the x and y axes
+  ggtitle("Average Ephyra produced per Polyp (dead included)")
+  
+TotalEphyraPlotTemp+ggsave("Graphs/Polyps/EphyraByTemp.png", width=10, height=5)
+
+#Just geno, not temp
+TotalEphyraGeno <- NoApoData %>%
+  group_by(Genotype) %>%
+  summarize(mean=mean(Total.Ephyra.Produced, na.rm=TRUE), SE=sd(Total.Ephyra.Produced, na.rm=TRUE)/sqrt(length(na.omit(Total.Ephyra.Produced))))
+TotalEphyraGeno
+
+TotalEphyraPlotGeno<-ggplot(TotalEphyraGeno, aes(x=Genotype, y=mean))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6, fill="darkseagreen3") + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y="Average Ephyra per polyp")+  #labels the x and y axes
+  ggtitle("Average Ephyra produced per Polyp (dead included)")
+TotalEphyraPlotGeno
+TotalEphyraPlotGeno+ggsave("Graphs/Polyps/EphyraByGeno.png", width=10, height=5)
 
 #Boxplot of total ephyra production####
 NoApoDataEphyra<-NoApoData%>%
@@ -164,7 +199,39 @@ strob.boxplot<-NoApoData%>%
         axis.title.x = element_text(face="bold", size=12))+
   labs(fill="Temperature")+
   scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+
 strob.boxplot+ggsave("Graphs/Polyps/DaystoStrob.boxplot.png", width=10, height=5)
+
+#Just temp, not geno
+DaystoStrobNoDeadTemp <- NoApoNoDeadData %>%
+  group_by(Temp) %>%
+  summarize(mean=mean(Days.to.Strobilation, na.rm=TRUE), SE=sd(Days.to.Strobilation, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Strobilation))))
+DaystoStrobNoDeadTemp
+
+DaysStrobTemp<-ggplot(DaystoStrobNoDeadTemp, aes(x=Temp, y=mean))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6, fill="mediumorchid4") + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Temperature", y="Days to strobilation")+  #labels the x and y axes
+  ggtitle("Average Days to Strobilation (no dead)")
+DaysStrobTemp+ggsave("Graphs/Polyps/DaystoStrobTemp.png", width=10, height=5)
+
+#Just geno, not temp
+DaystoStrobNoDeadGeno <- NoApoNoDeadData %>%
+  group_by(Genotype) %>%
+  summarize(mean=mean(Days.to.Strobilation, na.rm=TRUE), SE=sd(Days.to.Strobilation, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Strobilation))))
+DaystoStrobNoDeadGeno
+
+DaysStrobGeno<-ggplot(DaystoStrobNoDeadGeno, aes(x=Genotype, y=mean))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6, fill="darkseagreen3") + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y="Days to Strobilation")+  #labels the x and y axes
+  ggtitle("Average Days to Strobilation (no dead)")
+DaysStrobGeno+ggsave("Graphs/Polyps/DaystoStrobGeno.png", width=10, height=5)
+
 
 #Time to inoculation (same issue as strobilation)####
 DaystoInocNoDead <- NoApoNoDeadData %>%
@@ -183,6 +250,37 @@ DaystoInocNoDeadPlot<-ggplot(DaystoInocNoDead, aes(x=Genotype, y=mean, fill=fact
 DaystoInocNoDeadPlot
 
 DaystoInocNoDeadPlot+ggsave("Graphs/Polyps/DaystoInoc_deadremoved.pdf", width=11, height=6.19, dpi=300, unit="in")
+
+#Just temp, not geno
+DaystoInocNoDeadTemp <- NoApoNoDeadData %>%
+  group_by(Temp) %>%
+  summarize(mean=mean(Days.to.Inoculation, na.rm=TRUE), SE=sd(Days.to.Inoculation, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Inoculation))))
+DaystoInocNoDeadTemp
+
+DaysInocTemp<-ggplot(DaystoInocNoDeadTemp, aes(x=Temp, y=mean))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6, fill="mediumorchid4") + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Temperature", y="Days to inoculation")+  #labels the x and y axes
+  ggtitle("Average Days to Inoculation (no dead)")
+DaysInocTemp+ggsave("Graphs/Polyps/DaystoInocTemp.png", width=10, height=5)
+
+#Just geno, not temp
+DaystoInocNoDeadGeno <- NoApoNoDeadData %>%
+  group_by(Genotype) %>%
+  summarize(mean=mean(Days.to.Inoculation, na.rm=TRUE), SE=sd(Days.to.Inoculation, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Inoculation))))
+DaystoInocNoDeadGeno
+
+DaysInocGeno<-ggplot(DaystoInocNoDeadGeno, aes(x=Genotype, y=mean))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6, fill="darkseagreen3") + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Temperature", y="Days to inoculation")+  #labels the x and y axes
+  ggtitle("Average Days to Inoculation (no dead)")
+DaysInocGeno+ggsave("Graphs/Polyps/DaystoInocGeno.png", width=10, height=5)
+
 
 #Time to inoculation boxplot####
 inoc.boxplot<-NoApoData%>%
@@ -240,6 +338,37 @@ TE.boxplot<-NoApoData%>%
   labs(fill="Temperature")+
   scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
 TE.boxplot+ggsave("Graphs/Polyps/DaystoEphyra.boxplot.png", width=10, height=5)
+
+
+#Just temp, not geno
+DaystoEphyraNoDeadTemp <- NoApoNoDeadData %>%
+  group_by(Temp) %>%
+  summarize(mean=mean(Days.to.Ephyra, na.rm=TRUE), SE=sd(Days.to.Ephyra, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Ephyra))))
+DaystoEphyraNoDeadTemp
+
+DaysEphyraTemp<-ggplot(DaystoEphyraNoDeadTemp, aes(x=Temp, y=mean))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6, fill="mediumorchid4") + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Temperature", y="Days to ephyra")+  #labels the x and y axes
+  ggtitle("Average Days to Ephyra (no dead)")
+DaysEphyraTemp+ggsave("Graphs/Polyps/DaystoEphyraTemp.png", width=10, height=5)
+
+#Just geno, not temp
+DaystoEphyraNoDeadGeno <- NoApoNoDeadData %>%
+  group_by(Genotype) %>%
+  summarize(mean=mean(Days.to.Ephyra, na.rm=TRUE), SE=sd(Days.to.Ephyra, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Ephyra))))
+DaystoEphyraNoDeadGeno
+
+DaysEphyraGeno<-ggplot(DaystoEphyraNoDeadGeno, aes(x=Genotype, y=mean))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6, fill="darkseagreen3") + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Temperature", y="Days to ephyra")+  #labels the x and y axes
+  ggtitle("Average Days to Ephyra (no dead)")
+DaysEphyraGeno+ggsave("Graphs/Polyps/DaystoEphyraGeno.png", width=10, height=5)
 
 #Survival####
 #I have one weird NA from a spilled one. Just gonna remove it. 
@@ -349,6 +478,37 @@ bud.violin<-mydata%>%
   scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
 bud.violin
 #Nothing too crazy, but good to double check. 
+
+
+#Just temp, not geno
+BudDataTemp<-NoDeadData%>%
+  group_by(Temp)%>%
+  summarize(mean=mean(Total.Buds, na.rm=TRUE), SE=sd(Total.Buds, na.rm=TRUE)/sqrt(length(na.omit(Total.Buds))))
+BudDataTemp
+
+BudTemp<-ggplot(BudDataTemp, aes(x=Temp, y=mean))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6, fill="mediumorchid4") + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Temperature", y="Number of buds")+  #labels the x and y axes
+  ggtitle("Average Bud Production (no dead)")
+BudTemp+ggsave("Graphs/Polyps/BudsTemp.png", width=10, height=5)
+
+#Just geno, not temp
+BudDataGeno<-NoDeadData%>%
+  group_by(Genotype)%>%
+  summarize(mean=mean(Total.Buds, na.rm=TRUE), SE=sd(Total.Buds, na.rm=TRUE)/sqrt(length(na.omit(Total.Buds))))
+BudDataGeno
+
+BudsGeno<-ggplot(BudDataGeno, aes(x=Genotype, y=mean))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6, fill="darkseagreen3") + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Temperature", y="Number of Buds")+  #labels the x and y axes
+  ggtitle("Average Bud Production (no dead)")
+BudsGeno+ggsave("Graphs/Polyps/BudsGeno.png", width=10, height=5)
 
 #STATS####
 #Clear the environment
