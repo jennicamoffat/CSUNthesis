@@ -426,14 +426,14 @@ SummaryGP
 GPGraph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(0, 5.5))+
-  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Genotype", y=expression(Gross~Photo.~(µmol~O[2]/min/10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
   ggtitle("Gross Photosynthesis of Symbiont Strains")
 GPGraph
-GPGraph+ggsave("Graphs/PnR/OctCulturePnR/GPGraph_Oct.png",width=10, height=5)
+GPGraph+ggsave("Graphs/PnR/OctCulturePnR/GPGraph_Oct.png",width=8, height=5)
 
 #GP Boxplot
 #boxplot
@@ -463,14 +463,14 @@ SummaryNP
 NPGraph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(0, 7))+
-  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Genotype", y=expression(Net~Photo.~(µmol~O[2]/min/10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
   ggtitle("Net Photosynthesis of Symbiont Strains")
 NPGraph
-NPGraph+ggsave("Graphs/PnR/OctCulturePnR/NPGraph_Oct.png",width=10, height=5)
+NPGraph+ggsave("Graphs/PnR/OctCulturePnR/NPGraph_Oct.png",width=8, height=5)
 
 #NP Boxplot
 culture.NP.boxplot<-mydata%>%
@@ -500,15 +500,14 @@ SummaryResp
 RespGraph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(-1.8,0))+
-  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Genotype", y=expression(Respiration~(µmol~O[2]/min/10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
   ggtitle("Respiration of Symbiont Strains")
-  ggsave("Graphs/PnR/RespGraph_Oct.pdf", width=11, height=6.19, dpi=300, unit="in")
 RespGraph
-RespGraph+ggsave("Graphs/PnR/OctCulturePnR/RespGraph_Oct.png",width=10, height=5)
+RespGraph+ggsave("Graphs/PnR/OctCulturePnR/RespGraph_Oct.png",width=8, height=5)
 
 #Respiration boxplot
 culture.Resp.boxplot<-mydata%>%
