@@ -337,8 +337,21 @@ NP.polyp.graph.temp.no.apo<-ggplot(SummaryNP.temp.no.apo, aes(x=Temp, y=mean))+ 
   ggsave("Graphs/PnR/PolypNP.temp.no.apo.pdf", width=11, height=6.19, dpi=300, unit="in")
 NP.polyp.graph.temp.no.apo
 
-#GP boxplot
-
+#NP boxplot
+polyp.NP.boxplot<-mydata%>%
+  ggplot(aes(x=Genotype, y=NP, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  ggtitle("Net Photosynthesis of Holobiont")+
+  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature", x="Genotype", y=expression(Net~Photo.~(µmol~O[2]/min/10^{"9"}~cells)))+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+polyp.NP.boxplot+ggsave("Graphs/PnR/PolypPnR/PolypNPbyArea.boxplot.png", width=10, height=5)
 
 
 #Polyp PnR Stats####
