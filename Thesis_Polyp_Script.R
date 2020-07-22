@@ -3,6 +3,11 @@
 
 #Clear the environment
 rm(list=ls())
+
+#load libraries
+library(tidyverse)
+library(car)
+
 #Load data
 mydata<-read.csv("Data/Thesis_PolypData_Summary.csv")
 mydata$Temp<-as.factor(mydata$Temp)
@@ -10,11 +15,6 @@ NoApoData <- mydata %>%
   filter(Genotype != "Aposymbiotic") %>%
   droplevels
 NoApoNoDeadData <- subset(NoApoData, Survive.to.End == "Yes")
-
-
-#load libraries
-library(tidyverse)
-library(car)
 
 #GRAPHS#
 #Bargraph of total average ephyra production including dead ones####
@@ -310,8 +310,9 @@ DaystoEphyraNoDead <- NoApoNoDeadData %>%
 DaystoEphyraNoDead
 
 DaystoEphyraNoDeadPlot<-ggplot(DaystoEphyraNoDead, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
-  theme_bw()+ #Removes grey background
-  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  theme_bw()+ #Removes grey background+
+  scale_y_continuous(expand=c(0,0), limits=c(0, 28))+
+  theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Genotype", y="Avg days", fill="Temperature")+  #labels the x and y axes
