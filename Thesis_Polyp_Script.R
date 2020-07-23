@@ -34,7 +34,7 @@ TotalEphyraPlot<-ggplot(TotalEphyra, aes(x=Genotype, y=mean, fill=factor(Temp), 
   theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y="Number of ephyra", fill="Temperature")+  #labels the x and y axes
+  labs(x="Symbiont Strain", y="Number of ephyra", fill="Temperature")+  #labels the x and y axes
   ggtitle("Average Ephyra produced per Polyp")+
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "brown3"), labels=c("26°C", "30°C", "32°C"))
 TotalEphyraPlot
@@ -169,7 +169,7 @@ DaystoStrobNoDeadPlot<-ggplot(DaystoStrobNoDead, aes(x=Genotype, y=mean, fill=fa
   theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y="Number of days", fill="Temperature")+  #labels the x and y axes
+  labs(x="Symbiont Strain", y="Number of days", fill="Temperature")+  #labels the x and y axes
   ggtitle("Average Days to Strobilation")+
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "brown3"), labels=c("26°C", "30°C", "32°C"))
 DaystoStrobNoDeadPlot
@@ -243,15 +243,16 @@ DaystoInocNoDead
 
 DaystoInocNoDeadPlot<-ggplot(DaystoInocNoDead, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  scale_y_continuous(expand=c(0,0), limits=c(0, 24))+
+  theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y="Avg days to inoculation", fill="Temperature")+  #labels the x and y axes
-  ggtitle("Average Days to Inoculation (dead removed)")+
+  labs(x="Symbiont Strain", y="Number of days", fill="Temperature")+  #labels the x and y axes
+  ggtitle("Average Days to Inoculation")+
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "brown3"), labels=c("26°C", "30°C", "32°C"))
 DaystoInocNoDeadPlot
 
-DaystoInocNoDeadPlot+ggsave("Graphs/Polyps/DaystoInoc_deadremoved.pdf", width=11, height=6.19, dpi=300, unit="in")
+DaystoInocNoDeadPlot+ggsave("Graphs/Polyps/DaystoInoc_deadremoved.png", width=8, height=5)
 
 #Just temp, not geno
 DaystoInocNoDeadTemp <- NoApoNoDeadData %>%
@@ -317,12 +318,12 @@ DaystoEphyraNoDeadPlot<-ggplot(DaystoEphyraNoDead, aes(x=Genotype, y=mean, fill=
   theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y="Number of days", fill="Temperature")+  #labels the x and y axes
+  labs(x="Symbiont Strain", y="Number of days", fill="Temperature")+  #labels the x and y axes
   ggtitle("Average Days to Produce an Ephyra")+
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "brown3"), labels=c("26°C", "30°C", "32°C"))
 DaystoEphyraNoDeadPlot
 
-DaystoEphyraNoDeadPlot+ggsave("Graphs/Polyps/DaystoEphyra_deadremoved.pdf", width=11, height=6.19, dpi=300, unit="in")
+DaystoEphyraNoDeadPlot+ggsave("Graphs/Polyps/DaystoEphyra_deadremoved.png", width=8, height=5)
 
 #boxplot
 TE.boxplot<-NoApoData%>%
@@ -424,7 +425,7 @@ BudPlot<-ggplot(BudData, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor
   theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y="Number of buds", fill="Temperature")+  #labels the x and y axes
+  labs(x="Symbiont Strain", y="Number of buds", fill="Temperature")+  #labels the x and y axes
   ggtitle("Average buds produced per polyp")+
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "brown3"), labels=c("26°C", "30°C", "32°C"))
 BudPlot
