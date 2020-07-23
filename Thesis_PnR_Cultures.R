@@ -429,7 +429,7 @@ GPGraph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), gro
   theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y=expression(Gross~Photo.~(µmol~O[2]/min/10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
+  labs(x="Symbiont Strain", y=expression(Gross~Photo.~(µmol~O[2]/min/10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
   ggtitle("Gross Photosynthesis of Symbiont Strains")
 GPGraph
@@ -466,7 +466,7 @@ NPGraph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temperature), gro
   theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y=expression(Net~Photo.~(µmol~O[2]/min/10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
+  labs(x="Symbiont Strain", y=expression(Net~Photo.~(µmol~O[2]/min/10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
   ggtitle("Net Photosynthesis of Symbiont Strains")
 NPGraph
@@ -503,7 +503,7 @@ RespGraph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temperature),
   theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y=expression(Respiration~(µmol~O[2]/min/10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
+  labs(x="Symbiont Strain", y=expression(Respiration~(µmol~O[2]/min/10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
   ggtitle("Respiration of Symbiont Strains")
 RespGraph
