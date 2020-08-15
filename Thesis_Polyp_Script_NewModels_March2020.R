@@ -19,6 +19,28 @@ NoApoData <- mydata %>%
   filter(Genotype != "Aposymbiotic") %>%
   droplevels
 
+summary(NoApoData$Total.Ephyra.Produced)
+NoApoData$Total.Ephyra.Produced<-as.factor(NoApoData$Total.Ephyra.Produced)
+View(NoApoData)
+FilteredData<-NoApoData %>%
+  filter(Total.Ephyra.Produced == 1|Total.Ephyra.Produced == 2)
+FilteredData$Genotype<-as.factor(FilteredData$Genotype)
+summary(FilteredData$Genotype)
+
+summary.data<-FilteredData%>%
+  group_by(Genotype, Temp, Plate)%>%
+  count()
+summary.data.fewer<-summary.data%>%
+  filter(n<3)
+sum(summary.data.fewer$n)
+#22 total ephyra from plates where 3 or less were produced (need to do all of those)
+
+summary.data.more<-summary.data%>%
+  filter(n>2)
+#43 geno/temp/plate combos with 3+ ephyra produced, only need to do three from each row
+43*3 = 129
+#129+22=151
+
 #Genotype (fixed) and Temperature (fixed) on dependent variables 
 
 #Total average ephyra production####
