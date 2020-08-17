@@ -521,16 +521,17 @@ mydata$Temp<-as.factor(mydata$Temp)
 mydata$Flask<-as.factor(mydata$Flask)
 
 #Getting rid of NA's, but can only do one round at a time.
-MayJuneData<-subset(mydata, Round=="MayJune")
+MayJuneDat<-subset(mydata, Round=="MayJune")
 #Pivoting data to use growthcurver package
-MayJuneGrowthData<-pivot_wider(MayJuneData, id_cols = NULL, names_from = c(Genotype,Flask,Temp),
+#Value for each new cell is cell density from average (cells/mL)
+MayJuneGrowthData<-pivot_wider(MayJuneDat, id_cols = NULL, names_from = c(Genotype,Flask,Temp),
                                names_prefix = "", names_repair = "check_unique",
                                values_from = Density_cellspermL, values_fill = NULL, values_fn = NULL)
-#removing unnecessary columns
-MayJuneGrowthData <- MayJuneGrowthData[ -c(1,2,4:18) ]
+#removing unnecessary columns (round, method, calculations, individual counts)
+MayJuneGrowthData2 <- MayJuneGrowthData[ -c(1,2,4:18) ]
 #Getting rid of NA's
 #From stack overflow response "Here it, first, performs a wide-to-long data-transformation, excluding the "A" column and removing the missing values. Second, it groups by "A" column and the variable names. Third, it removes the duplicate values. Finally, it returns the data to its original wide format."
-MayJuneData<-MayJuneGrowthData %>%
+MayJuneData<-MayJuneGrowthData2 %>%
   gather(var, val, -Day, na.rm = TRUE) %>%
   group_by(Day, var) %>%
   distinct(val) %>%
