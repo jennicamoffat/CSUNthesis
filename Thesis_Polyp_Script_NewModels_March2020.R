@@ -10,6 +10,7 @@ library(car)
 library(lme4)
 library(lmerTest)
 library(MASS)
+library(gplots)
 
 #Load data
 mydata<-read.csv("Data/Thesis_PolypData_Summary.csv")
@@ -65,6 +66,8 @@ AIC(Ephyra.model2) #348.4
 AIC(Ephyra.model3) #343.1
 AIC(Ephyra.model4) #342.8
 #Model with all interactions is lowest.
+#But use model with plate as random factor to account for it. 
+Anova(sqrtEphyraModel, type="III")
 
 #Time to strobilation####
 
@@ -126,7 +129,7 @@ AIC(loglogStrobmodel) #-348.2
 AIC(Strob.model2) #-431.7
 AIC(Strob.model3) #-433.4
 AIC(Strob.model4) #-488.2
-#Model with all interactions is lowest again. 
+#Model with all interactions is lowest again.
 
 #Boxcox
 full.strob.model<-lm(Days.to.Strobilation ~ Genotype*Temp*Plate, data=StrobilatedData)
@@ -199,7 +202,7 @@ qqp(resid(Inoc.model), "norm")
 
 InocData$logIDays<-log(InocData$Days.to.Inoculation)
 log.Inoc.model<-lmer(logIDays~Genotype*Temp+(1|Plate), data=InocData)
-logInocmodelres<-resid(logInocmodel)
+logInocmodelres<-resid(log.Inoc.model)
 qqp(resid(log.Inoc.model), "norm")
 #Better, but not good enough. 
 
@@ -222,11 +225,12 @@ qqp(resid(quadrtInocmodel), "norm")
 #Worse
 
 #Running it with the logged data for now
-logInoc.model<-lm(logIDays~Genotype*Temp*Plate, data=InocData)
-anova(Inoc.model2)
+log.Inoc.model.full<-lm(logIDays~Genotype*Temp*Plate, data=InocData)
+anova(log.Inoc.model.full)
 #plate has an effect. Need to use original model
-anova(log.Inoc.model)
-#interaction: P=0.009616
+Anova(log.Inoc.model, type="III")
+#interaction: P=0.007982
+AIC(log.Inoc.model) #214
 
 #Gotta do generalized linear model. 
 #lognormal distribution
@@ -377,9 +381,10 @@ poisson <- fitdistr(TEData$Days.to.Ephyra, "Poisson")
 qqp(TEData$Days.to.Ephyra, "pois", poisson$estimate, lambda=5)
 #Probably closest
 #But changes if I change lambda...
+#5 fits the best
 TE.model.poi<-glmer(Days.to.Ephyra ~ Genotype*Temp+(1|Plate), data = TEData, family = poisson(link = "log"))
 summary(TE.model.poi)
-Anova(TE.model.poi)
+Anova(TE.model.poi, type="III")
 
 TE.model.poi2<-glm(Days.to.Ephyra ~ Genotype*Temp*Plate, data = TEData, family = poisson(link = "log"))
 Anova(TE.model.poi2)
@@ -390,10 +395,15 @@ Anova(TE.model.poi3)
 TE.model.poi4<-glm(Days.to.Ephyra ~ Genotype+Temp, data = TEData, family = poisson(link = "log"))
 Anova(TE.model.poi4)
 
+TE.model.poi5<-glmer(Days.to.Ephyra ~ Genotype+Temp+(1|Plate), data = TEData, family = poisson(link = "log"))
+summary(TE.model.poi5)
+Anova(TE.model.poi5, type="III")
+
 AIC(TE.model.poi) #1328
 AIC(TE.model.poi2) #1250
 AIC(TE.model.poi3) #1330
 AIC(TE.model.poi4) #1327
+AIC(TE.model.poi5) #1324
 #No significant effect of plate, no interaction between geno and temp.
 
 #Why don't we try z-scores
@@ -413,7 +423,7 @@ qqp(resid(Budmodel), "norm")
 Budmodel2<-lm(Total.Buds~Genotype*Temp, data=mydata)
 Budmodel3<-lm(Total.Buds~Genotype*Temp+Plate, data=mydata)
 Budmodel4<-lm(Total.Buds~Genotype*Temp*Plate, data=mydata)
-anova(Budmodel4)
+Anova(Budmodel4, type="III")
 #Plate actually has no effect on any other variables, for once. 
 
 AIC(Budmodel) #1580
@@ -421,7 +431,7 @@ AIC(Budmodel2) #1567
 AIC(Budmodel3)#1569
 AIC(Budmodel4)#1631
 #Without plate is best
-anova(Budmodel2)
+Anova(Budmodel2, type="III")
 #Interaction: P=0.002318
 
 
@@ -442,7 +452,6 @@ Survival<- mydata2_df%>%group_by(Genotype, Temp, Plate, Survive.to.End, .drop=FA
 
 #Renaming Survive.to.End to Survived because I'm dumb and made a very long column name
 names(Survival)[names(Survival) == 'Survive.to.End'] <- 'Survived'
-View(Survival)
 
 #Run model
 Survival.model<-glm(Freq~Genotype:Survived + Temp:Survived + Plate:Survived + Genotype:Temp:Survived + Genotype:Plate:Survived + Temp:Plate:Survived + Genotype:Temp:Plate:Survived, family=poisson, data=Survival)
@@ -456,18 +465,30 @@ anova(Survival.model2, test="Chisq")
 #removing plate gives me a more normal output. Geno*Temp P=0.94245
 #But sig effect of geno and temp independently
 
-#In the output, we're interested in the effect of Season, which is the Season:Fruit interaction
-#and the effect of Treatment, which is Treatment:Fruit
-#and the interactions between Season and Treatment, which is Season:Treatment:Fruit
+Survival.model3<-glm(Freq~Temp:Survived + Genotype:Survived + Genotype:Temp:Survived, family=poisson, data=Survival)
+anova(Survival.model3, test="Chisq")
+#Well, order matters. Fun. 
 
+#Different code for Chi-squared test
+mod0 <- glm(Freq ~ Genotype + Temp + Plate + Survived, 
+            data = Survival, family = poisson)
+summary(mod0)
+cbind(mod0$data, fitted(mod0))
 
-#Trying something else. Running model and just telling it that it's bimodal
-View(mydata2)
-#Adding column with yes/no changed to 1/0
-survival_bino<-mydata2 %>% mutate(Survived = ifelse(Survive.to.End == "Yes", 1, ifelse(Survive.to.End == "No", 0, "NA")))
-View(survival_bino)
-#Logisitic regression. 
-survival.bino.model<-glm(Survived~Temp*Genotype, family=binomial, data=survival_bino)
-#Logisitic regression requires continuous predictor. So, this doesn't work. Duh. 
+mod1<-glm(Freq ~ Genotype*Temp*Plate*Survived, 
+          data = Survival, family = poisson)
+deviance(mod1)
+anova(mod1, test="Chisq")
+#No sig effect of plate
 
+mod2<-glm(Freq~Genotype*Temp*Survived, data=Survival, family=poisson)
+anova(mod2, test="Chisq")
+#No sig interaction of geno and temp on survival
 
+mod3<-glm(Freq~(Genotype*Survived)+(Temp*Survived), data=Survival, family=poisson)
+anova(mod3, test="Chisq")
+#So genotype doesn't matter, just temp?
+
+mod4<-glm(Freq~(Temp*Survived)+(Genotype*Survived), data=Survival, family=poisson)
+anova(mod4,test="Chisq")
+#Hooray, order doesn't matter now!
