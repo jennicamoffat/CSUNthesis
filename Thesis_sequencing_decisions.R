@@ -39,3 +39,14 @@ summary.data.more<-summary.data%>%
 #43 geno/temp/plate combos with 3+ ephyra produced, only need to do three from each row
 43*3 = 129
 #129+22=151 ephyra
+
+
+#Full dataset
+polypdat<-read.csv("Data/Thesis_PolypData_Summary.csv")
+polypPnRdat<-read.csv("Data/Polyp_PnR_full_combined_data.csv")
+ALLpolypdat<-full_join(polypdat, polypPnRdat, by = "WellNum", copy = FALSE)
+write.csv(ALLpolypdat,"Data/ALL_polyp_data.csv", row.names = FALSE)
+
+
+
+
