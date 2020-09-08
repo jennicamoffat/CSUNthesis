@@ -701,7 +701,7 @@ kGraph_noCCMP2458orRT362 + ggsave("GrowthCurverGraph_carrycapacity2.pdf", width=
 #Well the carrying capacity is useless. I needed to take more and longer data. Varies completely from one round to another
 
 
-#Trying r because k is useless#####
+#Graphing r#####
 rm(list=ls())
 mydata<-read.csv("Data/GrowthcurverData_r.csv")
 mydata$Temp<-as.factor(mydata$Temp)
@@ -712,34 +712,47 @@ mydata2<-mydata %>%
   mutate(Round = as.character(Round),
          Round = if_else(Round == 'MayJune', 'May', Round),
          Round = as.factor(Round))
-
-View(mydata)
 #going to remove CCMP2464 from MayJune
 mydata3<-mydata2[-c(13:24),]
 
 Summary2 <- mydata3 %>%
   group_by(Genotype, Temp, Round) %>%
   summarize(mean=mean(r, na.rm=TRUE), SE=sd(r, na.rm=TRUE)/sqrt(length(na.omit(r))))
-View(Summary2)
 Summary2$Round <- factor(Summary2$Round,levels = c("May", "July"))
 
 pal=pnw_palette("Sailboat",3)
 pal=wes_palette("Moonrise3", 3)
-pal=pnw_palette("Starfish", 3)
-
+pal=pnw_palette("Sunset2", 3)
+pal<-c("#2c6184", "#f9ad2a", "#cc5c76")
+pal<-c("#675478", "#efbc82", "#c67b6f") #Modified Sunset
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #I think this is the one! Modified Shuksan and sunset combined
 
 rGraph<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  theme(axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Symbiont Genotype", y="Maximum growth rate (r)", fill="Temperature")+#labels the x and y axes
-  scale_fill_manual(values = pal, labels = c("26°C", "30°C", "32°C"))+
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
   ggtitle("Exponential Growth Rates calculated with growthcurver package")+
   scale_y_continuous(expand=c(0,0), limits=c(0,1))+
   facet_wrap(  ~ Round)
 rGraph
 rGraph+ggsave("GrowthCurverGraph_growthrate.pdf", width=10, height=6.19, dpi=300, unit="in")
+
+#Removing title, otherwise same as graph above
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f")
+rGraph.final<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  labs(x="Symbiont Genotype", y="Maximum growth rate (r)", fill="Temperature")+#labels the x and y axes
+  theme(axis.text.x=element_text(color="black", size=11, angle = 30, hjust=1), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
+  scale_y_continuous(expand=c(0,0), limits=c(0,1))+
+  facet_wrap(  ~ Round)
+rGraph.final
+rGraph.final+ggsave("Graphs/FinalGraphs/culture_growth.png", width=8, height=5)
 
 model1<-lm(r~Genotype*Temp*Round, data=mydata2)
 model1res<-resid(model1)
