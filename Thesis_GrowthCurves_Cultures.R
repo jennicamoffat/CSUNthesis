@@ -14,6 +14,7 @@ library(PNWColors)
 library(reshape2)
 library(growthcurver)
 library(purrr)
+library(PNWColors)
 
 #Clear the environment
 rm(list=ls())
@@ -705,26 +706,38 @@ rm(list=ls())
 mydata<-read.csv("Data/GrowthcurverData_r.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 mydata$Flask<-as.factor(mydata$Flask)
+
+#Change name of MayJune to just May
+mydata2<-mydata %>%
+  mutate(Round = as.character(Round),
+         Round = if_else(Round == 'MayJune', 'May', Round),
+         Round = as.factor(Round))
+
 View(mydata)
 #going to remove CCMP2464 from MayJune
-mydata2<-mydata[-c(13:24),]
-View(mydata2)
+mydata3<-mydata2[-c(13:24),]
 
-Summary2 <- mydata2 %>%
+Summary2 <- mydata3 %>%
   group_by(Genotype, Temp, Round) %>%
   summarize(mean=mean(r, na.rm=TRUE), SE=sd(r, na.rm=TRUE)/sqrt(length(na.omit(r))))
 View(Summary2)
-Summary2$Round <- factor(Summary2$Round,levels = c("MayJune", "July"))
+Summary2$Round <- factor(Summary2$Round,levels = c("May", "July"))
+
+pal=pnw_palette("Sailboat",3)
+pal=wes_palette("Moonrise3", 3)
+pal=pnw_palette("Starfish", 3)
+
 
 rGraph<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
   theme(axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y="r", fill="Temperature")+#labels the x and y axes
-  facet_wrap(  ~ Round)+
-  scale_fill_manual(values = wes_palette("Moonrise3"))+
-  ggtitle("Exponential Growth Rates calculated with growthcurver package")
+  labs(x="Symbiont Genotype", y="Maximum growth rate (r)", fill="Temperature")+#labels the x and y axes
+  scale_fill_manual(values = pal, labels = c("26°C", "30°C", "32°C"))+
+  ggtitle("Exponential Growth Rates calculated with growthcurver package")+
+  scale_y_continuous(expand=c(0,0), limits=c(0,1))+
+  facet_wrap(  ~ Round)
 rGraph
 rGraph+ggsave("GrowthCurverGraph_growthrate.pdf", width=10, height=6.19, dpi=300, unit="in")
 
