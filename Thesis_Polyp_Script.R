@@ -11,10 +11,19 @@ library(car)
 #Load data
 mydata<-read.csv("Data/Thesis_PolypData_Summary.csv")
 mydata$Temp<-as.factor(mydata$Temp)
+
+#Aposymbiotic removed (for developmental timing and ephyra)
 NoApoData <- mydata %>%
   filter(Genotype != "Aposymbiotic") %>%
   droplevels
+#Apo and dead removed 
 NoApoNoDeadData <- subset(NoApoData, Survive.to.End == "Yes")
+
+#Adding columns for each developmental stage to see percentage that actually reached that stage in 28 days
+Developed.data<-NoApoData%>%
+  mutate(Inoc = ifelse(is.na(Days.to.Inoculation), "No", "Yes"),
+         Strob=ifelse(is.na(Days.to.Strobilation), "No", "Yes"),
+         Ephyra=ifelse(is.na(Days.to.Ephyra), "No", "Yes"))
 
 #GRAPHS#
 #Bargraph of total average ephyra production including dead ones####
@@ -26,7 +35,6 @@ NoApoData <- mydata %>%
 TotalEphyra <- NoApoData %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Total.Ephyra.Produced, na.rm=TRUE), SE=sd(Total.Ephyra.Produced, na.rm=TRUE)/sqrt(length(na.omit(Total.Ephyra.Produced))))
-TotalEphyra
 
 TotalEphyraPlot<-ggplot(TotalEphyra, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
@@ -40,6 +48,23 @@ TotalEphyraPlot<-ggplot(TotalEphyra, aes(x=Genotype, y=mean, fill=factor(Temp), 
 TotalEphyraPlot
 
 TotalEphyraPlot+ggsave("Graphs/Polyps/EphyraProduced_deadincluded.png", width=8, height=5)
+
+#Total Ephyra final plot
+pal<-c("#79CFDB", "#859A51", "#DFADE1") #blue, green, pink (not colorblind friendly)
+pal<-c("#2c7fb8", "#7fcdbb", "#edf8b1") #blue greens
+pal<-c("#88CCEE", "#DDCC77", "#CC6677") #blue, yellow, orange
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
+
+Ephyra.final<-ggplot(TotalEphyra, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  labs(x="Symbiont Genotype", y="Ephyra Produced", fill="Temperature")+#labels the x and y axes
+  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
+  scale_y_continuous(expand=c(0,0), limits=c(0,1.6))
+Ephyra.final
+Ephyra.final+ggsave("Graphs/FinalGraphs/polyp_totalephyra.png", width=8, height=5)
 
 #Just temp, not geno
 TotalEphyraTemp <- NoApoData %>%
@@ -158,10 +183,19 @@ EphyraifInocPlot+ggsave("Graphs/Polyps/EphyraifInoc.pdf", width=11, height=6.19,
 #Time to strobilation####
 #Removing the NA's, which are the ones that never strobilated. Losing part of the story. 
 #How to manage?
+
+#First, let's see how many even got to strobilation
+total.strob<-Developed.data%>%
+  group_by(Genotype, Temp, Strob)%>%
+  tally()
+ggplot(total.strob, aes(fill=Strob, y=n, x=Temp))+
+  geom_bar(position="stack", stat="identity")+
+  facet_wrap(~Genotype)
+
+
 DaystoStrobNoDead <- NoApoNoDeadData %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Days.to.Strobilation, na.rm=TRUE), SE=sd(Days.to.Strobilation, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Strobilation))))
-DaystoStrobNoDead
 
 DaystoStrobNoDeadPlot<-ggplot(DaystoStrobNoDead, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
@@ -236,6 +270,14 @@ DaysStrobGeno+ggsave("Graphs/Polyps/DaystoStrobGeno.png", width=10, height=5)
 
 
 #Time to inoculation (same issue as strobilation)####
+#First, let's see how many even inoculated
+total.inoc<-Developed.data%>%
+  group_by(Genotype, Temp, Inoc)%>%
+  tally()
+ggplot(total.inoc, aes(fill=Inoc, y=n, x=Temp))+
+  geom_bar(position="stack", stat="identity")+
+  facet_wrap(~Genotype)
+
 DaystoInocNoDead <- NoApoNoDeadData %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Days.to.Inoculation, na.rm=TRUE), SE=sd(Days.to.Inoculation, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Inoculation))))
@@ -304,9 +346,15 @@ inoc.boxplot<-NoApoData%>%
 inoc.boxplot+ggsave("Graphs/Polyps/Inoculation.boxplot.png", width=10, height=5)
 
 #time to ephyra####
-#same issue as above
+#First, let's see how many even got to strobilation
+time.ephyra.total<-Developed.data%>%
+  group_by(Genotype, Temp, Ephyra)%>%
+  tally()
+ggplot(time.ephyra.total, aes(fill=Ephyra, y=n, x=Temp))+
+  geom_bar(position="stack", stat="identity")+
+  facet_wrap(~Genotype)
 
-
+#Boxplot of those that did produce an ephyra
 DaystoEphyraNoDead <- NoApoNoDeadData %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Days.to.Ephyra, na.rm=TRUE), SE=sd(Days.to.Ephyra, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Ephyra))))
