@@ -3,17 +3,16 @@
 
 #Clear the environment
 rm(list=ls())
-#August PnR - DO NOT USE. Photorespirometer was not calibrated properly.####
-#Load PnR data
-mydata<-read.csv("Data/AugustPnR_r_github.csv")
-View(mydata)
-
 #load libraries
 library(tidyverse)
 library(car)
 library(MASS)
 library(RColorBrewer)
 library(broman)
+
+#August PnR - DO NOT USE. Photorespirometer was not calibrated properly.####
+#Load PnR data
+mydata<-read.csv("Data/AugustPnR_r_github.csv")
 
 #Current PnR values are actually X umol of O2 per 10,000,000 (or 10^7) cells  (per minute)
 #To get it to be a more reasonable number on the x-axis, and per 100,000 cells instead, 
@@ -543,10 +542,15 @@ culture.Resp.boxplot+ggsave("Graphs/PnR/OctCulturePnR/Oct_Resp_Boxplot.png",widt
 #October PnR Stats#####
 
 #Genotype (fixed) and Temperature (fixed) on dependent variables (NP, GP, and Resp)
-#Respiration
-#Right now, data is really small number per 1000 cells. To get it to be 
-#a more resonible number, times it by 1,000,000 to get resp per billion cells. 
-mydata$Resp<-1000000*mydata$AvgRespPer1000Cell
+#Clear the environment
+rm(list=ls())
+#Load PnR data
+mydata<-read.csv("Data/OctoberPnR_r.csv")
+mydata$Temperature<-as.factor(mydata$Temperature)
+
+mydata <- mutate(mydata, GP = 1000000000*(AvgGP_umol_L_min/CellsPerL),
+                 NP=1000000000*(AvgNP_umol_L_min/CellsPerL),
+                 Resp=1000000000*(AvgResp_umol_L_min/CellsPerL))
 
 model1<-lm(Resp~Genotype*Temperature, data=mydata)
 #Check assumptions
@@ -554,6 +558,8 @@ model1res<-resid(model1)
 qqp(model1res, "norm")
 #The ends are out of the CI 
 
+summary(mydata$Resp)
+#Ranges from -2.2 to -0.2
 #Log transform
 mydata$logResp<-log(mydata$Resp+3)
 log.Resp.model<-lm(logResp~Genotype*Temperature, data=mydata)
@@ -595,7 +601,6 @@ qqp(InocData$Days.to.Inoculation, "pois", poisson$estimate, lambda=8)
 #BoxCox transformation
 #Response variable must be positive. Adding 3
 mydata$PosResp<-mydata$Resp+3
-View(mydata)
 full.resp.model<-lm(PosResp ~ Genotype*Temperature, data = mydata)
 step.resp.model<-stepAIC(full.resp.model, direction="both", trace = F)
 
@@ -603,9 +608,9 @@ boxcox<-boxcox(step.resp.model,lambda = seq(-5, 5, 1/1000),plotit = TRUE )
 
 Selected.Power<-boxcox$x[boxcox$y==max(boxcox$y)]
 Selected.Power
-#3.051
+#3.052
 
-mydata$cubedResp<-(mydata$PosResp)^3.051
+mydata$cubedResp<-(mydata$PosResp)^3.052
 hist(mydata$Resp)
 hist(mydata$PosResp)
 hist(mydata$cubedResp)
@@ -617,7 +622,6 @@ plot(cubed.resp.model)
 Anova(cubed.resp.model, type="III")
 
 #Net Photo. NP = umol O2 per billion cells. ####
-mydata$NP<-1000000*mydata$AvgNPPer1000Cell
 
 NP.model<-lm(NP~Genotype*Temperature, data=mydata)
 #Check assumptions
@@ -636,19 +640,15 @@ qqp(resid(quadrt.NP.model), "norm")
 #That's pretty much normal. Just one outlier
 Anova(quadrt.NP.model, type="III")
 
-
 #Gross photosynthesis. GP = gross photo umol O2 per billion cells####
-mydata$GP<-1000000*mydata$AvgGPPer1000Cell
-
 model1<-lm(GP~Genotype*Temperature, data=mydata)
 #Check assumptions
 model1res<-resid(model1)
 qqp(model1res, "norm")
 
-#Fourth root
-mydata$fourthrtGP<-sqrt(sqrt(mydata$GP))
-model1<-lm(fourthrtGP~Genotype*Temperature, data=mydata)
-model1res<-resid(model1)
-qqp(model1res, "norm")
+mydata$sqrtGP<-sqrt(mydata$GP)
+sqrtGPmodel<-lm(sqrtGP~Genotype*Temperature, data=mydata)
+qqp(resid(sqrtGPmodel), "norm")
+plot(sqrtGPmodel)
 #That's normal
-Anova(model1, type="III")
+Anova(sqrtGPmodel, type="III")
