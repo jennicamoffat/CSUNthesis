@@ -9,7 +9,7 @@ library(tidyverse)
 library(car)
 library(lme4)
 library(lmerTest)
-library(emmeans)
+library("emmeans")
 
 
 #Combining and cleaning data sets to get PnR data####
@@ -18,11 +18,9 @@ pnr.data<-read.csv("Data/PnR/Jan_Polyp_PnR.csv")
 polyp.data<-read.csv("Data/Thesis_PolypData_Summary.csv")
 area.data<-read.csv("Data/PolypAreas.csv")
 
-#Notes: In original data in Excel, there were two dark slopes and two light slopes per sample
-#The values in Respiration, NP, and GP are the average of the two
-#Second one was removed from dataset in Excel. I'm sorry. 
+#Notes: 
+#The values in Respiration, NP, and GP are slope values minus the average of the blank wells (DI)
 #Units: umol O2 per L per minute
-
 #NP=GP-Resp
 
 #I need to combine data sets so that the area, PnR values, and temp/plate number are all together
@@ -45,11 +43,11 @@ all.data <- mutate(all.data, avgct = ((Count1+Count2)/2))
 #Now, all pnr values divided by cell density
 
 #Current count is in #cells/0.1mm3 
-# Convert: #cells/0.1mm3 * (1000 mm3/mL) = # cells/mL 
+#Convert: #cells/0.1mm3 * (1000 mm3/mL) = # cells/mL 
 #This is the cell density in the POLYP not in the well of the photoresp
 all.data <- mutate(all.data, polyp.cells.per.mL = ((avgct)/0.1)*1000)
 
-# avgct(cells/mm3) * 150uL = cells per polyp (because I crushed each polyp in 150mL). No units, just a count.
+# avgct(in cells/mm3) * 150uL = cells per polyp (because I crushed each polyp in 150mL). No units, just a count.
 all.data <- mutate(all.data, cells.per.polyp = (avgct*150))
 
 #cell density = cells.per.polyp/polyp area (in mm2) = cells/mm2
@@ -59,18 +57,18 @@ all.data<-mutate(all.data, cells.per.area=(cells.per.polyp/Area))
 #Slope= (O2 umol/L)/second
 #slope/cells.per.area = [(O2 umol/L)/sec]/(cells/mm2)
 #Respiration
-all.data<-mutate(all.data, Resp.per.cell.density = (Respiration/cells.per.area))
+all.data<-mutate(all.data, Resp.polyp.area.density = (Respiration/cells.per.area))
 #And just because they are tiny numbers, let's multiply that by 10^9 (one billion)
-all.data<-mutate(all.data, Resp=(Resp.per.cell.density*1000000000))
+all.data<-mutate(all.data, Resp.polyp.area.billion.cells=(Resp.polyp.area.density*1000000000))
 #So now it is [(O2 umol/L)/sec]/(10^9 cells/mm2)
 
 #Gross Photosynthesis
-all.data<-mutate(all.data, GP.per.cell.density = (GrossPhoto/cells.per.area))
-all.data<-mutate(all.data, GP = (GP.per.cell.density*1000000000))
+all.data<-mutate(all.data, GP.polyp.area.density = (GrossPhoto/cells.per.area))
+all.data<-mutate(all.data, GP.polyp.area.billion.cells = (GP.polyp.area.density*1000000000))
 
 #Net photosynthesis
-all.data<-mutate(all.data, NP.per.cell.density = (NetPhoto/cells.per.area))
-all.data<-mutate(all.data, NP = (NP.per.cell.density*1000000000))
+all.data<-mutate(all.data, NP.polyp.area.density = (NetPhoto/cells.per.area))
+all.data<-mutate(all.data, NP.polyp.area.billion.cells = (NP.polyp.area.density*1000000000))
 
 
 #So I also want to test if I run everything without accounting for area, just doing total cells
@@ -97,18 +95,72 @@ all.data<-mutate(all.data, NP.per.bill.cell = (NP.per.cell*1000000000))
 #Finally, remove all NA rows so that I just have the clean PnR data
 all.pnr.data<-subset(all.data, NP.per.bill.cell != "NA")
 
-#I need WellNum, Date, Genotype, Temp, Plate, Resp, GP, and NP, and Resp,GP,NP per.cell
-pnr.data.cleaned = all.pnr.data[c("WellNum", "Date", "Genotype", "Temp", "Plate", "Resp", "GP", "NP", "Resp.per.bill.cell", "GP.per.bill.cell", "NP.per.bill.cell")]
+#I need WellNum, Date, Genotype, Temp, Plate, and Resp,GP,NP per.bill.cell
+pnr.data.cleaned = all.pnr.data[c("WellNum", "Date", "Genotype", "Temp", "Plate", "Resp.per.bill.cell", "GP.per.bill.cell", "NP.per.bill.cell")]
 
 #Export as CSV so I don't have to go through all of that every time. 
 write.csv(pnr.data.cleaned,"Data/Polyp_PnR_data_cleaned.csv", row.names = FALSE)
 #Exporting full pnr data, too, so I have counts and everything. 
 write.csv(all.pnr.data, "Data/Polyp_PnR_full_combined_data.csv", row.names= FALSE)
 
+#Graphs for PnR by number of cells instead of cell density####
+
+#Resp
+SummaryResp <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(Resp.per.bill.cell), SE=sd(Resp.per.bill.cell)/sqrt(length(na.omit(Resp.per.bill.cell))))
+SummaryResp
+
+Resp.polyp.graph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y=expression(Respiration~((µmol~O[2]/L)/sec)/(10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Respiration of Polyps by Symbiont Genotype")+
+  ggsave("Graphs/PnR/PolypResp.per.cell.pdf", width=11, height=6.19, dpi=300, unit="in")
+Resp.polyp.graph
+
+
+#GP
+SummaryGP <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(GP.per.bill.cell), SE=sd(GP.per.bill.cell)/sqrt(length(na.omit(GP.per.bill.cell))))
+SummaryGP
+
+GP.polyp.graph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y=expression(GP~((µmol~O[2]/L)/sec)/(10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Gross Photosynthesis of Polyps by Symbiont Genotype")+
+  ggsave("Graphs/PnR/PolypGP.per.cell.pdf", width=11, height=6.19, dpi=300, unit="in")
+GP.polyp.graph
+
+
+#NP
+SummaryNP <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(NP.per.bill.cell), SE=sd(NP.per.bill.cell)/sqrt(length(na.omit(NP.per.bill.cell))))
+SummaryNP
+
+NP.polyp.graph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y=expression(NP~((µmol~O[2]/L)/sec)/(10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Net Photosynthesis of Polyps by Symbiont Genotype")+
+  ggsave("Graphs/PnR/PolypNP.per.cell.pdf", width=11, height=6.19, dpi=300, unit="in")
+NP.polyp.graph
+
 #PnR graphs by count/area (density)#####
 mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
 mydata$Temp<-as.factor(mydata$Temp)
-View(mydata)
 
 #Resp graphs####
 SummaryResp <- mydata %>%
@@ -191,6 +243,7 @@ polyp.Resp.boxplot<-mydata%>%
         axis.title.x = element_text(face="bold", size=12))+
   labs(fill="Temperature", x="Genotype", y=expression(Respiration~(µmol~O[2]/min/10^{"9"}~cells)))+
   scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+polyp.Resp.boxplot
 polyp.Resp.boxplot+ggsave("Graphs/PnR/PolypPnR/PolypRespbyArea.boxplot.png", width=10, height=5)
 
 
@@ -735,61 +788,6 @@ loglogNP.model<-lmer(loglogNP~Genotype*Temp+(1|Plate), data=mydata)
 qqp(resid(loglogNP.model), "norm")
 
 anova(loglogNP.model)
-
-#Graphs for PnR by number of cells instead of cell density####
-
-#Resp
-SummaryResp <- mydata %>%
-  group_by(Genotype, Temp) %>%
-  summarize(mean=mean(Resp.per.bill.cell), SE=sd(Resp.per.bill.cell)/sqrt(length(na.omit(Resp.per.bill.cell))))
-SummaryResp
-
-Resp.polyp.graph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
-  theme_bw()+ #Removes grey background
-  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
-  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y=expression(Respiration~((µmol~O[2]/L)/sec)/(10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
-  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
-  ggtitle("Respiration of Polyps by Symbiont Genotype")+
-  ggsave("Graphs/PnR/PolypResp.per.cell.pdf", width=11, height=6.19, dpi=300, unit="in")
-Resp.polyp.graph
-
-
-#GP
-SummaryGP <- mydata %>%
-  group_by(Genotype, Temp) %>%
-  summarize(mean=mean(GP.per.bill.cell), SE=sd(GP.per.bill.cell)/sqrt(length(na.omit(GP.per.bill.cell))))
-SummaryGP
-
-GP.polyp.graph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
-  theme_bw()+ #Removes grey background
-  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
-  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y=expression(GP~((µmol~O[2]/L)/sec)/(10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
-  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
-  ggtitle("Gross Photosynthesis of Polyps by Symbiont Genotype")+
-  ggsave("Graphs/PnR/PolypGP.per.cell.pdf", width=11, height=6.19, dpi=300, unit="in")
-GP.polyp.graph
-
-
-#NP
-SummaryNP <- mydata %>%
-  group_by(Genotype, Temp) %>%
-  summarize(mean=mean(NP.per.bill.cell), SE=sd(NP.per.bill.cell)/sqrt(length(na.omit(NP.per.bill.cell))))
-SummaryNP
-
-NP.polyp.graph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
-  theme_bw()+ #Removes grey background
-  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
-  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y=expression(NP~((µmol~O[2]/L)/sec)/(10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
-  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
-  ggtitle("Net Photosynthesis of Polyps by Symbiont Genotype")+
-  ggsave("Graphs/PnR/PolypNP.per.cell.pdf", width=11, height=6.19, dpi=300, unit="in")
-NP.polyp.graph
 
 
 
