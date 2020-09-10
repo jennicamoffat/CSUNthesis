@@ -3,6 +3,7 @@
 
 #Clear the environment
 rm(list=ls())
+#August PnR - DO NOT USE. Photorespirometer was not calibrated properly.####
 #Load PnR data
 mydata<-read.csv("Data/AugustPnR_r_github.csv")
 View(mydata)
@@ -23,7 +24,7 @@ mydata$AvgNPPer100000<-100*mydata$AvgNP
 mydata$AvgGPPer100000<-100*mydata$AvgGP
 
 
-#All data Graphs####
+#All data Graphs
 #Summarizing data for bargraph
 #Net photosynthesis
 SummaryNP <- mydata %>%
@@ -73,7 +74,7 @@ GPGraph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), gro
   scale_fill_brewer(palette = "RdYlBu")
 GPGraph
 
-#Making new dataframe without 32*####
+#August - Making new dataframe without 32*####
 mydata2 <- subset(mydata, Temperature == 26 | Temperature == 30)
 View(mydata2)
 
@@ -132,7 +133,7 @@ RespGraphno32<-ggplot(SummaryRespNo32, aes(x=Genotype, y=mean, fill=factor(Tempe
 RespGraphno32
 
 
-#Alright time to start some actual stats...####
+#August - Alright time to start some actual stats...####
 
 #Clear the environment
 rm(list=ls())
@@ -150,7 +151,7 @@ mydata$AvgNPPer100000<-100*mydata$AvgNP
 mydata$AvgGPPer100000<-100*mydata$AvgGP
 
 
-#Make model - Respiration####
+#August - Respiration####
 model1<-aov(AvgRespPerCell~Genotype*Temperature, data=mydata)
 anova(model1)
 #Check assumptions
@@ -158,7 +159,7 @@ plot(model1)
 qqp(resid(model1), "norm")
 #OMG IT'S NORMAL
 
-#Make model - GP####
+#August - GP####
 model2<-aov(AvgGP~Genotype*Temperature, data=mydata)
 anova(model2)
 #Check assumptions
@@ -217,7 +218,7 @@ model4res<-resid(modelloglogGP)
 qqp(model4res, "norm")
 #Hmm, it's closer. 
 
-##Switching to NP, I give up on GP####
+#August - Switching to NP, I give up on GP####
 
 #Make model - NP
 model5<-aov(AvgNPPerCell~Genotype*Temperature, data=mydata)
@@ -257,7 +258,7 @@ qqp(resid(log3.NP.model), "norm")
 anova(log3.NP.model)
 
 
-#Stats for 26 and 30 degree only####
+#August - Stats for 26 and 30 degree only####
 #Clear the environment
 rm(list=ls())
 #Load PnR data
@@ -269,7 +270,7 @@ View(mydata)
 mydata2 <- subset(mydata, Temperature == 26 | Temperature == 30)
 
 
-#Make model - Respiration no 32####
+#August - Respiration no 32####
 model1<-aov(AvgResp~Genotype*Temperature, data=mydata2)
 anova(model1)
 #Check assumptions
@@ -358,7 +359,7 @@ summary(model1)
 #going to say it's "normal enough" for now and move on. 
 
 
-#Make model - GP no 32 ####
+#August - GP no 32 ####
 model2<-aov(AvgGP~Genotype*Temperature, data=mydata2)
 anova(model2)
 #Check assumptions
@@ -383,7 +384,7 @@ anova(model3)
 
 
 
-#Make model - NP no 32 ####
+#August - NP no 32 ####
 model4<-aov(AvgNP~Genotype*Temperature, data=mydata2)
 model4res<-resid(model4)
 qqp(model4res, "norm")
@@ -404,7 +405,7 @@ anova(model5)
 
 
 
-#October Photosynthesis#####
+#October PnR#####
 #August PnR had weird issue with 32* because the calibration was not set up for 32*
 #So I had to rerun it in October using one-point calibration
 #Clear the environment
@@ -414,25 +415,33 @@ mydata<-read.csv("Data/OctoberPnR_r.csv")
 mydata$Temperature<-as.factor(mydata$Temperature)
 
 #October PnR graphs#####
-
-#Gross photosynthesis. GP = gross photo umol O2 per billion cells
-mydata$GP<-1000000*mydata$AvgGPPer1000Cell
+#Adding columns for Resp/GP/NP per billion cells
+#Avg GP/Resp/NP_umol_L_min is average of the two wells minus the average of the control wells (DI)
+#10^9*(value/avg count) = umol O2 per min per billion cells
+mydata <- mutate(mydata, GP = 1000000000*(AvgGP_umol_L_min/CellsPerL),
+                 NP=1000000000*(AvgNP_umol_L_min/CellsPerL),
+                 Resp=1000000000*(AvgResp_umol_L_min/CellsPerL))
 
 SummaryGP <- mydata %>%
   group_by(Genotype, Temperature) %>%
   summarize(mean=mean(GP, na.rm=TRUE), SE=sd(GP, na.rm=TRUE)/sqrt(length(na.omit(GP))))
-SummaryGP
 
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
+pal<-c("skyblue3", "darkgoldenrod2", "firebrick3")
 GPGraph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(0, 5.5))+
-  theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Symbiont Strain", y=expression(Gross~Photo.~(µmol~O[2]/min/10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
-  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
-  ggtitle("Gross Photosynthesis of Symbiont Strains")
-GPGraph
+  labs(x="Genotype", y=expression(GP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Gross Photosynthesis of Symbionts in Culture")
 GPGraph+ggsave("Graphs/PnR/OctCulturePnR/GPGraph_Oct.png",width=8, height=5)
 
 #GP Boxplot
@@ -448,27 +457,32 @@ culture.GP.boxplot<-mydata%>%
         axis.text.y=element_text(size=10), 
         axis.title.y = element_text(face="bold", size=12), 
         axis.title.x = element_text(face="bold", size=12))+
-  labs(fill="Temperature", x="Genotype", y=expression(Gross~Photo.~(µmol~O[2]/min/10^{"9"}~cells)))+
-  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
-culture.GP.boxplot+ggsave("Graphs/PnR/OctCulturePnR/Oct_GP_Boxplot.png", width=10, height=5)
+  labs(fill="Temperature", x="Genotype", y=expression(Gross~Photo.~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
+  scale_fill_manual(values = c("#679A99", "#9DB462", "#E4C7E5"), labels=c("26°C", "30°C","32°C"))
+culture.GP.boxplot+ggsave("Graphs/PnR/OctCulturePnR/Oct_GP_Boxplot.png", width=8, height=5)
 
 #Net Photo. NP = umol O2 per billion cells. 
-mydata$NP<-1000000*mydata$AvgNPPer1000Cell
-
 SummaryNP <- mydata %>%
   group_by(Genotype, Temperature) %>%
   summarize(mean=mean(NP, na.rm=TRUE), SE=sd(NP, na.rm=TRUE)/sqrt(length(na.omit(NP))))
 SummaryNP
 
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
+pal<-c("skyblue3", "darkgoldenrod2", "firebrick3")
 NPGraph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(0, 7))+
-  theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Symbiont Strain", y=expression(Net~Photo.~(µmol~O[2]/min/10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
-  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
-  ggtitle("Net Photosynthesis of Symbiont Strains")
+  labs(x="Genotype", y=expression(NP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Net Photosynthesis of Symbionts in Culture")
 NPGraph
 NPGraph+ggsave("Graphs/PnR/OctCulturePnR/NPGraph_Oct.png",width=8, height=5)
 
@@ -484,29 +498,31 @@ culture.NP.boxplot<-mydata%>%
         axis.text.y=element_text(size=10), 
         axis.title.y = element_text(face="bold", size=12), 
         axis.title.x = element_text(face="bold", size=12))+
-  labs(fill="Temperature", x="Genotype", y=expression(Net~Photo.~(µmol~O[2]/min/10^{"9"}~cells)))+
-  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+  labs(fill="Temperature", x="Genotype", y=expression(Net~Photo.~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
+  scale_fill_manual(values = c("#679A99", "#9DB462", "#E4C7E5"), labels=c("26°C", "30°C","32°C"))
 culture.NP.boxplot+ggsave("Graphs/PnR/OctCulturePnR/Oct_NP_boxplot.png",width=10, height=5)
 
-#Right now, data is really small number per 1000 cells. To get it to be 
-#a more resonible number, times it by 1,000,000 to get resp per billion cells. Resp = umol O2 per billion cells per min
-mydata$Resp<-1000000*mydata$AvgRespPer1000Cell
-
+#Respiration
 SummaryResp <- mydata %>%
   group_by(Genotype, Temperature) %>%
   summarize(mean=mean(Resp, na.rm=TRUE), SE=sd(Resp, na.rm=TRUE)/sqrt(length(na.omit(Resp))))
 SummaryResp
 
+pal<-c("skyblue3", "darkgoldenrod2", "firebrick3")
 RespGraph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(-1.8,0))+
-  theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Symbiont Strain", y=expression(Respiration~(µmol~O[2]/min/10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
-  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
-  ggtitle("Respiration of Symbiont Strains")
-RespGraph
+  labs(x="Genotype", y=expression(Respiration~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Respiration of Symbionts in Culture")
 RespGraph+ggsave("Graphs/PnR/OctCulturePnR/RespGraph_Oct.png",width=8, height=5)
 
 #Respiration boxplot
@@ -520,8 +536,8 @@ culture.Resp.boxplot<-mydata%>%
         axis.text.y=element_text(size=10), 
         axis.title.y = element_text(face="bold", size=12), 
         axis.title.x = element_text(face="bold", size=12))+
-  labs(fill="Temperature", x="Genotype", y=expression(Respiration~(µmol~O[2]/min/10^{"9"}~cells)))+
-  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+  labs(fill="Temperature", x="Genotype", y=expression(Respiration~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
+  scale_fill_manual(values = c("#679A99", "#9DB462", "#E4C7E5"), labels=c("26°C", "30°C","32°C"))
 culture.Resp.boxplot+ggsave("Graphs/PnR/OctCulturePnR/Oct_Resp_Boxplot.png",width=10, height=5)
 
 #October PnR Stats#####
