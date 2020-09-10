@@ -17,18 +17,22 @@ library(emmeans)
 pnr.data<-read.csv("Data/PnR/Jan_Polyp_PnR.csv")
 polyp.data<-read.csv("Data/Thesis_PolypData_Summary.csv")
 area.data<-read.csv("Data/PolypAreas.csv")
-View(area.data)
+
+#Notes: In original data in Excel, there were two dark slopes and two light slopes per sample
+#The values in Respiration, NP, and GP are the average of the two
+#Second one was removed from dataset in Excel. I'm sorry. 
+#Units: umol O2 per L per minute
+
+#NP=GP-Resp
 
 #I need to combine data sets so that the area, PnR values, and temp/plate number are all together
 #they need to be combined by Polyp ("WellNum")
 
 #Start with pnr and pic data
 pnr.area.data<-full_join(pnr.data, area.data, by = "WellNum", copy = FALSE, suffix = c(".ph", ".ar"))
-View(pnr.area.data)
 
 #Combine that with polyp summary data
 all.data<-full_join(pnr.area.data, polyp.data, by = "WellNum", copy = FALSE)
-View(all.data)
 #Wow that worked seemlessly. Go me!
 
 #Need to make temp and plate factors
@@ -38,14 +42,15 @@ all.data$Plate<-as.factor(all.data$Plate)
 #Now, I need to add column for average count
 all.data <- mutate(all.data, avgct = ((Count1+Count2)/2))
 
-#Now, all pnr values divided by polyp area/count
+#Now, all pnr values divided by cell density
 
 #Current count is in #cells/0.1mm3 
 # Convert: #cells/0.1mm3 * (1000 mm3/mL) = # cells/mL 
-all.data <- mutate(all.data, cells.per.mL = ((avgct)/0.1)*1000)
+#This is the cell density in the POLYP not in the well of the photoresp
+all.data <- mutate(all.data, polyp.cells.per.mL = ((avgct)/0.1)*1000)
 
-# cells.per.mL * 150mL = cells per polyp (because I crushed each polyp in 150mL). No units, just a count.
-all.data <- mutate(all.data, cells.per.polyp = (cells.per.mL*150))
+# avgct(cells/mm3) * 150uL = cells per polyp (because I crushed each polyp in 150mL). No units, just a count.
+all.data <- mutate(all.data, cells.per.polyp = (avgct*150))
 
 #cell density = cells.per.polyp/polyp area (in mm2) = cells/mm2
 all.data<-mutate(all.data, cells.per.area=(cells.per.polyp/Area))
@@ -69,29 +74,31 @@ all.data<-mutate(all.data, NP = (NP.per.cell.density*1000000000))
 
 
 #So I also want to test if I run everything without accounting for area, just doing total cells
-#Slope= (O2 umol/L)/second
-#slope/cells.per.polyp = [(O2 umol/L)/sec]/(cells)
+#Slope (labeled as respiration, netphoto, or grossphoto)= (O2 umol/L)/second
+#Final PnR measurements will be umol of O2/second/cell
+
+#I need to divide by volume of the photorespirometer well to get cells/L when taking PnR measurments
+#Volume of the well is 2mL=0.002L
+all.data <- mutate(all.data, well.cells.per.L = (cells.per.polyp/0.002))
+
 #Respiration
-all.data<-mutate(all.data, Resp.per.cell = (Respiration/cells.per.polyp))
+all.data<-mutate(all.data, Resp.per.cell = (Respiration/well.cells.per.L))
 #And just because they are tiny numbers, let's multiply that by 10^9 (one billion)
 all.data<-mutate(all.data, Resp.per.bill.cell=(Resp.per.cell*1000000000))
-#So now it is [(O2 umol/L)/sec]/(10^9 cells)
 
 #Gross Photosynthesis
-all.data<-mutate(all.data, GP.per.cell = (GrossPhoto/cells.per.polyp))
+all.data<-mutate(all.data, GP.per.cell = (GrossPhoto/well.cells.per.L))
 all.data<-mutate(all.data, GP.per.bill.cell = (GP.per.cell*1000000000))
 
 #Net photosynthesis
-all.data<-mutate(all.data, NP.per.cell = (NetPhoto/cells.per.polyp))
+all.data<-mutate(all.data, NP.per.cell = (NetPhoto/well.cells.per.L))
 all.data<-mutate(all.data, NP.per.bill.cell = (NP.per.cell*1000000000))
 
 #Finally, remove all NA rows so that I just have the clean PnR data
 all.pnr.data<-subset(all.data, NP.per.bill.cell != "NA")
-View(all.pnr.data)
 
 #I need WellNum, Date, Genotype, Temp, Plate, Resp, GP, and NP, and Resp,GP,NP per.cell
 pnr.data.cleaned = all.pnr.data[c("WellNum", "Date", "Genotype", "Temp", "Plate", "Resp", "GP", "NP", "Resp.per.bill.cell", "GP.per.bill.cell", "NP.per.bill.cell")]
-View(pnr.data.cleaned)
 
 #Export as CSV so I don't have to go through all of that every time. 
 write.csv(pnr.data.cleaned,"Data/Polyp_PnR_data_cleaned.csv", row.names = FALSE)
