@@ -10,7 +10,7 @@ library(car)
 library(lme4)
 library(lmerTest)
 library(MASS)
-library(gplots)
+library("gmodels")
 
 #Load data
 mydata<-read.csv("Data/Thesis_PolypData_Summary.csv")
@@ -469,16 +469,17 @@ Survival.model3<-glm(Freq~Temp:Survived + Genotype:Survived + Genotype:Temp:Surv
 anova(Survival.model3, test="Chisq")
 #Well, order matters. Fun. 
 
+
 #Different code for Chi-squared test
 mod0 <- glm(Freq ~ Genotype + Temp + Plate + Survived, 
             data = Survival, family = poisson)
 summary(mod0)
-cbind(mod0$data, fitted(mod0))
 
-mod1<-glm(Freq ~ Genotype*Temp*Plate*Survived, 
+full.mod<-glm(Freq ~ Genotype*Temp*Plate*Survived, 
           data = Survival, family = poisson)
-deviance(mod1)
-anova(mod1, test="Chisq")
+deviance(full.mod)
+anova(full.mod, test="Chisq")
+summary(full.mod)
 #No sig effect of plate
 
 mod2<-glm(Freq~Genotype*Temp*Survived, data=Survival, family=poisson)
@@ -492,3 +493,5 @@ anova(mod3, test="Chisq")
 mod4<-glm(Freq~(Temp*Survived)+(Genotype*Survived), data=Survival, family=poisson)
 anova(mod4,test="Chisq")
 #Hooray, order doesn't matter now!
+Anova(mod4, type="III")
+
