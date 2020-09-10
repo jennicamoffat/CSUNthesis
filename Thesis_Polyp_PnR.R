@@ -209,8 +209,7 @@ NP.polyp.graph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temp), gro
   labs(x="Genotype", y=expression(NP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
   ggtitle("Net Photosynthesis of Holobiont")
-NP.polyp.graph
-
+NP.polyp.graph+ggsave("Graphs/PnR/PolypPnR/Polyp.NP.bargraph.png", width=8, height=5)
 
 #NP boxplot
 polyp.NP.boxplot<-mydata%>%
