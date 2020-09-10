@@ -9,7 +9,7 @@ library(tidyverse)
 library(car)
 library(lme4)
 library(lmerTest)
-library("emmeans")
+library(emmeans)
 
 
 #Combining and cleaning data sets to get PnR data####
@@ -103,7 +103,10 @@ write.csv(pnr.data.cleaned,"Data/Polyp_PnR_data_cleaned.csv", row.names = FALSE)
 #Exporting full pnr data, too, so I have counts and everything. 
 write.csv(all.pnr.data, "Data/Polyp_PnR_full_combined_data.csv", row.names= FALSE)
 
-#Graphs for PnR by number of cells instead of cell density####
+#Graphs for PnR by number of cells####
+rm(list=ls())
+mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
+mydata$Temp<-as.factor(mydata$Temp)
 
 #Resp
 SummaryResp <- mydata %>%
@@ -111,17 +114,39 @@ SummaryResp <- mydata %>%
   summarize(mean=mean(Resp.per.bill.cell), SE=sd(Resp.per.bill.cell)/sqrt(length(na.omit(Resp.per.bill.cell))))
 SummaryResp
 
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
+pal<-c("skyblue3", "darkgoldenrod2", "firebrick3")
 Resp.polyp.graph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y=expression(Respiration~((µmol~O[2]/L)/sec)/(10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
-  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
-  ggtitle("Respiration of Polyps by Symbiont Genotype")+
-  ggsave("Graphs/PnR/PolypResp.per.cell.pdf", width=11, height=6.19, dpi=300, unit="in")
-Resp.polyp.graph
+  labs(x="Genotype", y=expression(Respiration~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Respiration of Holobiont")
+Resp.polyp.graph+ggsave("Graphs/PnR/PolypPnR/PolypResp.per.cell.png", width=8, height=5)
 
+#Resp boxplot
+polyp.Resp.boxplot<-mydata%>%
+  ggplot(aes(x=Genotype, y=Resp.per.bill.cell, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  ggtitle("Respiration of Holobiont")+
+  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature", x="Genotype", y=expression(Respiration~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+polyp.Resp.boxplot
+polyp.Resp.boxplot+ggsave("Graphs/PnR/PolypRespBoxplot.png", width=8, height=5)
 
 #GP
 SummaryGP <- mydata %>%
@@ -129,17 +154,39 @@ SummaryGP <- mydata %>%
   summarize(mean=mean(GP.per.bill.cell), SE=sd(GP.per.bill.cell)/sqrt(length(na.omit(GP.per.bill.cell))))
 SummaryGP
 
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
+pal<-c("skyblue3", "darkgoldenrod2", "firebrick3")
 GP.polyp.graph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y=expression(GP~((µmol~O[2]/L)/sec)/(10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
-  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
-  ggtitle("Gross Photosynthesis of Polyps by Symbiont Genotype")+
-  ggsave("Graphs/PnR/PolypGP.per.cell.pdf", width=11, height=6.19, dpi=300, unit="in")
-GP.polyp.graph
+  labs(x="Genotype", y=expression(GP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Gross Photosynthesis of Holobiont")
+GP.polyp.graph+ggsave("Graphs/PnR/PolypPnR/Polyp.GP.bargraph.png", width=8, height=5)
 
+#GP boxplot
+polyp.GP.boxplot<-mydata%>%
+  ggplot(aes(x=Genotype, y=GP.per.bill.cell, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  ggtitle("Grossphotosynthesis of Holobiont")+
+  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature", x="Genotype", y=expression(GP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+polyp.GP.boxplot
+polyp.GP.boxplot+ggsave("Graphs/PnR/Polyp.GP.boxplot.png", width=8, height=5)
 
 #NP
 SummaryNP <- mydata %>%
@@ -147,22 +194,47 @@ SummaryNP <- mydata %>%
   summarize(mean=mean(NP.per.bill.cell), SE=sd(NP.per.bill.cell)/sqrt(length(na.omit(NP.per.bill.cell))))
 SummaryNP
 
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
+pal<-c("skyblue3", "darkgoldenrod2", "firebrick3")
 NP.polyp.graph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(plot.title = element_text(face = "bold", size=18), axis.text.x=element_text(color="black", size=13), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=14), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y=expression(NP~((µmol~O[2]/L)/sec)/(10^{"9"}~cells)), fill="Temperature")+  #labels the x and y axes
-  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "firebrick3"), labels=c("26°C", "30°C","32°C"))+
-  ggtitle("Net Photosynthesis of Polyps by Symbiont Genotype")+
-  ggsave("Graphs/PnR/PolypNP.per.cell.pdf", width=11, height=6.19, dpi=300, unit="in")
+  labs(x="Genotype", y=expression(NP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Net Photosynthesis of Holobiont")
 NP.polyp.graph
+
+
+#NP boxplot
+polyp.NP.boxplot<-mydata%>%
+  ggplot(aes(x=Genotype, y=NP.per.bill.cell, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  ggtitle("Net Photosynthesis of Holobiont")+
+  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(size=12), 
+        axis.title.x = element_text(size=12))+
+  labs(fill="Temperature", x="Genotype", y=expression(NP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+polyp.NP.boxplot
+polyp.NP.boxplot+ggsave("Graphs/PnR/Polyp.NP.boxplot.png", width=8, height=5)
+
 
 #PnR graphs by count/area (density)#####
 mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 
-#Resp graphs####
+#Resp graphs
 SummaryResp <- mydata %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Resp), SE=sd(Resp)/sqrt(length(na.omit(Resp))))
@@ -247,7 +319,7 @@ polyp.Resp.boxplot
 polyp.Resp.boxplot+ggsave("Graphs/PnR/PolypPnR/PolypRespbyArea.boxplot.png", width=10, height=5)
 
 
-#GP counts/area graphs####
+#GP counts/area graphs
 SummaryGP <- mydata %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(GP), SE=sd(GP)/sqrt(length(na.omit(GP))))
