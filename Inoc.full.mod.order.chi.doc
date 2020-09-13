@@ -1,0 +1,28 @@
+Analysis of Deviance Table
+
+Model: poisson, link: log
+
+Response: Freq
+
+Terms added sequentially (first to last)
+
+
+                         Df Deviance Resid. Df Resid. Dev  Pr(>Chi)    
+NULL                                       119    308.312              
+Temp                      2    0.000       117    308.312  1.000000    
+Genotype                  4    0.000       113    308.312  1.000000    
+Plate                     3    0.000       110    308.312  1.000000    
+Inoc                      1  191.268       109    117.044 < 2.2e-16 ***
+Temp:Genotype             8    0.000       101    117.044  1.000000    
+Temp:Plate                6    0.000        95    117.044  1.000000    
+Genotype:Plate           12    0.000        83    117.044  1.000000    
+Temp:Inoc                 2    1.224        81    115.820  0.542295    
+Genotype:Inoc             4   51.794        77     64.026 1.523e-10 ***
+Plate:Inoc                3   14.754        74     49.272  0.002039 ** 
+Temp:Genotype:Plate      24    0.038        50     49.234  1.000000    
+Temp:Genotype:Inoc        8   16.961        42     32.273  0.030513 *  
+Temp:Plate:Inoc           6   10.198        36     22.074  0.116549    
+Genotype:Plate:Inoc      12   12.727        24      9.348  0.389227    
+Temp:Genotype:Plate:Inoc 24    9.348         0      0.000  0.996755    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1

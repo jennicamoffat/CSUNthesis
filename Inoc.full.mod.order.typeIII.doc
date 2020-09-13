@@ -1,0 +1,21 @@
+Analysis of Deviance Table (Type III tests)
+
+Response: Freq
+                         LR Chisq Df Pr(>Chisq)  
+Temp                       1.6219  2    0.44444  
+Genotype                   8.4727  4    0.07572 .
+Plate                      0.6796  3    0.87799  
+Inoc                       2.9110  1    0.08798 .
+Temp:Genotype              5.7562  8    0.67452  
+Temp:Plate                 2.4057  6    0.87887  
+Genotype:Plate             4.1636 12    0.98030  
+Temp:Inoc                  1.7445  2    0.41801  
+Genotype:Inoc             10.5541  4    0.03206 *
+Plate:Inoc                 0.9023  3    0.82488  
+Temp:Genotype:Plate        8.8723 24    0.99786  
+Temp:Genotype:Inoc         6.5854  8    0.58195  
+Temp:Plate:Inoc            2.5455  6    0.86334  
+Genotype:Plate:Inoc        5.1344 12    0.95334  
+Temp:Genotype:Plate:Inoc   9.3478 24    0.99676  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
