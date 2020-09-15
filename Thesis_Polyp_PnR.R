@@ -10,6 +10,7 @@ library(car)
 library(lme4)
 library(lmerTest)
 library(emmeans)
+library(MASS)
 
 
 #Combining and cleaning data sets to get PnR data####
@@ -496,14 +497,17 @@ NoApoData <- mydata %>%
 mydata <- mydata %>% drop_na()
 
 #Respiration####
-resp.model<-lmer(Resp~Genotype*Temp+(1|Plate), data=mydata)
+resp.model<-lmer(Resp.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
 #Check assumptions
 plot(resp.model)
 qqp(resid(resp.model), "norm")
 #Not normal at ends
 hist(mydata$Resp)
 
-#I want to log transform, but variables range from -12 to 10
+resp.model<-lm(Resp.per.bill.cell~Genotype*Temp*Plate, data=mydata)
+summary(mydata)
+
+#I want to log transform, but variables range from -1121 to 472
 mydata$logResp<-log(mydata$Resp+13)
 
 logresp.model<-lmer(logResp~Genotype*Temp+(1|Plate), data=mydata)
@@ -550,9 +554,8 @@ mydata<-mutate(mydata, Resp.z2 = (Resp - mean(Resp))/sd(Resp))
 #Okay, yes they're the same. So z-score didn't help, maybe that's not what I want. 
 
 #BoxCox transformation
-#Response variable must be positive. Adding 13
-mydata$PosResp<-mydata$Resp+13
-View(mydata)
+#Response variable must be positive. Adding 1121
+mydata$PosResp<-mydata$Resp.per.bill.cell+1121
 full.resp.model<-lm(PosResp ~ Genotype*Temp*Plate, data=mydata)
 step.resp.model<-stepAIC(full.resp.model, direction="both", trace = F)
 
@@ -560,13 +563,14 @@ boxcox<-boxcox(step.resp.model,lambda = seq(-5, 5, 1/1000),plotit = TRUE )
 
 Selected.Power<-boxcox$x[boxcox$y==max(boxcox$y)]
 Selected.Power
-#1.49
+#2.177
 
-mydata$Resp.trans<-(mydata$PosResp)^1.49
+mydata$Resp.trans<-(mydata$PosResp)^2.177
 trans.resp.model<-lm(Resp.trans~Genotype*Temp*Plate, data = mydata)
 qqp(resid(trans.resp.model), "norm")
-#Well that didn't work as well as I hoped. 
+#Well that didn't work at all
 hist(mydata$Resp.trans)
+#It looks very normal in this, though. 
 Anova(trans.resp.model, type="III")
 plot(trans.resp.model)
 
@@ -574,7 +578,7 @@ trans.resp.model2<-lmer(Resp.trans~Genotype*Temp+(1|Plate), data=mydata)
 qqp(resid(trans.resp.model2), "norm")
 Anova(trans.resp.model2, type="III")
 
-trans.resp.model3<-lmer(Resp.trans~Genotype+Temp+(1|Plate), data=mydata)
+trans.resp.model3<-lm(Resp.trans~Genotype*Temp, data=mydata)
 Anova(trans.resp.model3, type="III")
 
 AIC(trans.resp.model)
