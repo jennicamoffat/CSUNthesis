@@ -1013,3 +1013,53 @@ qqp(resid(model2), "norm")
 anova(model2)
 summary(model2)
 
+
+#Comparing blank slopes to polyp slopes. To compare randomness
+polyp.pnr.data<-read.csv("Data/PnR/Jan_Polyp_PnR.csv")
+blank.pnr.data<-read.csv("Data/PnR/Polyp_PnR_BlankSlopes.csv")
+polyp.data<-read.csv("Data/Thesis_PolypData_Summary.csv")
+
+#Add temp to polyp pnr data
+polyp.data.temp<-full_join(polyp.pnr.data, polyp.data, by = "WellNum", copy = FALSE)
+#Adding blanks
+pnr.data<-full_join(blank.pnr.data, polyp.data.temp, copy = FALSE)
+#Removing columns I don't need
+pnr.data.cleaned = pnr.data[c("Date", "Genotype", "Temp", "Plate", "WellNum", "DarkSlope", "LightSlope")]
+mydata<-pnr.data.cleaned%>%
+  mutate(Genotype = replace_na(Genotype, "Blank"))
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Genotype<-as.factor(mydata$Genotype)
+
+
+polyp.darkslope.boxplot<-mydata%>%
+  ggplot(aes(x=Genotype, y=DarkSlope, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  ggtitle("Dark Slopes of Polyps")+
+  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature", x="Genotype", y="Slope")+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+polyp.darkslope.boxplot
+polyp.darkslope.boxplot+ggsave("Graphs/PnR/PolypPnR/Polyp.darkslope.boxplot.png", width=8, height=5)
+
+
+polyp.lightslope.boxplot<-mydata%>%
+  ggplot(aes(x=Genotype, y=LightSlope, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  ggtitle("Light Slopes of Polyps")+
+  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  theme(plot.title = element_text(face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature", x="Genotype", y="Slope")+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+polyp.lightslope.boxplot
+polyp.lightslope.boxplot+ggsave("Graphs/PnR/PolypPnR/Polyp.lightslope.boxplot.png", width=8, height=5)
