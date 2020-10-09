@@ -14,7 +14,9 @@ library(PNWColors)
 library(reshape2)
 library(growthcurver)
 library(purrr)
-library(PNWColors)
+library(lme4)
+library(lmerTest)
+library("lmtest")
 
 #Clear the environment
 rm(list=ls())
@@ -607,7 +609,7 @@ write.xlsx(gc_out2, file = "GrowthcurverData.xlsx",
            sheetName = "July", append = TRUE)
 
 
-#Running an ANOVA on data output from growthcurver#####
+#Stats on data output from growthcurver#####
 rm(list=ls())
 mydata<-read.csv("Data/GrowthcurverData_r.csv")
 mydata$Temp<-as.factor(mydata$Temp)
@@ -615,7 +617,6 @@ mydata$Flask<-as.factor(mydata$Flask)
 View(mydata)
 #going to remove CCMP2464 from MayJune
 mydata2<-mydata[-c(13:24),]
-View(mydata2)
 
 summary<-mydata2%>%
   group_by(Round)%>%
@@ -701,21 +702,24 @@ kGraph_noCCMP2458orRT362 + ggsave("GrowthCurverGraph_carrycapacity2.pdf", width=
 #Well the carrying capacity is useless. I needed to take more and longer data. Varies completely from one round to another
 
 
-#Graphing r#####
+#Graphing and analyzing r#####
 rm(list=ls())
 mydata<-read.csv("Data/GrowthcurverData_r.csv")
-mydata$Temp<-as.factor(mydata$Temp)
-mydata$Flask<-as.factor(mydata$Flask)
+mydata<-mydata%>%
+  mutate_if(is.character,as.factor)
 
 #Change name of MayJune to just May
-mydata2<-mydata %>%
+mydata<-mydata %>%
   mutate(Round = as.character(Round),
          Round = if_else(Round == 'MayJune', 'May', Round),
          Round = as.factor(Round))
-#going to remove CCMP2464 from MayJune
-mydata3<-mydata2[-c(13:24),]
 
-Summary2 <- mydata3 %>%
+#going to remove CCMP2464 altogether, because  I can't include in stats with Round (aliased coefficients=not equal replication)
+mydata2<-mydata %>%
+  filter(Genotype!="CCMP2464")%>%
+  droplevels()
+
+Summary2 <- mydata2 %>%
   group_by(Genotype, Temp, Round) %>%
   summarize(mean=mean(r, na.rm=TRUE), SE=sd(r, na.rm=TRUE)/sqrt(length(na.omit(r))))
 Summary2$Round <- factor(Summary2$Round,levels = c("May", "July"))
@@ -738,7 +742,6 @@ rGraph<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor
   scale_y_continuous(expand=c(0,0), limits=c(0,1))+
   facet_wrap(  ~ Round)
 rGraph
-rGraph+ggsave("GrowthCurverGraph_growthrate.pdf", width=10, height=6.19, dpi=300, unit="in")
 
 #Removing title, otherwise same as graph above
 pal<-c("#ac8eab", "#f2cec7", "#c67b6f")
@@ -754,36 +757,34 @@ rGraph.final<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp), group=
 rGraph.final
 rGraph.final+ggsave("Graphs/FinalGraphs/culture_growth.png", width=8, height=5)
 
-model1<-lm(r~Genotype*Temp*Round, data=mydata2)
+
+mydata3<-mydata[-c(13:24),]
+model1<-lm(r~Genotype*Temp*Round, data=mydata3)
 model1res<-resid(model1)
 qqp(model1res, "norm")
 
-mydata2$logr<-log(mydata2$r)
+mydata3$logr<-log(mydata3$r)
 
-logr.model<-lm(logr~Genotype*Temp*Round, data=mydata2)
+logr.model<-lm(logr~Round*Genotype*Temp, data=mydata3)
 qqp(resid(logr.model), "norm")
 #Pretty close
 
-mydata2$loglogr<-log(mydata2$logr+3)
-loglogr.model<-lm(loglogr~Genotype*Temp*Round, data=mydata2)
+mydata3$loglogr<-log(mydata3$logr+3)
+loglogr.model<-lm(loglogr~Genotype*Temp*Round, data=mydata3)
 qqp(resid(loglogr.model), "norm")
 #Same as one log
 
-mydata2$sqrtr<-sqrt(mydata2$r)
-sqrtr.model<-lm(sqrtr~Genotype*Temp*Round, data=mydata2)
+mydata3$sqrtr<-sqrt(mydata3$r)
+sqrtr.model<-lm(sqrtr~Round*Genotype*Temp, data=mydata3)
 qqp(resid(sqrtr.model), "norm")
 #Not as good as log
 
-Anova(logr.model)
-#Round is significant
+Anova(logr.model, type="III")
+#Aliased coefficients 
 
-logr.model2<-lmer(logr~Genotype*Temp, data=mydata2)
-Anova(logr.model2, type="III")
-#No sig interaction
 
 #Removing CCMP2464 altogether
-lessdata<-subset(mydata2, Genotype !="CCMP2464")
-View(lessdata)
+lessdata<-subset(mydata3, Genotype !="CCMP2464")
 
 No2464.model<-lm(r~Genotype*Temp*Round, data=lessdata)
 qqp(resid(No2464.model), "norm")
@@ -791,8 +792,8 @@ qqp(resid(No2464.model), "norm")
 logNo2464.model<-lm(logr~Genotype*Temp*Round, data=lessdata)
 qqp(resid(logNo2464.model), "norm")
 #Good
-anova(logNo2464.model)
-#No different conclusions. 
+Anova(logNo2464.model, type="III")
+#Yes, round is significant even without CCMP2464
 
 #Boxcox
 full.growth.model<-lm(r ~ Genotype*Temp*Round, data=mydata2)
@@ -811,9 +812,9 @@ qqp(resid(transf.growth.model), "norm")
 
 
 #Running stats on growth rate from growthcurver separated by round####
-#MayJune
+#MayJune (no CCMP2464)
 MayJuneData<-mydata2%>%
-  filter(Round=="MayJune")%>%
+  filter(Round=="May")%>%
   droplevels()
 
 May.model<-lm(r~Genotype*Temp, data=MayJuneData)
@@ -823,7 +824,7 @@ plot(May.model)
 Anova(May.model, type="III")
 
 #July
-JulyData<-mydata2%>%
+JulyData<-mydata%>%
   filter(Round=="July")%>%
   droplevels()
 July.model<-lm(r~Genotype*Temp, data=JulyData)
