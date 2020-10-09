@@ -778,6 +778,8 @@ rGraph.final.all<-ggplot(Summary3, aes(x=Genotype, y=mean, fill=factor(Temp), gr
 rGraph.final.all
 rGraph.final.all+ggsave("Graphs/FinalGraphs/culture_growth.CCMP2464.png", width=8, height=5)
 
+
+#Stats
 mydata3<-mydata[-c(13:24),]
 model1<-lm(r~Genotype*Temp*Round, data=mydata3)
 model1res<-resid(model1)
