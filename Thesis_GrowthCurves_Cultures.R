@@ -757,6 +757,26 @@ rGraph.final<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp), group=
 rGraph.final
 rGraph.final+ggsave("Graphs/FinalGraphs/culture_growth.png", width=8, height=5)
 
+#Putting CCMP2464 back in for July
+mydata3<-mydata[-c(13:24),]
+
+Summary3 <- mydata3 %>%
+  group_by(Genotype, Temp, Round) %>%
+  summarize(mean=mean(r, na.rm=TRUE), SE=sd(r, na.rm=TRUE)/sqrt(length(na.omit(r))))
+Summary3$Round <- factor(Summary3$Round,levels = c("May", "July"))
+
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f")
+rGraph.final.all<-ggplot(Summary3, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  labs(x="Symbiont Genotype", y="Maximum growth rate (r)", fill="Temperature")+#labels the x and y axes
+  theme(axis.text.x=element_text(color="black", size=11, angle = 30, hjust=1), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
+  scale_y_continuous(expand=c(0,0), limits=c(0,1))+
+  facet_wrap(  ~ Round)
+rGraph.final.all
+rGraph.final.all+ggsave("Graphs/FinalGraphs/culture_growth.CCMP2464.png", width=8, height=5)
 
 mydata3<-mydata[-c(13:24),]
 model1<-lm(r~Genotype*Temp*Round, data=mydata3)
