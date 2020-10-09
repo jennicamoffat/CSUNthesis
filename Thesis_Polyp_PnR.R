@@ -787,36 +787,50 @@ anova(loglogNPmodel2)
 
 #Stats with slopes/cell count, instead of slope/(cells/polyp area)####
 mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
-mydata$Temp<-as.factor(mydata$Temp)
+mydata<-mydata%>%
+  mutate_if(is.character, as.factor)
 mydata$Plate<-as.factor(mydata$Plate)
+summary(mydata)
+#These ranges are stupid... ugh this data sucks.  
+#Resp: -1121 to 472
+#GP: -788 to 366
+#NP: -703 to 1312
 
 #Respiration####
 resp.model<-lmer(Resp.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
 #Check assumptions
 plot(resp.model)
 qqp(resid(resp.model), "norm")
-#Not really normal at ends (surprise, surprise)
+#Not really normal at ends (surprise, surprise). But actually a little closer to normal than I expected. 
 
-View(mydata)
-#I want to log transform, but variables range from -56 to 23
-mydata$logResp<-log(mydata$Resp.per.bill.cell+58)
+#I want to log transform
+mydata$logResp<-log(mydata$Resp.per.bill.cell+1121)
 logresp.model<-lmer(logResp~Genotype*Temp+(1|Plate), data=mydata)
 #Check assumptions
 plot(logresp.model)
 qqp(resid(logresp.model), "norm")
 #Outliers: 154, 143
+#It's a horizontal line now. 
+ 
+Anova(resp.model, type="III")
+#Nothing significant. What a surprise. 
 
-#loglog
-mydata$loglogResp<-log(mydata$logResp)
-loglogresp.model<-lmer(loglogResp~Genotype*Temp+(1|Plate), data=mydata)
-plot(loglogresp.model)
-qqp(resid(loglogresp.model), "norm")
-#Only slightly better than just one log 
+resp.model.simp<-lm(Resp.per.bill.cell~Genotype*Temp, data=mydata)
+plot(resp.model.simp)
+qqp(resid(resp.model.simp), "norm")
+Anova(resp.model.simp, type="III")
 
-anova(loglogresp.model)
-#Nothing significant
+resp.model.simp2<-lm(Resp.per.bill.cell~Genotype+Temp, data=mydata)
+plot(resp.model.simp2)
+qqp(resid(resp.model.simp2), "norm")
+Anova(resp.model.simp2, type="III")
+#Well, temp is significant now
 
+AIC(resp.model)#2693
+AIC(resp.model.simp) #2783
+AIC(resp.model.simp2)#2778
 
+lrtest(resp.model.simp2, resp.model.simp)#simpler model is better. But ultimately the lmer is best. 
 
 #GP####
 GP.model<-lmer(GP.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
@@ -825,22 +839,24 @@ plot(GP.model)
 qqp(resid(GP.model), "norm")
 #Not really normal at ends again
 
-View(mydata)
-#GP ranges from -39 to 20
-#GP ranges from -15.3 to 7...
-mydata$logGP<-log(mydata$GP.per.bill.cell+40)
+mydata$logGP<-log(mydata$GP.per.bill.cell+789)
 logGP.model<-lmer(logGP~Genotype*Temp+(1|Plate), data=mydata)
 plot(logGP.model)
 qqp(resid(logGP.model), "norm")
 
-#loglog
-mydata$loglogGP<-log(mydata$logGP+1)
-loglogGP.model<-lmer(loglogGP~Genotype*Temp+(1|Plate), data=mydata)
-plot(loglogGP.model)
-qqp(resid(loglogGP.model), "norm")
-
-anova(loglogGP.model)
+Anova(GP.model, type="III")
 #nothing is significant
+
+GP.model.simp<-lm(GP.per.bill.cell~Genotype*Temp, data=mydata)
+GP.model.super.simp<-lm(GP.per.bill.cell~Genotype+Temp, data=mydata)
+
+AIC(GP.model)#2516
+AIC(GP.model.simp)#2594
+AIC(GP.model.super.simp)#2592
+
+GP.model.full<-lm(GP.per.bill.cell~Genotype*Plate*Temp, data=mydata)
+AIC(GP.model.full)#2618
+
 
 #NP####
 NP.model<-lmer(NP.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
@@ -849,23 +865,33 @@ plot(NP.model)
 qqp(resid(NP.model), "norm")
 #Not at ends
 
-#NP ranges from -35 to 65
-mydata$logNP<-log(mydata$NP.per.bill.cell+36)
+mydata$logNP<-log(mydata$NP.per.bill.cell+704)
 logNP.model<-lmer(logNP~Genotype*Temp+(1|Plate), data=mydata)
 qqp(resid(logNP.model), "norm")
 #Better
-anova(logNP.model)
+Anova(logNP.model, type="III")
 #Nothing significant
 
-#loglog
-mydata$loglogNP<-log(mydata$logNP+1)
-loglogNP.model<-lmer(loglogNP~Genotype*Temp+(1|Plate), data=mydata)
-qqp(resid(loglogNP.model), "norm")
+NP.model.full<-lm(logNP~Genotype*Temp*Plate, data=mydata)
+NP.model.simp<-lm(logNP~Genotype*Temp, data=mydata)
+NP.model.super.simp<-lm(logNP~Genotype+Temp, data=mydata)
 
-anova(loglogNP.model)
+AIC(logNP.model)#351
+AIC(NP.model.full)#320
+AIC(NP.model.simp)#300
+AIC(NP.model.super.simp)#294
 
+lrtest(NP.model.simp, NP.model.full)
+#Slightly sig (0.045)= bigger model better. But barely...
 
+lrtest(NP.model.super.simp, NP.model.simp)
+#Not sig=simpler model is better
 
+lrtest(NP.model.super.simp, NP.model.full)
+#Not sig (0.06)- simpler model is better
+
+Anova(NP.model.full, type="III")#Plate is not sig, so I can use simple model
+Anova(NP.model.super.simp,type="III")
 
 #Does cell count differ between genotype/temps?####
 mydata<-read.csv("Data/Polyp_PnR_full_combined_data.csv")
