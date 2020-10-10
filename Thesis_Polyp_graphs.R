@@ -505,28 +505,6 @@ survival.temp.plot<-ggplot(survival.temp, aes(x=Temp, y=n, fill=Survive.to.End))
 survival.temp.plot+ggsave("Graphs/FinalGraphs/Survival.temp.final.png", width=8, height=5)
 
 #Bud production####
-#Removing dead polyps
-NoDeadData <- subset(mydata, Survive.to.End == "Yes")
-NoDeadData
-
-BudData<-NoDeadData%>%
-  group_by(Genotype, Temp)%>%
-  summarize(mean=mean(Total.Buds, na.rm=TRUE), SE=sd(Total.Buds, na.rm=TRUE)/sqrt(length(na.omit(Total.Buds))))
-BudData
-
-BudPlot<-ggplot(BudData, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
-  theme_bw()+ #Removes grey background
-  scale_y_continuous(expand=c(0,0), limits=c(0, 5.1))+
-  theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
-  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Symbiont Strain", y="Number of buds", fill="Temperature")+  #labels the x and y axes
-  ggtitle("Average buds produced per polyp")+
-  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "brown3"), labels=c("26°C", "30°C", "32°C"))
-BudPlot
-
-BudPlot+ggsave("Graphs/Polyps/BudPlot_deadremoved.png", width=8, height=5)
-
 BudData<-mydata%>%
   group_by(Genotype, Temp)%>%
   summarize(mean=mean(Total.Buds, na.rm=TRUE), SE=sd(Total.Buds, na.rm=TRUE)/sqrt(length(na.omit(Total.Buds))))
@@ -550,33 +528,32 @@ bud.boxplot<-mydata%>%
   geom_boxplot()+
   theme_bw()+
   geom_jitter(color="black", size=0.5, alpha=0.7)+
-  scale_x_discrete(name = "Genotype") +
+  scale_x_discrete(name = "Symbiont Genotype") +
   scale_y_continuous(name = "Number of Buds")+
-  ggtitle("Total Bud Production per Polyp")+
-  theme(plot.title = element_text(face="bold"), 
-        axis.text.x=element_text(size=10), 
-        axis.text.y=element_text(size=10), 
-        axis.title.y = element_text(face="bold", size=12), 
-        axis.title.x = element_text(face="bold", size=12))+
+  theme(axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   labs(fill="Temperature")+
-  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
-bud.boxplot+ggsave("Graphs/Polyps/Bud.boxplot.png", width=10, height=5)
+  scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
+bud.boxplot+ggsave("Graphs/FinalGraphs/Bud.boxplot..final.png", width=10, height=5)
 
 bud.boxplot.nojitter<-mydata%>%
   ggplot(aes(x=Genotype, y=Total.Buds, fill=Temp))+
   geom_boxplot()+
   theme_bw()+
-  scale_x_discrete(name = "Genotype") +
+  scale_x_discrete(name = "Symbiont Genotype") +
   scale_y_continuous(name = "Number of Buds")+
-  ggtitle("Total Bud Production per Polyp")+
-  theme(plot.title = element_text(face="bold"), 
-        axis.text.x=element_text(size=10), 
-        axis.text.y=element_text(size=10), 
-        axis.title.y = element_text(face="bold", size=12), 
-        axis.title.x = element_text(face="bold", size=12))+
+  theme(axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   labs(fill="Temperature")+
-  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
-bud.boxplot.nojitter+ggsave("Graphs/Polyps/Bud.boxplot.nojitter.png", width=10, height=5)
+  scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
+bud.boxplot.nojitter
+ggsave("Graphs/FinalGraphs/Bud.boxplot.nojitter.png", width=10, height=5)
 
 #violin
 bud.violin<-mydata%>%
