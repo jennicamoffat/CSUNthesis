@@ -109,17 +109,17 @@ boxplot<-NoApoDataEphyra%>%
   ggplot(aes(x=Genotype, y=Total.Ephyra.Produced, fill=Temp))+
   geom_boxplot()+
   theme_bw()+
+  geom_jitter(color="black", size=0.1, alpha=0.2)+
   scale_x_discrete(name = "Genotype") +
   scale_y_continuous(name = "Total Ephyra Produced")+
-  ggtitle("Total ephyra production per polyp")+
-  theme(plot.title = element_text(face="bold"), 
-        axis.text.x=element_text(size=10), 
-        axis.text.y=element_text(size=10), 
-        axis.title.y = element_text(face="bold", size=12), 
-        axis.title.x = element_text(face="bold", size=12))+
+  theme(axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   labs(fill="Temperature")+
-  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
-boxplot
+  scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
+boxplot+ggsave("Graphs/FinalGraphs/TotalEphyraBox.png", width=8, height=5)
 #Since they all either produced 0, 1, or 2, there's too many dots to use jitter
 #I think bargraph is best to represent this one. 
 
@@ -138,13 +138,13 @@ violinplot<-NoApoDataEphyra%>%
   labs(fill="Temperature")+
   scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
 violinplot
-
+#This shows nothing, really.
 
 #New dataframe without dead
 NoApoNoDeadData <- subset(NoApoData, Survive.to.End == "Yes")
 View(NoApoNoDeadData)
 
-#Average Total Ephyra Produced#
+#Average Total Ephyra Produced no dead
 TotalEphyraNoDead <- NoApoNoDeadData %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Total.Ephyra.Produced, na.rm=TRUE), SE=sd(Total.Ephyra.Produced, na.rm=TRUE)/sqrt(length(na.omit(Total.Ephyra.Produced))))
@@ -163,7 +163,7 @@ TotalEphyraNoDeadPlot
 TotalEphyraNoDeadPlot+ggsave("Graphs/Polyps/EphyraProduced_deadremoved.pdf", width=11, height=6.19, dpi=300, unit="in")
 
 #Average Total Ephyra Produced as percent that inoculated 
-InoculatedData <- subset(NoApoNoDeadData, Days.to.Inoculation != "NA")
+InoculatedData <- subset(NoApoData, Days.to.Inoculation != "NA")
 
 EphyraifInoc <- InoculatedData %>%
   group_by(Genotype, Temp) %>%
@@ -179,9 +179,27 @@ EphyraifInocPlot<-ggplot(EphyraifInoc, aes(x=Genotype, y=mean, fill=factor(Temp)
   ggtitle("Average Ephyra produced per Polyp (if inoculated)")+
   scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "brown3"), labels=c("26°C", "30°C", "32°C"))
 EphyraifInocPlot
+ggsave("Graphs/Polyps/EphyraifInoc.pdf", width=11, height=6.19, dpi=300, unit="in")
+#Nothing noticeably different from whole data set
 
-EphyraifInocPlot+ggsave("Graphs/Polyps/EphyraifInoc.pdf", width=11, height=6.19, dpi=300, unit="in")
+#Ephyra production proportions####
+NoApoData$Total.Ephyra.Produced<-as.factor(NoApoData$Total.Ephyra.Produced)
+NoApoData$Total.Ephyra.Produced<-NoApoData$Total.Ephyra.Produced %>% replace_na("0")
 
+ephyra.prop<-NoApoData%>%
+  group_by(Genotype,Temp, Total.Ephyra.Produced)%>%
+  tally()
+
+pal<-c("#2c7fb8","#7fcdbb", "#edf8b1") #blue green
+ephyra.prop.bar<-ggplot(ephyra.prop, aes(x=Temp, y=n, fill=Total.Ephyra.Produced))+  #basic plot
+  theme_minimal()+
+  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
+  geom_bar(position=position_stack(), stat="identity", color="black")+
+  scale_fill_manual(values=pal)+
+  labs(x="Temperature (°C)", y="", fill="Total Ephyra by Polyp")+#labels the x and y axes
+  scale_y_continuous(expand=c(0,0), limits=c(0,25))+
+  facet_grid(~Genotype)
+ephyra.prop.bar+ggsave("Graphs/FinalGraphs/TotalEphyraProportion.png", width=8, height=5)
 
 #Time to strobilation####
 
@@ -537,7 +555,8 @@ bud.boxplot<-mydata%>%
         panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   labs(fill="Temperature")+
   scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
-bud.boxplot+ggsave("Graphs/FinalGraphs/Bud.boxplot..final.png", width=10, height=5)
+bud.boxplot
+ggsave("Graphs/FinalGraphs/Bud.boxplot..final.png", width=10, height=5)
 
 bud.boxplot.nojitter<-mydata%>%
   ggplot(aes(x=Genotype, y=Total.Buds, fill=Temp))+
