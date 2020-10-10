@@ -193,7 +193,6 @@ total.strob<-Developed.data%>%
 pal<-c("#DFADE1", "#859A51") #green, pink (potentially not colorblind friendly)
 pal<-c("#DFADE1", "#2c7fb8")
 pal<-c("#2c7fb8","#7fcdbb") #blue green
-
 strob.prop<-ggplot(total.strob, aes(x=Temp, y=n, fill=Strob))+  #basic plot
   theme_minimal()+
   theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
@@ -292,24 +291,38 @@ total.inoc<-Developed.data%>%
 ggplot(total.inoc, aes(fill=Inoc, y=n, x=Temp))+
   geom_bar(position="stack", stat="identity")+
   facet_wrap(~Genotype)
+#Inoculation proportion plot
+pal<-c("#2c7fb8","#7fcdbb") #blue green
+inoc.prop<-ggplot(total.inoc, aes(x=Temp, y=n, fill=Inoc))+  #basic plot
+  theme_minimal()+
+  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
+  geom_bar(position=position_stack(), stat="identity")+
+  scale_fill_manual(values=pal)+
+  labs(x="Temperature (°C)", y="", fill="Inoculated")+#labels the x and y axes
+  scale_y_continuous(expand=c(0,0), limits=c(0,25))+
+  facet_grid(~Genotype)
+inoc.prop
+inoc.prop+ggsave("Graphs/FinalGraphs/Inoc.prop.png", width=10, height=5)
 
-DaystoInocNoDead <- NoApoNoDeadData %>%
+DaystoInoc <- NoApoData %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Days.to.Inoculation, na.rm=TRUE), SE=sd(Days.to.Inoculation, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Inoculation))))
-DaystoInocNoDead
 
-DaystoInocNoDeadPlot<-ggplot(DaystoInocNoDead, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
+DaystoInocBar<-ggplot(DaystoInoc, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
-  scale_y_continuous(expand=c(0,0), limits=c(0, 24))+
-  theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  scale_y_continuous(expand=c(0,0), limits=c(0, 25))+
+  theme(axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Symbiont Strain", y="Number of days", fill="Temperature")+  #labels the x and y axes
-  ggtitle("Average Days to Inoculation")+
-  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "brown3"), labels=c("26°C", "30°C", "32°C"))
-DaystoInocNoDeadPlot
-
-DaystoInocNoDeadPlot+ggsave("Graphs/Polyps/DaystoInoc_deadremoved.png", width=8, height=5)
+  labs(x="Symbiont Genotype", y="Days to Inoculation", fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))
+DaystoInocBar
+DaystoInocBar+ggsave("Graphs/FinalGraphs/DaystoInoc.final.png", width=8, height=5)
 
 #Just temp, not geno
 DaystoInocNoDeadTemp <- NoApoNoDeadData %>%
@@ -348,17 +361,17 @@ inoc.boxplot<-NoApoData%>%
   geom_boxplot()+
   theme_bw()+
   geom_jitter(color="black", size=0.5, alpha=0.7)+
-  scale_x_discrete(name = "Genotype") +
+  scale_x_discrete(name = "Symbiont Genotype") +
   scale_y_continuous(name = "Days to Inoculation")+
-  ggtitle("Days to Inoculation")+
-  theme(plot.title = element_text(face="bold"), 
-        axis.text.x=element_text(size=10), 
-        axis.text.y=element_text(size=10), 
-        axis.title.y = element_text(face="bold", size=12), 
-        axis.title.x = element_text(face="bold", size=12))+
+  theme(axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   labs(fill="Temperature")+
-  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
-inoc.boxplot+ggsave("Graphs/Polyps/Inoculation.boxplot.png", width=10, height=5)
+  scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
+inoc.boxplot
+inoc.boxplot+ggsave("Graphs/FinalGraphs/inoc.boxplot.final.png", width=8, height=5)
 
 #time to ephyra####
 #First, let's see how many even got to strobilation
@@ -368,43 +381,58 @@ time.ephyra.total<-Developed.data%>%
 ggplot(time.ephyra.total, aes(fill=Ephyra, y=n, x=Temp))+
   geom_bar(position="stack", stat="identity")+
   facet_wrap(~Genotype)
+#Ephyra proportion plot
+pal<-c("#2c7fb8","#7fcdbb") #blue green
+ephyra.prop<-ggplot(time.ephyra.total, aes(x=Temp, y=n, fill=Ephyra))+  #basic plot
+  theme_minimal()+
+  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
+  geom_bar(position=position_stack(), stat="identity")+
+  scale_fill_manual(values=pal)+
+  labs(x="Temperature (°C)", y="", fill="Produced an Ephyra")+#labels the x and y axes
+  scale_y_continuous(expand=c(0,0), limits=c(0,25))+
+  facet_grid(~Genotype)
+ephyra.prop
+ephyra.prop+ggsave("Graphs/FinalGraphs/Ephyra.prop.png", width=10, height=5)
 
-#Boxplot of those that did produce an ephyra
-DaystoEphyraNoDead <- NoApoNoDeadData %>%
+
+#Bargraph of those that did produce an ephyra
+DaystoEphyra <- NoApoData %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Days.to.Ephyra, na.rm=TRUE), SE=sd(Days.to.Ephyra, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Ephyra))))
-DaystoEphyraNoDead
 
-DaystoEphyraNoDeadPlot<-ggplot(DaystoEphyraNoDead, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
-  theme_bw()+ #Removes grey background+
-  scale_y_continuous(expand=c(0,0), limits=c(0, 28))+
-  theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
+DaystoEphyraBar<-ggplot(DaystoEphyra, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  scale_y_continuous(expand=c(0,0), limits=c(0, 27))+
+  theme(axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Symbiont Strain", y="Number of days", fill="Temperature")+  #labels the x and y axes
-  ggtitle("Average Days to Produce an Ephyra")+
-  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "brown3"), labels=c("26°C", "30°C", "32°C"))
-DaystoEphyraNoDeadPlot
-
-DaystoEphyraNoDeadPlot+ggsave("Graphs/Polyps/DaystoEphyra_deadremoved.png", width=8, height=5)
+  labs(x="Symbiont Genotype", y="Days to Produce an Ephyra", fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))
+DaystoEphyraBar
+DaystoEphyraBar+ggsave("Graphs/FinalGraphs/DaystoEphyraBar.final.png", width=8, height=5)
 
 #boxplot
-TE.boxplot<-NoApoData%>%
+time.ephyra.boxplot<-NoApoData%>%
   ggplot(aes(x=Genotype, y=Days.to.Ephyra, fill=Temp))+
   geom_boxplot()+
   theme_bw()+
   geom_jitter(color="black", size=0.5, alpha=0.7)+
-  scale_x_discrete(name = "Genotype") +
-  scale_y_continuous(name = "Days to Ephyra")+
-  ggtitle("Days to Produce First Ephyra")+
-  theme(plot.title = element_text(face="bold"), 
-        axis.text.x=element_text(size=10), 
-        axis.text.y=element_text(size=10), 
-        axis.title.y = element_text(face="bold", size=12), 
-        axis.title.x = element_text(face="bold", size=12))+
+  scale_x_discrete(name = "Symbiont Genotype") +
+  scale_y_continuous(name = "Days to Produce an Ephyra")+
+  theme(axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   labs(fill="Temperature")+
-  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
-TE.boxplot+ggsave("Graphs/Polyps/DaystoEphyra.boxplot.png", width=10, height=5)
+  scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
+time.ephyra.boxplot
+time.ephyra.boxplot+ggsave("Graphs/FinalGraphs/DaystoEphyraBox.final.png", width=8, height=5)
 
 
 #Just temp, not geno
