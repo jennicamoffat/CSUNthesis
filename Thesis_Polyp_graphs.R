@@ -434,7 +434,6 @@ time.ephyra.boxplot<-NoApoData%>%
 time.ephyra.boxplot
 time.ephyra.boxplot+ggsave("Graphs/FinalGraphs/DaystoEphyraBox.final.png", width=8, height=5)
 
-
 #Just temp, not geno
 DaystoEphyraNoDeadTemp <- NoApoNoDeadData %>%
   group_by(Temp) %>%
@@ -466,39 +465,29 @@ DaysEphyraGeno<-ggplot(DaystoEphyraNoDeadGeno, aes(x=Genotype, y=mean))+  #basic
 DaysEphyraGeno+ggsave("Graphs/Polyps/DaystoEphyraGeno.png", width=10, height=5)
 
 #Survival####
-#I have one weird NA from a spilled one. Just gonna remove it. 
-mydata2<-subset(mydata, Survive.to.End != "NA")
+#I have one weird NA from a spilled one. Just gonna make it a no. 
+mydata$Survive.to.End<-mydata$Survive.to.End %>% replace_na("No")
 
-Survival<- mydata2%>%group_by(Genotype, Temp)%>%
-  tally(Survive.to.End == "Yes")
-Survival
+survival<-mydata%>%
+  group_by(Genotype, Temp, Survive.to.End)%>%
+  tally()
 
-Survival$SurvivalRate<-Survival$n/24
-Survival
+ggplot(survival, aes(fill=Survive.to.End, y=n, x=Temp))+
+  geom_bar(position="stack", stat="identity")+
+  facet_wrap(~Genotype)
 
-#Not quite because I need SE somehow
-Survival2<- mydata2%>%group_by(Genotype, Temp, Plate, WellNum)%>%
-  tally(Survive.to.End == "Yes")
-Survival2
-
-SurvivalSummary<-Survival2%>%
-  group_by(Genotype, Temp) %>%
-  summarize(mean=mean(n, na.rm=TRUE), SE=sd(n, na.rm=TRUE)/sqrt(length(na.omit(n))))
-SurvivalSummary
-#I think this is what I need. Double check!
-
-SurvivalPlot<-ggplot(SurvivalSummary, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
-  theme_bw()+ #Removes grey background
-  theme(axis.text.x=element_text(color="black", size=14), axis.text.y=element_text(face="bold", color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
-  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y="Avg Survival", fill="Temperature")+  #labels the x and y axes
-  ggtitle("Average Survival")+
-  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "brown3"), labels=c("26°C", "30°C", "32°C"))
-SurvivalPlot
-
-SurvivalPlot+ggsave("Graphs/Polyps/SurvivalPlot.pdf", width=11, height=6.19, dpi=300, unit="in")
-
+#Survival proportion plot
+pal<-c("#2c7fb8","#7fcdbb") #blue green
+survival.prop<-ggplot(survival, aes(x=Temp, y=n, fill=Survive.to.End))+  #basic plot
+  theme_minimal()+
+  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
+  geom_bar(position=position_stack(), stat="identity")+
+  scale_fill_manual(values=pal)+
+  labs(x="Temperature (°C)", y="", fill="Survived")+#labels the x and y axes
+  scale_y_continuous(expand=c(0,0), limits=c(0,25))+
+  facet_grid(~Genotype)
+survival.prop
+ggsave("Graphs/FinalGraphs/Survival.final.png", width=10, height=5)
 
 #Bud production####
 #Removing dead polyps
