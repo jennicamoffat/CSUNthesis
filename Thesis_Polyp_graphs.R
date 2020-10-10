@@ -489,6 +489,21 @@ survival.prop<-ggplot(survival, aes(x=Temp, y=n, fill=Survive.to.End))+  #basic 
 survival.prop
 ggsave("Graphs/FinalGraphs/Survival.final.png", width=10, height=5)
 
+
+#Survival by temp
+survival.temp<-mydata%>%
+  group_by(Temp, Survive.to.End)%>%
+  tally()
+pal<-c("#2c7fb8","#7fcdbb") #blue green
+survival.temp.plot<-ggplot(survival.temp, aes(x=Temp, y=n, fill=Survive.to.End))+  #basic plot
+  theme_minimal()+
+  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
+  geom_bar(position=position_stack(), stat="identity", size=0.5)+
+  scale_fill_manual(values=pal)+
+  labs(x="Temperature (°C)", y="", fill="Survived")+#labels the x and y axes
+  scale_y_continuous(expand=c(0,0), limits=c(0,145))
+survival.temp.plot+ggsave("Graphs/FinalGraphs/Survival.temp.final.png", width=8, height=5)
+
 #Bud production####
 #Removing dead polyps
 NoDeadData <- subset(mydata, Survive.to.End == "Yes")
