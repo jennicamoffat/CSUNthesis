@@ -199,7 +199,7 @@ ephyra.prop.bar<-ggplot(ephyra.prop, aes(x=Temp, y=n, fill=Total.Ephyra.Produced
   labs(x="Temperature (°C)", y="", fill="Total Ephyra by Polyp")+#labels the x and y axes
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
   facet_grid(~Genotype)
-ephyra.prop.bar+ggsave("Graphs/FinalGraphs/TotalEphyraProportion.png", width=8, height=5)
+ephyra.prop.bar+ggsave("Graphs/FinalGraphs/TotalEphyraProportion.png", width=10, height=5)
 
 #Time to strobilation####
 
@@ -214,7 +214,7 @@ pal<-c("#2c7fb8","#7fcdbb") #blue green
 strob.prop<-ggplot(total.strob, aes(x=Temp, y=n, fill=Strob))+  #basic plot
   theme_minimal()+
   theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
-  geom_bar(position=position_stack(), stat="identity")+
+  geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
   labs(x="Temperature (°C)", y="", fill="Strobilated")+#labels the x and y axes
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
@@ -301,11 +301,12 @@ DaysStrobGeno<-ggplot(DaystoStrobNoDeadGeno, aes(x=Genotype, y=mean))+  #basic p
 DaysStrobGeno+ggsave("Graphs/Polyps/DaystoStrobGeno.png", width=10, height=5)
 
 
-#Time to inoculation (same issue as strobilation)####
+#Time to inoculation####
 #First, let's see how many even inoculated
 total.inoc<-Developed.data%>%
   group_by(Genotype, Temp, Inoc)%>%
   tally()
+
 ggplot(total.inoc, aes(fill=Inoc, y=n, x=Temp))+
   geom_bar(position="stack", stat="identity")+
   facet_wrap(~Genotype)
@@ -314,7 +315,7 @@ pal<-c("#2c7fb8","#7fcdbb") #blue green
 inoc.prop<-ggplot(total.inoc, aes(x=Temp, y=n, fill=Inoc))+  #basic plot
   theme_minimal()+
   theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
-  geom_bar(position=position_stack(), stat="identity")+
+  geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
   labs(x="Temperature (°C)", y="", fill="Inoculated")+#labels the x and y axes
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
@@ -404,7 +405,7 @@ pal<-c("#2c7fb8","#7fcdbb") #blue green
 ephyra.prop<-ggplot(time.ephyra.total, aes(x=Temp, y=n, fill=Ephyra))+  #basic plot
   theme_minimal()+
   theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
-  geom_bar(position=position_stack(), stat="identity")+
+  geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
   labs(x="Temperature (°C)", y="", fill="Produced an Ephyra")+#labels the x and y axes
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
@@ -499,7 +500,7 @@ pal<-c("#2c7fb8","#7fcdbb") #blue green
 survival.prop<-ggplot(survival, aes(x=Temp, y=n, fill=Survive.to.End))+  #basic plot
   theme_minimal()+
   theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
-  geom_bar(position=position_stack(), stat="identity")+
+  geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
   labs(x="Temperature (°C)", y="", fill="Survived")+#labels the x and y axes
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
