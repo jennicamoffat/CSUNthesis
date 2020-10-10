@@ -10,29 +10,25 @@ library(MASS)
 library(RColorBrewer)
 library(broman)
 
-#October PnR#####
-#August PnR had weird issue with 32* because the calibration was not set up for 32*
-#So I had to rerun it in October using one-point calibration
-#Clear the environment
-rm(list=ls())
-#Load PnR data
+#Load October PnR data (August PnR is BAD data)
 mydata<-read.csv("Data/OctoberPnR_r.csv")
 mydata$Temperature<-as.factor(mydata$Temperature)
+mydata<-mydata%>%
+  mutate_if(is.character, as.factor)
 
-#October PnR graphs#####
-#Adding columns for Resp/GP/NP per billion cells
+
+#Adding columns for Resp/GP/NP per billion cells####
 #Avg GP/Resp/NP_umol_L_min is average of the two wells minus the average of the control wells (DI)
 #10^9*(value/avg count) = umol O2 per min per billion cells
 mydata <- mutate(mydata, GP = 1000000000*(AvgGP_umol_L_min/CellsPerL),
                  NP=1000000000*(AvgNP_umol_L_min/CellsPerL),
                  Resp=1000000000*(AvgResp_umol_L_min/CellsPerL))
-
+#GP graphs####
 SummaryGP <- mydata %>%
   group_by(Genotype, Temperature) %>%
   summarize(mean=mean(GP, na.rm=TRUE), SE=sd(GP, na.rm=TRUE)/sqrt(length(na.omit(GP))))
 
-pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
-pal<-c("skyblue3", "darkgoldenrod2", "firebrick3")
+pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
 GPGraph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(0, 5.5))+
@@ -42,12 +38,12 @@ GPGraph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), gro
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_bar(stat="identity", position="dodge", size=0.6, color="black") + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y=expression(GP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
+  labs(x="Symbiont Genotype", y=expression(GP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
   ggtitle("Gross Photosynthesis of Symbionts in Culture")
-GPGraph+ggsave("Graphs/PnR/OctCulturePnR/GPGraph_Oct.png",width=8, height=5)
+GPGraph+ggsave("Graphs/FinalGraphs/Culture_GPBar_Oct.png",width=8, height=5)
 
 #GP Boxplot
 #boxplot
@@ -56,36 +52,34 @@ culture.GP.boxplot<-mydata%>%
   geom_boxplot()+
   theme_bw()+
   geom_jitter(color="black", size=0.5, alpha=0.7)+
-  ggtitle("Gross Photosynthesis of Cultures")+
-  theme(plot.title = element_text(face="bold"), 
-        axis.text.x=element_text(size=10), 
-        axis.text.y=element_text(size=10), 
-        axis.title.y = element_text(face="bold", size=12), 
-        axis.title.x = element_text(face="bold", size=12))+
-  labs(fill="Temperature", x="Genotype", y=expression(Gross~Photo.~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
-  scale_fill_manual(values = c("#679A99", "#9DB462", "#E4C7E5"), labels=c("26°C", "30°C","32°C"))
-culture.GP.boxplot+ggsave("Graphs/PnR/OctCulturePnR/Oct_GP_Boxplot.png", width=8, height=5)
+  theme(axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  scale_fill_manual(values = c("#679A99", "#9DB462", "#E4C7E5"), labels=c("26°C", "30°C","32°C"))+
+  labs(fill="Temperature", x="Symbiont Genotype", y=expression(Gross~Photo.~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))
+culture.GP.boxplot+ggsave("Graphs/PnR/OctCulturePnR/Culture_GPBox_Oct.png", width=8, height=5)
 
+#NP graphs####
 #Net Photo. NP = umol O2 per billion cells. 
 SummaryNP <- mydata %>%
   group_by(Genotype, Temperature) %>%
   summarize(mean=mean(NP, na.rm=TRUE), SE=sd(NP, na.rm=TRUE)/sqrt(length(na.omit(NP))))
-SummaryNP
 
 pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
-pal<-c("skyblue3", "darkgoldenrod2", "firebrick3")
+pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
 NPGraph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(0, 7))+
-  theme(plot.title = element_text(face = "bold", size=16),
-        axis.text.x=element_text(color="black", size=11), 
+  theme(axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_bar(stat="identity", position="dodge", size=0.6, color="black") + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y=expression(NP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
+  labs(x="Symbiont Genotype", y=expression(NP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
   ggtitle("Net Photosynthesis of Symbionts in Culture")
 NPGraph
@@ -107,7 +101,7 @@ culture.NP.boxplot<-mydata%>%
   scale_fill_manual(values = c("#679A99", "#9DB462", "#E4C7E5"), labels=c("26°C", "30°C","32°C"))
 culture.NP.boxplot+ggsave("Graphs/PnR/OctCulturePnR/Oct_NP_boxplot.png",width=10, height=5)
 
-#Respiration
+#Respiration graphs####
 SummaryResp <- mydata %>%
   group_by(Genotype, Temperature) %>%
   summarize(mean=mean(Resp, na.rm=TRUE), SE=sd(Resp, na.rm=TRUE)/sqrt(length(na.omit(Resp))))
