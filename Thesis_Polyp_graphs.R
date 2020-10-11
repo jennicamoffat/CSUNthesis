@@ -1,4 +1,5 @@
 #Cassiopea Polyp Data
+#Just the graphs
 #Created by Jennica Moffat 02162020
 
 #Clear the environment
@@ -30,11 +31,6 @@ Developed.data<-NoApoData%>%
 #GRAPHS#
 #Total ephyra production####
 #Bargraph of total average ephyra production including dead ones####
-#New data frame without Apo (since no ephyra)
-NoApoData <- mydata %>%
-  filter(Genotype != "Aposymbiotic") %>%
-  droplevels
-
 TotalEphyra <- NoApoData %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Total.Ephyra.Produced, na.rm=TRUE), SE=sd(Total.Ephyra.Produced, na.rm=TRUE)/sqrt(length(na.omit(Total.Ephyra.Produced))))
@@ -62,7 +58,7 @@ Ephyra.final<-ggplot(TotalEphyra, aes(x=Genotype, y=mean, fill=factor(Temp), gro
   theme_bw()+ #Removes grey background
   labs(x="Symbiont Genotype", y="Ephyra Produced", fill="Temperature")+#labels the x and y axes
   theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
   scale_y_continuous(expand=c(0,0), limits=c(0,1.6))
@@ -190,7 +186,7 @@ ephyra.prop<-NoApoData%>%
   group_by(Genotype,Temp, Total.Ephyra.Produced)%>%
   tally()
 
-pal<-c("#2c7fb8","#7fcdbb", "#edf8b1") #blue green
+pal<-c("#2c7fb8","#7fcdbb", "#edf8b1") #blue green yellow
 ephyra.prop.bar<-ggplot(ephyra.prop, aes(x=Temp, y=n, fill=Total.Ephyra.Produced))+  #basic plot
   theme_minimal()+
   theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
@@ -199,7 +195,7 @@ ephyra.prop.bar<-ggplot(ephyra.prop, aes(x=Temp, y=n, fill=Total.Ephyra.Produced
   labs(x="Temperature (°C)", y="", fill="Total Ephyra by Polyp")+#labels the x and y axes
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
   facet_grid(~Genotype)
-ephyra.prop.bar+ggsave("Graphs/FinalGraphs/TotalEphyraProportion.png", width=10, height=5)
+ephyra.prop.bar+ggsave("Graphs/FinalGraphs/TotalEphyraProportion.png", width=8, height=5)
 
 #Time to strobilation####
 
@@ -245,7 +241,7 @@ DaystoStrobBar<-ggplot(DaystoStrob, aes(x=Genotype, y=mean, fill=factor(Temp), g
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Symbiont Genotype", y="Days to Strobilation", fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))
@@ -323,6 +319,7 @@ inoc.prop<-ggplot(total.inoc, aes(x=Temp, y=n, fill=Inoc))+  #basic plot
 inoc.prop
 inoc.prop+ggsave("Graphs/FinalGraphs/Inoc.prop.png", width=10, height=5)
 
+#Bargraph
 DaystoInoc <- NoApoData %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Days.to.Inoculation, na.rm=TRUE), SE=sd(Days.to.Inoculation, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Inoculation))))
@@ -336,7 +333,7 @@ DaystoInocBar<-ggplot(DaystoInoc, aes(x=Genotype, y=mean, fill=factor(Temp), gro
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Symbiont Genotype", y="Days to Inoculation", fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))
@@ -428,7 +425,7 @@ DaystoEphyraBar<-ggplot(DaystoEphyra, aes(x=Genotype, y=mean, fill=factor(Temp),
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Symbiont Genotype", y="Days to Produce an Ephyra", fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))
@@ -517,7 +514,7 @@ pal<-c("#2c7fb8","#7fcdbb") #blue green
 survival.temp.plot<-ggplot(survival.temp, aes(x=Temp, y=n, fill=Survive.to.End))+  #basic plot
   theme_minimal()+
   theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
-  geom_bar(position=position_stack(), stat="identity", size=0.5)+
+  geom_bar(color="black", position=position_stack(), stat="identity", size=0.5)+
   scale_fill_manual(values=pal)+
   labs(x="Temperature (°C)", y="", fill="Survived")+#labels the x and y axes
   scale_y_continuous(expand=c(0,0), limits=c(0,145))
@@ -533,12 +530,12 @@ Buds.final<-ggplot(BudData, aes(x=Genotype, y=mean, fill=factor(Temp), group=fac
   theme_bw()+ #Removes grey background
   labs(x="Symbiont Genotype", y="Number of Buds", fill="Temperature")+#labels the x and y axes
   theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
   scale_y_continuous(expand=c(0,0), limits=c(0,5.1))
 Buds.final
-Buds.final+ggsave("Graphs/FinalGraphs/polyp_buds.png", width=8, height=5)
+Buds.final+ggsave("Graphs/FinalGraphs/Polyp_buds_bar.png", width=8, height=5)
 
 
 #Boxplot
