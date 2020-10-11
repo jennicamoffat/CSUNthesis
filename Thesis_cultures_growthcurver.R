@@ -1,0 +1,415 @@
+#Symbiodinium microadriaticum growth curves
+#Created by Jennica Moffat Oct 11, 2020
+#Just growthcurvercode (stats and graphs) originally from Thesis_GrowthCurves_Cultures code
+#load libraries
+library(tidyverse)
+library(car)
+library(PNWColors)
+library(reshape2)
+library(growthcurver)
+library(purrr)
+library(lme4)
+library(lmerTest)
+library("lmtest")
+
+#Clear the environment
+rm(list=ls())
+
+#Using "growthcurver" package#####
+rm(list=ls())
+mydata<-read.csv("GrowthDataCombined_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
+
+#Getting rid of NA's, but can only do one round at a time.
+MayJuneDat<-subset(mydata, Round=="MayJune")
+#Pivoting data to use growthcurver package
+#Value for each new cell is cell density from average (cells/mL)
+MayJuneGrowthData<-pivot_wider(MayJuneDat, id_cols = NULL, names_from = c(Genotype,Flask,Temp),
+                               names_prefix = "", names_repair = "check_unique",
+                               values_from = Density_cellspermL, values_fill = NULL, values_fn = NULL)
+#removing unnecessary columns (round, method, calculations, individual counts)
+MayJuneGrowthData2 <- MayJuneGrowthData[ -c(1,2,4:18) ]
+#Getting rid of NA's
+#From stack overflow response "Here it, first, performs a wide-to-long data-transformation, excluding the "A" column and removing the missing values. Second, it groups by "A" column and the variable names. Third, it removes the duplicate values. Finally, it returns the data to its original wide format."
+MayJuneData<-MayJuneGrowthData2 %>%
+  gather(var, val, -Day, na.rm = TRUE) %>%
+  group_by(Day, var) %>%
+  distinct(val) %>%
+  spread(var, val)
+#IT WOOOOOOOOORKED
+
+ggplot(data=MayJuneData,aes(x = time, y=CCMP2464_1_32))+geom_point()
+
+#Need to rename "Day" column to "time" for the package. 
+names(MayJuneData)[1]<-"time"
+
+# Now, we'll use Growthcurver to summarize the growth curve data for the entire
+# plate using the default background correction method ("min").
+gc_out <- SummarizeGrowthByPlate(MayJuneData, plot_fit = TRUE, plot_file="MayJuneGrowthValues.pdf")
+head(gc_out)
+View(gc_out)
+#CCMP data are the only data that can't be fit, cuz it didn't grow.
+
+#Export to excel file
+library("xlsx")
+write.xlsx(gc_out, file = "GrowthcurverData.xlsx",
+           sheetName = "MayJune", append = FALSE)
+
+#Going to try to run the model for one replicate
+model.FLCass_1_26 <- SummarizeGrowth(MayJuneData$time, MayJuneData$FLCass_1_26)
+#Let's see how it looks.
+plot(model.FLCass_1_26)
+# To see all the available metrics
+str(model.FLCass_1_26$vals)
+
+model.FLCass_2_26 <- SummarizeGrowth(MayJuneData$time, MayJuneData$FLCass_2_26)
+plot(model.FLCass_2_26)
+
+model.FLCass_3_26 <- SummarizeGrowth(MayJuneData$time, MayJuneData$FLCass_3_26)
+plot(model.FLCass_3_26)
+
+model.FLCass_4_26 <- SummarizeGrowth(MayJuneData$time, MayJuneData$FLCass_4_26)
+plot(model.FLCass_4_26)
+
+
+####So now the whole thing for July
+JulyData<-subset(mydata,Round == "July")
+
+
+#Pivoting data to use growthcurver package
+JulyGrowthData<-pivot_wider(JulyData, id_cols = NULL, names_from = c(Genotype,Flask,Temp),
+                            names_prefix = "", names_repair = "check_unique",
+                            values_from = Density_cellspermL, values_fill = NULL, values_fn = NULL)
+#removing unnecessary columns
+JulyGrowthData <- JulyGrowthData[ -c(1,2,4:18) ]
+View(JulyGrowthData)
+#Getting rid of NA's
+#From stack overflow response "Here it, first, performs a wide-to-long data-transformation, excluding the "A" column and removing the missing values. Second, it groups by "A" column and the variable names. Third, it removes the duplicate values. Finally, it returns the data to its original wide format."
+JulyData<-JulyGrowthData %>%
+  gather(var, val, -Day, na.rm = TRUE) %>%
+  group_by(Day, var) %>%
+  distinct(val) %>%
+  spread(var, val)
+View(JulyData)
+#IT WOOOOOOOOORKED
+
+#Need to rename "Day" column to "time" for the package. 
+names(JulyData)[1]<-"time"
+
+# Now, we'll use Growthcurver to summarize the growth curve data for the entire
+# plate using the default background correction method ("min").
+gc_out2 <- SummarizeGrowthByPlate(JulyData, plot_fit = TRUE, plot_file="JulyGrowthValues.pdf")
+head(gc_out2)
+View(gc_out2)
+#Export to same excel file
+write.xlsx(gc_out2, file = "GrowthcurverData.xlsx",
+           sheetName = "July", append = TRUE)
+
+
+#Stats on data output from growthcurver#####
+rm(list=ls())
+mydata<-read.csv("Data/GrowthcurverData_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
+View(mydata)
+#going to remove CCMP2464 from MayJune
+mydata2<-mydata[-c(13:24),]
+
+summary<-mydata2%>%
+  group_by(Round)%>%
+  summarize(sigma=mean(sigma), r=mean(r))
+summary
+#"sigma is a measure of the goodnesss of fit of the parameters of the logistic equation for the data; 
+#it is the residual sum of squares from the nonlinear regression model. 
+#Smaller sigma values indicate a better fit of the logistic curve to the data than larger values."
+hist(mydata2$sigma, main = "Histogram of sigma values", xlab = "sigma")
+# Show the top 5 samples with the largest sigma value 
+#(with the worst model fit to the growth curve data)
+mydata2 %>% top_n(5, sigma) %>% arrange(desc(sigma))
+
+#Graphing and analyzing r#####
+rm(list=ls())
+mydata<-read.csv("Data/GrowthcurverData_r.csv")
+mydata<-mydata%>%
+  mutate_if(is.character,as.factor)
+
+#Change name of MayJune to just May
+mydata<-mydata %>%
+  mutate(Round = as.character(Round),
+         Round = if_else(Round == 'MayJune', 'May', Round),
+         Round = as.factor(Round))
+
+#going to remove CCMP2464 altogether, because  I can't include in stats with Round (aliased coefficients=not equal replication)
+mydata2<-mydata %>%
+  filter(Genotype!="CCMP2464")%>%
+  droplevels()
+
+Summary2 <- mydata2 %>%
+  group_by(Genotype, Temp, Round) %>%
+  summarize(mean=mean(r, na.rm=TRUE), SE=sd(r, na.rm=TRUE)/sqrt(length(na.omit(r))))
+Summary2$Round <- factor(Summary2$Round,levels = c("May", "July"))
+
+pal=pnw_palette("Sailboat",3)
+pal=wes_palette("Moonrise3", 3)
+pal=pnw_palette("Sunset2", 3)
+pal<-c("#2c6184", "#f9ad2a", "#cc5c76")
+pal<-c("#675478", "#efbc82", "#c67b6f") #Modified Sunset
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #I think this is the one! Modified Shuksan and sunset combined
+
+rGraph<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Symbiont Genotype", y="Maximum growth rate (r)", fill="Temperature")+#labels the x and y axes
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
+  ggtitle("Exponential Growth Rates calculated with growthcurver package")+
+  scale_y_continuous(expand=c(0,0), limits=c(0,1))+
+  facet_wrap(  ~ Round)
+rGraph
+
+#Removing title, otherwise same as graph above
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f")
+rGraph.final<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  labs(x="Symbiont Genotype", y="Maximum growth rate (r)", fill="Temperature")+#labels the x and y axes
+  theme(axis.text.x=element_text(color="black", size=11, angle = 30, hjust=1), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
+  scale_y_continuous(expand=c(0,0), limits=c(0,1))+
+  facet_wrap(  ~ Round)
+rGraph.final
+rGraph.final+ggsave("Graphs/FinalGraphs/culture_growth.png", width=8, height=5)
+
+#Putting CCMP2464 back in for July
+mydata3<-mydata[-c(13:24),]
+
+Summary3 <- mydata3 %>%
+  group_by(Genotype, Temp, Round) %>%
+  summarize(mean=mean(r, na.rm=TRUE), SE=sd(r, na.rm=TRUE)/sqrt(length(na.omit(r))))
+Summary3$Round <- factor(Summary3$Round,levels = c("May", "July"))
+
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f")
+rGraph.final.all<-ggplot(Summary3, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  labs(x="Symbiont Genotype", y="Maximum growth rate (r)", fill="Temperature")+#labels the x and y axes
+  theme(axis.text.x=element_text(color="black", size=11, angle = 30, hjust=1), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
+  scale_y_continuous(expand=c(0,0), limits=c(0,1))+
+  facet_wrap(  ~ Round)
+rGraph.final.all
+rGraph.final.all+ggsave("Graphs/FinalGraphs/culture_growth.CCMP2464.png", width=8, height=5)
+
+
+#Stats
+mydata3<-mydata[-c(13:24),]
+model1<-lm(r~Genotype*Temp*Round, data=mydata3)
+model1res<-resid(model1)
+qqp(model1res, "norm")
+
+mydata3$logr<-log(mydata3$r)
+
+logr.model<-lm(logr~Round*Genotype*Temp, data=mydata3)
+qqp(resid(logr.model), "norm")
+#Pretty close
+
+mydata3$loglogr<-log(mydata3$logr+3)
+loglogr.model<-lm(loglogr~Genotype*Temp*Round, data=mydata3)
+qqp(resid(loglogr.model), "norm")
+#Same as one log
+
+mydata3$sqrtr<-sqrt(mydata3$r)
+sqrtr.model<-lm(sqrtr~Round*Genotype*Temp, data=mydata3)
+qqp(resid(sqrtr.model), "norm")
+#Not as good as log
+
+Anova(logr.model, type="III")
+#Aliased coefficients 
+
+
+#Removing CCMP2464 altogether
+lessdata<-subset(mydata3, Genotype !="CCMP2464")
+
+No2464.model<-lm(r~Genotype*Temp*Round, data=lessdata)
+qqp(resid(No2464.model), "norm")
+
+logNo2464.model<-lm(logr~Genotype*Temp*Round, data=lessdata)
+qqp(resid(logNo2464.model), "norm")
+#Good
+Anova(logNo2464.model, type="III")
+#Yes, round is significant even without CCMP2464
+
+#Boxcox
+full.growth.model<-lm(r ~ Genotype*Temp*Round, data=mydata2)
+step.growth.model<-stepAIC(full.growth.model, direction="both", trace = F)
+
+boxcox<-boxcox(step.growth.model,lambda = seq(-5, 5, 1/1000),plotit = TRUE )
+
+Selected.Power<-boxcox$x[boxcox$y==max(boxcox$y)]
+Selected.Power
+#0.18
+
+mydata2$transf.r<-(mydata2$r)^0.18
+transf.growth.model<-lm(transf.r~Genotype*Temp*Round, data = mydata2)
+qqp(resid(transf.growth.model), "norm")
+#I think that's the same as log, so I'll just stick with log
+
+
+#Running stats on growth rate from growthcurver separated by round####
+#MayJune (no CCMP2464)
+MayJuneData<-mydata2%>%
+  filter(Round=="May")%>%
+  droplevels()
+
+May.model<-lm(r~Genotype*Temp, data=MayJuneData)
+qqp(resid(May.model), "norm")
+#Normal, yay!
+plot(May.model)
+Anova(May.model, type="III")
+
+#July
+JulyData<-mydata%>%
+  filter(Round=="July")%>%
+  droplevels()
+July.model<-lm(r~Genotype*Temp, data=JulyData)
+qqp(resid(July.model), "norm")
+#Not normal
+
+JulyData$logr<-log(JulyData$r)
+logJuly.model<-lm(logr~Genotype*Temp, data=JulyData)
+qqp(resid(logJuly.model), "norm")
+#Still not good enough
+
+JulyData$loglogr<-log(JulyData$logr+3)
+loglogJuly.model<-lm(loglogr~Genotype*Temp, data=JulyData)
+qqp(resid(loglogJuly.model), "norm")
+#Hm close
+
+#BoxCox
+full.model<-lm(r ~ Genotype*Temp, data=JulyData)
+step.model<-stepAIC(full.model, direction="both", trace = F)
+
+boxcox<-boxcox(step.model,lambda = seq(-5, 5, 1/1000),plotit = TRUE )
+
+Selected.Power<-boxcox$x[boxcox$y==max(boxcox$y)]
+Selected.Power
+#0.15
+
+JulyData$transf.r<-(JulyData$r)^0.15
+transf.model<-lm(transf.r~Genotype*Temp, data = JulyData)
+qqp(resid(transf.model), "norm")
+#Worse than double log
+
+#Using double log
+Anova(loglogJuly.model, type="III")
+#Graphing growthcurver max growthrate####
+mydata<-read.csv("Data/GrowthcurverData_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
+View(mydata)
+#going to remove CCMP2464 from MayJune
+mydata2<-mydata[-c(13:24),]
+View(mydata2)
+
+Summary2 <- mydata2 %>%
+  group_by(Genotype, Temp, Round) %>%
+  summarize(mean=mean(r, na.rm=TRUE), SE=sd(r, na.rm=TRUE)/sqrt(length(na.omit(r))))
+View(Summary2)
+Summary2$Round <- factor(Summary2$Round,levels = c("MayJune", "July"))
+
+Growthcurver.r.Graph<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Genotype", y="Excel Exponential", fill="Temperature")+#labels the x and y axes
+  facet_wrap(  ~ Round)+
+  scale_fill_manual(values = wes_palette("Moonrise3"))+
+  ggtitle("Exponential Growth Rates from growthcruver package")
+Growthcurver.r.Graph
+Growthcurver.r.Graph+ggsave("GrowthCurverGraph_growthrates.pdf", width=10, height=6.19, dpi=300, unit="in")
+
+#Bargraph of just July growthcurver####
+JulyData <- mydata %>%
+  filter(Round == "July") %>%
+  droplevels
+JulyData
+
+JulySummary <- JulyData %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(r, na.rm=TRUE), SE=sd(r, na.rm=TRUE)/sqrt(length(na.omit(r))))
+head(JulySummary)
+
+July.growthcurver.r.graph<-ggplot(JulySummary, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  scale_y_continuous(expand=c(0,0), limits=c(0, 1))+
+  theme(plot.title = element_text(face = "bold", size=16), axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Symbiont Strain", y="Max Growth Rate", fill="Temperature")+#labels the x and y axes
+  scale_fill_manual(values = c("skyblue3", "darkgoldenrod2", "brown3"), labels=c("26°C", "30°C", "32°C"))+
+  ggtitle("Maximum Growth Rate of Symbionts in Culture")
+July.growthcurver.r.graph
+July.growthcurver.r.graph+ggsave("Graphs/Growth/July.growthcurver.r.png", width=8, height=5)
+
+#Boxplot of growthercurver max growth rate####
+mydata<-read.csv("Data/GrowthcurverData_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
+View(mydata)
+#going to remove CCMP2464 from MayJune
+mydata2<-mydata[-c(13:24),]
+View(mydata2)
+#Reordering round so MayJune comes up first
+mydata2$Round<-factor(mydata2$Round, levels = c("MayJune", "July"))
+
+pal=pnw_palette("Starfish",3, type = "discrete")
+pal=wes_palette("Moonrise3", 3, type = c("discrete"))
+scale_fill_manual(values = wes_palette("Moonrise3"), labels=c("26°C", "30°C", "32°C"))
+pal
+colors(pal)
+#blue: #79CFDB
+#green: #859A51
+#pink: #DFADE1
+
+boxplot<-mydata2%>%
+  ggplot(aes(x=Genotype, y=r, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  geom_jitter(color="black", size=1, alpha=0.7)+
+  scale_x_discrete(name = "Genotype") +
+  scale_y_continuous(name = "Max growth rate (r)")+
+  ggtitle("Maximum Growth Rate (from growthcurver package)")+
+  theme(plot.title = element_text(hjust=0.5, face="bold"), 
+        axis.text.x=element_text(size=10), 
+        axis.text.y=element_text(size=10), 
+        axis.title.y = element_text(face="bold", size=12), 
+        axis.title.x = element_text(face="bold", size=12))+
+  labs(fill="Temperature")+
+  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))+
+  facet_wrap(  ~ Round)
+boxplot
+boxplot+ggsave("Graphs/Growth/Growthcurver.growthrate.boxplot.png", width=10, height=5)
+
+violinplot<-mydata2%>%
+  ggplot(aes(x=Genotype, y=r, fill=Temp))+
+  geom_violin()+
+  facet_wrap( ~Round)
+violinplot
+
+data %>%
+  ggplot( aes(x=name, y=value, fill=name)) +
+  geom_boxplot() +
+  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) +
+  theme_ipsum() +
+  theme(
+    legend.position="none",
+    plot.title = element_text(size=11)
+  ) +
+  ggtitle("A boxplot with jitter") +
+  xlab("")
