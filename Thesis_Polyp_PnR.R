@@ -109,125 +109,118 @@ rm(list=ls())
 mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 
-#Resp
+#Resp graphs####
 SummaryResp <- mydata %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Resp.per.bill.cell), SE=sd(Resp.per.bill.cell)/sqrt(length(na.omit(Resp.per.bill.cell))))
-SummaryResp
 
-pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
-pal<-c("skyblue3", "darkgoldenrod2", "firebrick3")
+pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
 Resp.polyp.graph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(plot.title = element_text(face = "bold", size=16),
-        axis.text.x=element_text(color="black", size=11), 
+  labs(x="Symbiont Genotype", y="Maximum growth rate (r)", fill="Temperature")+#labels the x and y axes
+  theme(axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y=expression(Respiration~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
-  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
+  labs(x="Symbiont Genotype", y=expression(Respiration~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
   ggtitle("Respiration of Holobiont")
-Resp.polyp.graph+ggsave("Graphs/PnR/PolypPnR/PolypResp.per.cell.png", width=8, height=5)
+Resp.polyp.graph+ggsave("Graphs/FinalGraphs/Polyp_Resp_Bar.png", width=8, height=5)
 
 #Resp boxplot
 polyp.Resp.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=Resp.per.bill.cell, fill=Temp))+
   geom_boxplot()+
   theme_bw()+
-  ggtitle("Respiration of Holobiont")+
   geom_jitter(color="black", size=0.5, alpha=0.7)+
-  theme(plot.title = element_text(face="bold"), 
-        axis.text.x=element_text(size=10), 
-        axis.text.y=element_text(size=10), 
-        axis.title.y = element_text(face="bold", size=12), 
-        axis.title.x = element_text(face="bold", size=12))+
-  labs(fill="Temperature", x="Genotype", y=expression(Respiration~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
-  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+  theme(axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  labs(fill="Temperature", x="Symbiont Genotype", y=expression(Respiration~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
+  ggtitle("Respiration of Holobiont")
 polyp.Resp.boxplot
-polyp.Resp.boxplot+ggsave("Graphs/PnR/PolypRespBoxplot.png", width=8, height=5)
+polyp.Resp.boxplot+ggsave("Graphs/FinalGraphs/Polyp_Resp_boxplot.png", width=8, height=5)
 
-#GP
+#GP graphs####
 SummaryGP <- mydata %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(GP.per.bill.cell), SE=sd(GP.per.bill.cell)/sqrt(length(na.omit(GP.per.bill.cell))))
-SummaryGP
 
-pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
-pal<-c("skyblue3", "darkgoldenrod2", "firebrick3")
+pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
 GP.polyp.graph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(plot.title = element_text(face = "bold", size=16),
-        axis.text.x=element_text(color="black", size=11), 
+  theme(axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y=expression(GP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
-  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
+  labs(x="Symbiont Genotype", y=expression(GP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
   ggtitle("Gross Photosynthesis of Holobiont")
-GP.polyp.graph+ggsave("Graphs/PnR/PolypPnR/Polyp.GP.bargraph.png", width=8, height=5)
+GP.polyp.graph+ggsave("Graphs/FinalGraphs/Polyp_GP_bargraph.png", width=8, height=5)
 
 #GP boxplot
 polyp.GP.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=GP.per.bill.cell, fill=Temp))+
   geom_boxplot()+
   theme_bw()+
-  ggtitle("Grossphotosynthesis of Holobiont")+
   geom_jitter(color="black", size=0.5, alpha=0.7)+
-  theme(plot.title = element_text(face="bold"), 
-        axis.text.x=element_text(size=10), 
-        axis.text.y=element_text(size=10), 
-        axis.title.y = element_text(face="bold", size=12), 
-        axis.title.x = element_text(face="bold", size=12))+
-  labs(fill="Temperature", x="Genotype", y=expression(GP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
-  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+  theme(axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Grossphotosynthesis of Holobiont")+
+  labs(fill="Temperature", x="Symbiont Genotype", y=expression(GP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))
 polyp.GP.boxplot
-polyp.GP.boxplot+ggsave("Graphs/PnR/Polyp.GP.boxplot.png", width=8, height=5)
+polyp.GP.boxplot+ggsave("Graphs/FinalGraphs/Polyp_GP_boxplot.png", width=8, height=5)
 
-#NP
+#NP graphs####
 SummaryNP <- mydata %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(NP.per.bill.cell), SE=sd(NP.per.bill.cell)/sqrt(length(na.omit(NP.per.bill.cell))))
-SummaryNP
 
-pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
-pal<-c("skyblue3", "darkgoldenrod2", "firebrick3")
+pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
+
 NP.polyp.graph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(plot.title = element_text(face = "bold", size=16),
-        axis.text.x=element_text(color="black", size=11), 
+  theme(axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y=expression(NP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
-  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
+  labs(x="Symbiont Genotype", y=expression(NP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
   ggtitle("Net Photosynthesis of Holobiont")
-NP.polyp.graph+ggsave("Graphs/PnR/PolypPnR/Polyp.NP.bargraph.png", width=8, height=5)
+NP.polyp.graph+ggsave("Graphs/FinalGraphs/Polyp_NP_bar.png", width=8, height=5)
 
 #NP boxplot
 polyp.NP.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=NP.per.bill.cell, fill=Temp))+
   geom_boxplot()+
   theme_bw()+
-  ggtitle("Net Photosynthesis of Holobiont")+
   geom_jitter(color="black", size=0.5, alpha=0.7)+
-  theme(plot.title = element_text(face="bold"), 
-        axis.text.x=element_text(size=10), 
-        axis.text.y=element_text(size=10), 
-        axis.title.y = element_text(size=12), 
-        axis.title.x = element_text(size=12))+
-  labs(fill="Temperature", x="Genotype", y=expression(NP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
-  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))
+  theme(axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  labs(fill="Temperature", x="Symbiont Genotype", y=expression(NP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
+  ggtitle("Net Photosynthesis of Holobiont")
 polyp.NP.boxplot
-polyp.NP.boxplot+ggsave("Graphs/PnR/Polyp.NP.boxplot.png", width=8, height=5)
+polyp.NP.boxplot+ggsave("Graphs/FinalGraphs/Polyp_NP_box.png", width=8, height=5)
 
 
 #PnR graphs by count/area (density)#####
