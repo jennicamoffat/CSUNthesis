@@ -107,12 +107,12 @@ write.xlsx(gc_out2, file = "GrowthcurverData.xlsx",
            sheetName = "July", append = TRUE)
 
 
-#Stats on data output from growthcurver#####
+#Sigma from growthcurver#####
 rm(list=ls())
 mydata<-read.csv("Data/GrowthcurverData_r.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 mydata$Flask<-as.factor(mydata$Flask)
-View(mydata)
+
 #going to remove CCMP2464 from MayJune
 mydata2<-mydata[-c(13:24),]
 
@@ -128,11 +128,12 @@ hist(mydata2$sigma, main = "Histogram of sigma values", xlab = "sigma")
 #(with the worst model fit to the growth curve data)
 mydata2 %>% top_n(5, sigma) %>% arrange(desc(sigma))
 
-#Graphing and analyzing r#####
+#Bargraphs of r #####
 rm(list=ls())
 mydata<-read.csv("Data/GrowthcurverData_r.csv")
 mydata<-mydata%>%
   mutate_if(is.character,as.factor)
+mydata$Temp<-as.factor(mydata$Temp)
 
 #Change name of MayJune to just May
 mydata<-mydata %>%
@@ -175,7 +176,7 @@ rGraph.final<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp), group=
   theme_bw()+ #Removes grey background
   labs(x="Symbiont Genotype", y="Maximum growth rate (r)", fill="Temperature")+#labels the x and y axes
   theme(axis.text.x=element_text(color="black", size=11, angle = 30, hjust=1), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
   scale_y_continuous(expand=c(0,0), limits=c(0,1))+
@@ -196,7 +197,7 @@ rGraph.final.all<-ggplot(Summary3, aes(x=Genotype, y=mean, fill=factor(Temp), gr
   theme_bw()+ #Removes grey background
   labs(x="Symbiont Genotype", y="Maximum growth rate (r)", fill="Temperature")+#labels the x and y axes
   theme(axis.text.x=element_text(color="black", size=11, angle = 30, hjust=1), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
   scale_y_continuous(expand=c(0,0), limits=c(0,1))+
@@ -204,8 +205,53 @@ rGraph.final.all<-ggplot(Summary3, aes(x=Genotype, y=mean, fill=factor(Temp), gr
 rGraph.final.all
 rGraph.final.all+ggsave("Graphs/FinalGraphs/culture_growth.CCMP2464.png", width=8, height=5)
 
+#Boxplot of r ####
 
-#Stats
+#going to remove CCMP2464 from MayJune
+summary(mydata3)
+#Reordering so May comes first
+mydata3$Round <- factor(mydata3$Round,levels = c("May", "July"))
+
+boxplot.r<-mydata3%>%
+  ggplot(aes(x=Genotype, y=r, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  theme(axis.text.x=element_text(color="black", size=11, angle = 30, hjust=1),
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))+
+  scale_x_discrete(name = "Symbiont Genotype") +
+  scale_y_continuous(name = "Max growth rate (r)")+
+  labs(fill="Temperature")+
+  facet_wrap(  ~ Round)
+boxplot.r+ggsave("Graphs/FinalGraphs/culture_growthrate_box.png", width=8, height=5)
+
+violinplot<-mydata2%>%
+  ggplot(aes(x=Genotype, y=r, fill=Temp))+
+  geom_violin()+
+  facet_wrap( ~Round)
+violinplot
+
+data %>%
+  ggplot( aes(x=name, y=value, fill=name)) +
+  geom_boxplot() +
+  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) +
+  theme_ipsum() +
+  theme(
+    legend.position="none",
+    plot.title = element_text(size=11)
+  ) +
+  ggtitle("A boxplot with jitter") +
+  xlab("")
+
+
+
+
+#Stats for r####
 mydata3<-mydata[-c(13:24),]
 model1<-lm(r~Genotype*Temp*Round, data=mydata3)
 model1res<-resid(model1)
@@ -259,7 +305,7 @@ qqp(resid(transf.growth.model), "norm")
 #I think that's the same as log, so I'll just stick with log
 
 
-#Running stats on growth rate from growthcurver separated by round####
+#Stats for r separated by round####
 #MayJune (no CCMP2464)
 MayJuneData<-mydata2%>%
   filter(Round=="May")%>%
@@ -306,34 +352,8 @@ qqp(resid(transf.model), "norm")
 
 #Using double log
 Anova(loglogJuly.model, type="III")
-#Graphing growthcurver max growthrate####
-mydata<-read.csv("Data/GrowthcurverData_r.csv")
-mydata$Temp<-as.factor(mydata$Temp)
-mydata$Flask<-as.factor(mydata$Flask)
-View(mydata)
-#going to remove CCMP2464 from MayJune
-mydata2<-mydata[-c(13:24),]
-View(mydata2)
 
-Summary2 <- mydata2 %>%
-  group_by(Genotype, Temp, Round) %>%
-  summarize(mean=mean(r, na.rm=TRUE), SE=sd(r, na.rm=TRUE)/sqrt(length(na.omit(r))))
-View(Summary2)
-Summary2$Round <- factor(Summary2$Round,levels = c("MayJune", "July"))
-
-Growthcurver.r.Graph<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
-  theme_bw()+ #Removes grey background
-  theme(axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(face="bold", color="black", size=16), axis.title.y = element_text(face="bold", color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
-  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
-  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Genotype", y="Excel Exponential", fill="Temperature")+#labels the x and y axes
-  facet_wrap(  ~ Round)+
-  scale_fill_manual(values = wes_palette("Moonrise3"))+
-  ggtitle("Exponential Growth Rates from growthcruver package")
-Growthcurver.r.Graph
-Growthcurver.r.Graph+ggsave("GrowthCurverGraph_growthrates.pdf", width=10, height=6.19, dpi=300, unit="in")
-
-#Bargraph of just July growthcurver####
+#Bargraph of just July growthcurver (old)####
 JulyData <- mydata %>%
   filter(Round == "July") %>%
   droplevels
@@ -356,60 +376,3 @@ July.growthcurver.r.graph<-ggplot(JulySummary, aes(x=Genotype, y=mean, fill=fact
 July.growthcurver.r.graph
 July.growthcurver.r.graph+ggsave("Graphs/Growth/July.growthcurver.r.png", width=8, height=5)
 
-#Boxplot of growthercurver max growth rate####
-mydata<-read.csv("Data/GrowthcurverData_r.csv")
-mydata$Temp<-as.factor(mydata$Temp)
-mydata$Flask<-as.factor(mydata$Flask)
-View(mydata)
-#going to remove CCMP2464 from MayJune
-mydata2<-mydata[-c(13:24),]
-View(mydata2)
-#Reordering round so MayJune comes up first
-mydata2$Round<-factor(mydata2$Round, levels = c("MayJune", "July"))
-
-pal=pnw_palette("Starfish",3, type = "discrete")
-pal=wes_palette("Moonrise3", 3, type = c("discrete"))
-scale_fill_manual(values = wes_palette("Moonrise3"), labels=c("26°C", "30°C", "32°C"))
-pal
-colors(pal)
-#blue: #79CFDB
-#green: #859A51
-#pink: #DFADE1
-
-boxplot<-mydata2%>%
-  ggplot(aes(x=Genotype, y=r, fill=Temp))+
-  geom_boxplot()+
-  theme_bw()+
-  geom_jitter(color="black", size=1, alpha=0.7)+
-  scale_x_discrete(name = "Genotype") +
-  scale_y_continuous(name = "Max growth rate (r)")+
-  ggtitle("Maximum Growth Rate (from growthcurver package)")+
-  theme(plot.title = element_text(hjust=0.5, face="bold"), 
-        axis.text.x=element_text(size=10), 
-        axis.text.y=element_text(size=10), 
-        axis.title.y = element_text(face="bold", size=12), 
-        axis.title.x = element_text(face="bold", size=12))+
-  labs(fill="Temperature")+
-  scale_fill_manual(values = c("#79CFDB", "#859A51", "#DFADE1"), labels=c("26°C", "30°C","32°C"))+
-  facet_wrap(  ~ Round)
-boxplot
-boxplot+ggsave("Graphs/Growth/Growthcurver.growthrate.boxplot.png", width=10, height=5)
-
-violinplot<-mydata2%>%
-  ggplot(aes(x=Genotype, y=r, fill=Temp))+
-  geom_violin()+
-  facet_wrap( ~Round)
-violinplot
-
-data %>%
-  ggplot( aes(x=name, y=value, fill=name)) +
-  geom_boxplot() +
-  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
-  geom_jitter(color="black", size=0.4, alpha=0.9) +
-  theme_ipsum() +
-  theme(
-    legend.position="none",
-    plot.title = element_text(size=11)
-  ) +
-  ggtitle("A boxplot with jitter") +
-  xlab("")
