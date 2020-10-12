@@ -216,7 +216,7 @@ strob.prop<-ggplot(total.strob, aes(x=Temp, y=n, fill=Strob))+  #basic plot
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
   facet_grid(~Genotype)
 strob.prop
-strob.prop+ggsave("Graphs/FinalGraphs/Strob.Proportion.png", width=10, height=5)
+strob.prop+ggsave("Graphs/FinalGraphs/Strob.Proportion.png", width=8, height=5)
 
 pal<-c("#79CFDB", "#859A51", "#DFADE1") #blue, green, pink (potentially not colorblind friendly)
 strob.prop2<-ggplot(total.strob, aes(x=Genotype, y=n, fill=Temp, group=Temp, alpha=Strob))+  #basic plot
@@ -317,7 +317,7 @@ inoc.prop<-ggplot(total.inoc, aes(x=Temp, y=n, fill=Inoc))+  #basic plot
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
   facet_grid(~Genotype)
 inoc.prop
-inoc.prop+ggsave("Graphs/FinalGraphs/Inoc.prop.png", width=10, height=5)
+inoc.prop+ggsave("Graphs/FinalGraphs/Inoc.prop.png", width=8, height=5)
 
 #Bargraph
 DaystoInoc <- NoApoData %>%
@@ -408,7 +408,7 @@ ephyra.prop<-ggplot(time.ephyra.total, aes(x=Temp, y=n, fill=Ephyra))+  #basic p
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
   facet_grid(~Genotype)
 ephyra.prop
-ephyra.prop+ggsave("Graphs/FinalGraphs/Ephyra.prop.png", width=10, height=5)
+ephyra.prop+ggsave("Graphs/FinalGraphs/ProducedEphyra.prop.png", width=8, height=5)
 
 
 #Bargraph of those that did produce an ephyra
@@ -502,8 +502,7 @@ survival.prop<-ggplot(survival, aes(x=Temp, y=n, fill=Survive.to.End))+  #basic 
   labs(x="Temperature (°C)", y="", fill="Survived")+#labels the x and y axes
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
   facet_grid(~Genotype)
-survival.prop
-ggsave("Graphs/FinalGraphs/Survival.final.png", width=10, height=5)
+survival.prop+ggsave("Graphs/FinalGraphs/Survival.final.png", width=8, height=5)
 
 
 #Survival by temp
@@ -542,7 +541,6 @@ Buds.final+ggsave("Graphs/FinalGraphs/Polyp_buds_bar.png", width=8, height=5)
 bud.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=Total.Buds, fill=Temp))+
   geom_boxplot()+
-  theme_bw()+
   geom_jitter(color="black", size=0.5, alpha=0.7)+
   scale_x_discrete(name = "Symbiont Genotype") +
   scale_y_continuous(name = "Number of Buds")+
@@ -553,8 +551,7 @@ bud.boxplot<-mydata%>%
         panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   labs(fill="Temperature")+
   scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
-bud.boxplot
-ggsave("Graphs/FinalGraphs/Bud.boxplot..final.png", width=10, height=5)
+bud.boxplot+ggsave("Graphs/FinalGraphs/Bud.boxplot.final.png", width=8, height=5)
 
 bud.boxplot.nojitter<-mydata%>%
   ggplot(aes(x=Genotype, y=Total.Buds, fill=Temp))+
@@ -569,8 +566,7 @@ bud.boxplot.nojitter<-mydata%>%
         panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   labs(fill="Temperature")+
   scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
-bud.boxplot.nojitter
-ggsave("Graphs/FinalGraphs/Bud.boxplot.nojitter.png", width=10, height=5)
+bud.boxplot.nojitter+ggsave("Graphs/FinalGraphs/Bud.boxplot.nojitter.png", width=8, height=5)
 
 #violin
 bud.violin<-mydata%>%

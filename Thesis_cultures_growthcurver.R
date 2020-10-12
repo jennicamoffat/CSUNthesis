@@ -252,6 +252,10 @@ data %>%
 
 
 #Stats for r####
+rm(list=ls())
+mydata<-read.csv("Data/GrowthcurverData_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
 mydata3<-mydata[-c(13:24),]
 model1<-lm(r~Genotype*Temp*Round, data=mydata3)
 model1res<-resid(model1)
@@ -262,16 +266,6 @@ mydata3$logr<-log(mydata3$r)
 logr.model<-lm(logr~Round*Genotype*Temp, data=mydata3)
 qqp(resid(logr.model), "norm")
 #Pretty close
-
-mydata3$loglogr<-log(mydata3$logr+3)
-loglogr.model<-lm(loglogr~Genotype*Temp*Round, data=mydata3)
-qqp(resid(loglogr.model), "norm")
-#Same as one log
-
-mydata3$sqrtr<-sqrt(mydata3$r)
-sqrtr.model<-lm(sqrtr~Round*Genotype*Temp, data=mydata3)
-qqp(resid(sqrtr.model), "norm")
-#Not as good as log
 
 Anova(logr.model, type="III")
 #Aliased coefficients 
