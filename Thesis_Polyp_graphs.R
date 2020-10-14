@@ -404,7 +404,7 @@ ephyra.prop<-ggplot(time.ephyra.total, aes(x=Temp, y=n, fill=Ephyra))+  #basic p
   theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
   geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
-  labs(x="Temperature (°C)", y="", fill="Produced an Ephyra")+#labels the x and y axes
+  labs(x="Temperature (°C)", y="", fill="Produced\nan Ephyra")+#labels the x and y axes
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
   facet_grid(~Genotype)
 ephyra.prop
