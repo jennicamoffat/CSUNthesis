@@ -182,20 +182,20 @@ ggsave("Graphs/Polyps/EphyraifInoc.pdf", width=11, height=6.19, dpi=300, unit="i
 NoApoData$Total.Ephyra.Produced<-as.factor(NoApoData$Total.Ephyra.Produced)
 NoApoData$Total.Ephyra.Produced<-NoApoData$Total.Ephyra.Produced %>% replace_na("0")
 
-ephyra.prop<-NoApoData%>%
+total.ephyra.prop<-NoApoData%>%
   group_by(Genotype,Temp, Total.Ephyra.Produced)%>%
   tally()
 
 pal<-c("#2c7fb8","#7fcdbb", "#edf8b1") #blue green yellow
-ephyra.prop.bar<-ggplot(ephyra.prop, aes(x=Temp, y=n, fill=Total.Ephyra.Produced))+  #basic plot
+total.ephyra.prop.bar<-ggplot(total.ephyra.prop, aes(x=Temp, y=n, fill=Total.Ephyra.Produced))+  #basic plot
   theme_minimal()+
   theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
   geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
-  labs(x="Temperature (°C)", y="", fill="Total Ephyra by Polyp")+#labels the x and y axes
+  labs(x="Temperature (°C)", y="Number of Polyps", fill="Total Ephyra\nper Polyp")+#labels the x and y axes
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
   facet_grid(~Genotype)
-ephyra.prop.bar+ggsave("Graphs/FinalGraphs/TotalEphyraProportion.png", width=8, height=5)
+total.ephyra.prop.bar+ggsave("Graphs/FinalGraphs/TotalEphyraProportion.png", width=8, height=5)
 
 #Time to strobilation####
 
@@ -212,7 +212,7 @@ strob.prop<-ggplot(total.strob, aes(x=Temp, y=n, fill=Strob))+  #basic plot
   theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
   geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
-  labs(x="Temperature (°C)", y="", fill="Strobilated")+#labels the x and y axes
+  labs(x="Temperature (°C)", y="Number of Polyps", fill="Strobilated")+#labels the x and y axes
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
   facet_grid(~Genotype)
 strob.prop
@@ -313,7 +313,7 @@ inoc.prop<-ggplot(total.inoc, aes(x=Temp, y=n, fill=Inoc))+  #basic plot
   theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
   geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
-  labs(x="Temperature (°C)", y="", fill="Inoculated")+#labels the x and y axes
+  labs(x="Temperature (°C)", y="Number of Polyps", fill="Inoculated")+#labels the x and y axes
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
   facet_grid(~Genotype)
 inoc.prop
@@ -404,7 +404,7 @@ ephyra.prop<-ggplot(time.ephyra.total, aes(x=Temp, y=n, fill=Ephyra))+  #basic p
   theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
   geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
-  labs(x="Temperature (°C)", y="", fill="Produced\nan Ephyra")+#labels the x and y axes
+  labs(x="Temperature (°C)", y="Number of Polyps", fill="Produced\nan Ephyra")+#labels the x and y axes
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
   facet_grid(~Genotype)
 ephyra.prop
@@ -499,7 +499,7 @@ survival.prop<-ggplot(survival, aes(x=Temp, y=n, fill=Survive.to.End))+  #basic 
   theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
   geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
-  labs(x="Temperature (°C)", y="", fill="Survived")+#labels the x and y axes
+  labs(x="Temperature (°C)", y="Number of Polyps", fill="Survived")+#labels the x and y axes
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
   facet_grid(~Genotype)
 survival.prop+ggsave("Graphs/FinalGraphs/Survival.final.png", width=8, height=5)
