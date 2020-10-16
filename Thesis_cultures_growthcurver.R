@@ -14,7 +14,7 @@ library("lmtest")
 
 #Clear the environment
 rm(list=ls())
-
+#
 #Using "growthcurver" package#####
 rm(list=ls())
 mydata<-read.csv("GrowthDataCombined_r.csv")
@@ -142,11 +142,11 @@ mydata<-mydata %>%
          Round = as.factor(Round))
 
 #going to remove CCMP2464 altogether, because  I can't include in stats with Round (aliased coefficients=not equal replication)
-mydata2<-mydata %>%
+lessdata<-mydata %>%
   filter(Genotype!="CCMP2464")%>%
   droplevels()
 
-Summary2 <- mydata2 %>%
+Summary2 <- lessdata %>%
   group_by(Genotype, Temp, Round) %>%
   summarize(mean=mean(r, na.rm=TRUE), SE=sd(r, na.rm=TRUE)/sqrt(length(na.omit(r))))
 Summary2$Round <- factor(Summary2$Round,levels = c("May", "July"))
@@ -206,8 +206,6 @@ rGraph.final.all
 rGraph.final.all+ggsave("Graphs/FinalGraphs/culture_growth.CCMP2464.png", width=8, height=5)
 
 #Boxplot of r ####
-
-#going to remove CCMP2464 from MayJune
 summary(mydata3)
 #Reordering so May comes first
 mydata3$Round <- factor(mydata3$Round,levels = c("May", "July"))
@@ -257,6 +255,7 @@ mydata<-read.csv("Data/GrowthcurverData_r.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 mydata$Flask<-as.factor(mydata$Flask)
 mydata3<-mydata[-c(13:24),]
+
 model1<-lm(r~Genotype*Temp*Round, data=mydata3)
 model1res<-resid(model1)
 qqp(model1res, "norm")
@@ -283,6 +282,11 @@ qqp(resid(logNo2464.model), "norm")
 Anova(logNo2464.model, type="III")
 #Yes, round is significant even without CCMP2464
 
+model2<-lm(logr~Genotype*Temp, data=lessdata)
+anova(logNo2464.model, model2)
+lrtest(logNo2464.model, model2)
+
+
 #Boxcox
 full.growth.model<-lm(r ~ Genotype*Temp*Round, data=mydata2)
 step.growth.model<-stepAIC(full.growth.model, direction="both", trace = F)
@@ -300,8 +304,20 @@ qqp(resid(transf.growth.model), "norm")
 
 
 #Stats for r separated by round####
+rm(list=ls())
+mydata<-read.csv("Data/GrowthcurverData_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
+
+#Change name of MayJune to just May
+mydata<-mydata %>%
+  mutate(Round = as.character(Round),
+         Round = if_else(Round == 'MayJune', 'May', Round),
+         Round = as.factor(Round))
+
 #MayJune (no CCMP2464)
-MayJuneData<-mydata2%>%
+mydata3<-mydata[-c(13:24),]
+MayJuneData<-mydata3%>%
   filter(Round=="May")%>%
   droplevels()
 
@@ -310,6 +326,7 @@ qqp(resid(May.model), "norm")
 #Normal, yay!
 plot(May.model)
 Anova(May.model, type="III")
+
 
 #July
 JulyData<-mydata%>%
