@@ -220,6 +220,10 @@ qqp(resid(cubed.resp.model), "norm")
 plot(cubed.resp.model)
 Anova(cubed.resp.model, type="III")
 
+cubed.resp.model.simp<-lm(cubedResp~Genotype+Temperature, data = mydata)
+lrtest(cubed.resp.model, cubed.resp.model.simp)
+#Sig=use full model
+
 #Net Photo. NP = umol O2 per billion cells. ####
 
 NP.model<-lm(NP~Genotype*Temperature, data=mydata)
@@ -236,8 +240,12 @@ qqp(resid(sqrt.NP.model), "norm")
 mydata$fourthrtNP<-sqrt(sqrt(mydata$NP))
 quadrt.NP.model<-lm(fourthrtNP~Genotype*Temperature, data=mydata)
 qqp(resid(quadrt.NP.model), "norm")
-#That's pretty much normal. Just one outlier
+#That's normal. Just one outlier
 Anova(quadrt.NP.model, type="III")
+
+NP.model.simp<-lm(fourthrtNP~Genotype+Temperature, data=mydata)
+lrtest(quadrt.NP.model, NP.model.simp)
+#Sig=use full model
 
 #Gross photosynthesis. GP = gross photo umol O2 per billion cells####
 model1<-lm(GP~Genotype*Temperature, data=mydata)
@@ -251,3 +259,6 @@ qqp(resid(sqrtGPmodel), "norm")
 plot(sqrtGPmodel)
 #That's normal
 Anova(sqrtGPmodel, type="III")
+GP.model.simp<-lm(sqrtGP~Genotype+Temperature, data=mydata)
+lrtest(sqrtGPmodel, GP.model.simp)
+#Sig = use ful model
