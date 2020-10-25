@@ -131,11 +131,12 @@ Resp.polyp.graph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temp),
 Resp.polyp.graph+ggsave("Graphs/FinalGraphs/Polyp_Resp_Bar.png", width=8, height=5)
 
 #Resp boxplot
+pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
 polyp.Resp.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=Resp.per.bill.cell, fill=Temp))+
   geom_boxplot()+
   theme_bw()+
-  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
   theme(axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
@@ -172,7 +173,7 @@ polyp.GP.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=GP.per.bill.cell, fill=Temp))+
   geom_boxplot()+
   theme_bw()+
-  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
   theme(axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
@@ -210,7 +211,7 @@ polyp.NP.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=NP.per.bill.cell, fill=Temp))+
   geom_boxplot()+
   theme_bw()+
-  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
   theme(axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
@@ -480,6 +481,117 @@ polyp.NP.boxplot+ggsave("Graphs/PnR/PolypPnR/PolypNPbyArea.boxplot.png", width=1
 
 
 #Polyp PnR Stats####
+
+#Stats with slopes/cell count####
+mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
+mydata<-mydata%>%
+  mutate_if(is.character, as.factor)
+mydata$Plate<-as.factor(mydata$Plate)
+summary(mydata)
+#These ranges are stupid... ugh this data sucks.  
+#Resp: -1121 to 472
+#GP: -788 to 366
+#NP: -703 to 1312
+
+#Respiration####
+resp.model<-lmer(Resp.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
+#Check assumptions
+plot(resp.model)
+qqp(resid(resp.model), "norm")
+#Not really normal at ends (surprise, surprise). But actually a little closer to normal than I expected. 
+
+#I want to log transform
+mydata$logResp<-log(mydata$Resp.per.bill.cell+1121)
+logresp.model<-lmer(logResp~Genotype*Temp+(1|Plate), data=mydata)
+#Check assumptions
+plot(logresp.model)
+qqp(resid(logresp.model), "norm")
+#Outliers: 154, 143
+#It's a horizontal line now. 
+ 
+Anova(resp.model, type="III")
+#Nothing significant. What a surprise. 
+
+resp.model.simp<-lm(Resp.per.bill.cell~Genotype*Temp, data=mydata)
+plot(resp.model.simp)
+qqp(resid(resp.model.simp), "norm")
+Anova(resp.model.simp, type="III")
+
+resp.model.simp2<-lm(Resp.per.bill.cell~Genotype+Temp, data=mydata)
+plot(resp.model.simp2)
+qqp(resid(resp.model.simp2), "norm")
+Anova(resp.model.simp2, type="III")
+#Well, temp is significant now
+
+AIC(resp.model)#2693
+AIC(resp.model.simp) #2783
+AIC(resp.model.simp2)#2778
+
+lrtest(resp.model.simp2, resp.model.simp)#simpler model is better. But ultimately the lmer is best. 
+
+#GP####
+GP.model<-lmer(GP.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
+#Check assumptions
+plot(GP.model)
+qqp(resid(GP.model), "norm")
+#Not really normal at ends again
+
+mydata$logGP<-log(mydata$GP.per.bill.cell+789)
+logGP.model<-lmer(logGP~Genotype*Temp+(1|Plate), data=mydata)
+plot(logGP.model)
+qqp(resid(logGP.model), "norm")
+
+Anova(GP.model, type="III")
+#nothing is significant
+
+GP.model.simp<-lm(GP.per.bill.cell~Genotype*Temp, data=mydata)
+GP.model.super.simp<-lm(GP.per.bill.cell~Genotype+Temp, data=mydata)
+
+AIC(GP.model)#2516
+AIC(GP.model.simp)#2594
+AIC(GP.model.super.simp)#2592
+
+GP.model.full<-lm(GP.per.bill.cell~Genotype*Plate*Temp, data=mydata)
+AIC(GP.model.full)#2618
+
+
+#NP####
+NP.model<-lmer(NP.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
+#Check assumptions
+plot(NP.model)
+qqp(resid(NP.model), "norm")
+#Not at ends
+
+mydata$logNP<-log(mydata$NP.per.bill.cell+704)
+logNP.model<-lmer(logNP~Genotype*Temp+(1|Plate), data=mydata)
+qqp(resid(logNP.model), "norm")
+#Better
+Anova(logNP.model, type="III")
+#Nothing significant
+
+NP.model.full<-lm(logNP~Genotype*Temp*Plate, data=mydata)
+NP.model.simp<-lm(logNP~Genotype*Temp, data=mydata)
+NP.model.super.simp<-lm(logNP~Genotype+Temp, data=mydata)
+
+AIC(logNP.model)#351
+AIC(NP.model.full)#320
+AIC(NP.model.simp)#300
+AIC(NP.model.super.simp)#294
+
+lrtest(NP.model.simp, NP.model.full)
+#Slightly sig (0.045)= bigger model better. But barely...
+
+lrtest(NP.model.super.simp, NP.model.simp)
+#Not sig=simpler model is better
+
+lrtest(NP.model.super.simp, NP.model.full)
+#Not sig (0.06)- simpler model is better
+
+Anova(NP.model.full, type="III")#Plate is not sig, so I can use simple model
+Anova(NP.model.super.simp,type="III")
+
+
+#Stats slope/(cells/polyp area))####
 mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 mydata$Plate<-as.factor(mydata$Plate)
@@ -488,19 +600,18 @@ NoApoData <- mydata %>%
   droplevels
 
 mydata <- mydata %>% drop_na()
-
 #Respiration####
-resp.model<-lmer(Resp.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
+resp.model<-lmer(Resp~Genotype*Temp+(1|Plate), data=mydata)
 #Check assumptions
 plot(resp.model)
 qqp(resid(resp.model), "norm")
 #Not normal at ends
 hist(mydata$Resp)
 
-resp.model<-lm(Resp.per.bill.cell~Genotype*Temp*Plate, data=mydata)
+resp.model<-lm(Resp~Genotype*Temp*Plate, data=mydata)
 summary(mydata)
 
-#I want to log transform, but variables range from -1121 to 472
+#I want to log transform, but variables range from -12 to 
 mydata$logResp<-log(mydata$Resp+13)
 
 logresp.model<-lmer(logResp~Genotype*Temp+(1|Plate), data=mydata)
@@ -777,114 +888,6 @@ loglogNPmodel2<-lm(loglogNP~Genotype*Temp*Plate, no.apo.data)
 qqp(resid(loglogNPmodel2), "norm")
 anova(loglogNPmodel2)
 
-
-#Stats with slopes/cell count, instead of slope/(cells/polyp area)####
-mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
-mydata<-mydata%>%
-  mutate_if(is.character, as.factor)
-mydata$Plate<-as.factor(mydata$Plate)
-summary(mydata)
-#These ranges are stupid... ugh this data sucks.  
-#Resp: -1121 to 472
-#GP: -788 to 366
-#NP: -703 to 1312
-
-#Respiration####
-resp.model<-lmer(Resp.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
-#Check assumptions
-plot(resp.model)
-qqp(resid(resp.model), "norm")
-#Not really normal at ends (surprise, surprise). But actually a little closer to normal than I expected. 
-
-#I want to log transform
-mydata$logResp<-log(mydata$Resp.per.bill.cell+1121)
-logresp.model<-lmer(logResp~Genotype*Temp+(1|Plate), data=mydata)
-#Check assumptions
-plot(logresp.model)
-qqp(resid(logresp.model), "norm")
-#Outliers: 154, 143
-#It's a horizontal line now. 
- 
-Anova(resp.model, type="III")
-#Nothing significant. What a surprise. 
-
-resp.model.simp<-lm(Resp.per.bill.cell~Genotype*Temp, data=mydata)
-plot(resp.model.simp)
-qqp(resid(resp.model.simp), "norm")
-Anova(resp.model.simp, type="III")
-
-resp.model.simp2<-lm(Resp.per.bill.cell~Genotype+Temp, data=mydata)
-plot(resp.model.simp2)
-qqp(resid(resp.model.simp2), "norm")
-Anova(resp.model.simp2, type="III")
-#Well, temp is significant now
-
-AIC(resp.model)#2693
-AIC(resp.model.simp) #2783
-AIC(resp.model.simp2)#2778
-
-lrtest(resp.model.simp2, resp.model.simp)#simpler model is better. But ultimately the lmer is best. 
-
-#GP####
-GP.model<-lmer(GP.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
-#Check assumptions
-plot(GP.model)
-qqp(resid(GP.model), "norm")
-#Not really normal at ends again
-
-mydata$logGP<-log(mydata$GP.per.bill.cell+789)
-logGP.model<-lmer(logGP~Genotype*Temp+(1|Plate), data=mydata)
-plot(logGP.model)
-qqp(resid(logGP.model), "norm")
-
-Anova(GP.model, type="III")
-#nothing is significant
-
-GP.model.simp<-lm(GP.per.bill.cell~Genotype*Temp, data=mydata)
-GP.model.super.simp<-lm(GP.per.bill.cell~Genotype+Temp, data=mydata)
-
-AIC(GP.model)#2516
-AIC(GP.model.simp)#2594
-AIC(GP.model.super.simp)#2592
-
-GP.model.full<-lm(GP.per.bill.cell~Genotype*Plate*Temp, data=mydata)
-AIC(GP.model.full)#2618
-
-
-#NP####
-NP.model<-lmer(NP.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
-#Check assumptions
-plot(NP.model)
-qqp(resid(NP.model), "norm")
-#Not at ends
-
-mydata$logNP<-log(mydata$NP.per.bill.cell+704)
-logNP.model<-lmer(logNP~Genotype*Temp+(1|Plate), data=mydata)
-qqp(resid(logNP.model), "norm")
-#Better
-Anova(logNP.model, type="III")
-#Nothing significant
-
-NP.model.full<-lm(logNP~Genotype*Temp*Plate, data=mydata)
-NP.model.simp<-lm(logNP~Genotype*Temp, data=mydata)
-NP.model.super.simp<-lm(logNP~Genotype+Temp, data=mydata)
-
-AIC(logNP.model)#351
-AIC(NP.model.full)#320
-AIC(NP.model.simp)#300
-AIC(NP.model.super.simp)#294
-
-lrtest(NP.model.simp, NP.model.full)
-#Slightly sig (0.045)= bigger model better. But barely...
-
-lrtest(NP.model.super.simp, NP.model.simp)
-#Not sig=simpler model is better
-
-lrtest(NP.model.super.simp, NP.model.full)
-#Not sig (0.06)- simpler model is better
-
-Anova(NP.model.full, type="III")#Plate is not sig, so I can use simple model
-Anova(NP.model.super.simp,type="III")
 
 #Does cell count differ between genotype/temps?####
 mydata<-read.csv("Data/Polyp_PnR_full_combined_data.csv")
