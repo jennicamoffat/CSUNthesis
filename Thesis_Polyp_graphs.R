@@ -31,6 +31,14 @@ Developed.data<-NoApoData%>%
 #GRAPHS#
 #Total ephyra production####
 #Bargraph of total average ephyra production including dead ones####
+
+#Squart root
+NoApoData$sqrtTotalEphyra<-sqrt(NoApoData$Total.Ephyra.Produced)
+sqrtEphyraModel<-lmer(sqrtTotalEphyra~Genotype*Temp+(1|Plate), data=NoApoData)
+summary(sqrtEphyraModel)
+print(summary(sqrtEphyraModel), correlation=TRUE)
+anova(sqrtEphyraModel)
+
 TotalEphyra <- NoApoData %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Total.Ephyra.Produced, na.rm=TRUE), SE=sd(Total.Ephyra.Produced, na.rm=TRUE)/sqrt(length(na.omit(Total.Ephyra.Produced))))
@@ -101,11 +109,11 @@ TotalEphyraPlotGeno+ggsave("Graphs/Polyps/EphyraByGeno.png", width=10, height=5)
 NoApoDataEphyra<-NoApoData%>%
   filter(Total.Ephyra.Produced!="NA")
 
-boxplot<-NoApoDataEphyra%>%
+ephyra.boxplot<-NoApoDataEphyra%>%
   ggplot(aes(x=Genotype, y=Total.Ephyra.Produced, fill=Temp))+
   geom_boxplot()+
   theme_bw()+
-  geom_jitter(color="black", size=0.1, alpha=0.2)+
+  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
   scale_x_discrete(name = "Genotype") +
   scale_y_continuous(name = "Total Ephyra Produced")+
   theme(axis.text.x=element_text(color="black", size=11), 
@@ -115,7 +123,7 @@ boxplot<-NoApoDataEphyra%>%
         panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   labs(fill="Temperature")+
   scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
-boxplot+ggsave("Graphs/FinalGraphs/TotalEphyraBox.png", width=8, height=5)
+ephyra.boxplot+ggsave("Graphs/FinalGraphs/TotalEphyraBox.png", width=8, height=5)
 #Since they all either produced 0, 1, or 2, there's too many dots to use jitter
 #I think bargraph is best to represent this one. 
 
@@ -248,24 +256,6 @@ DaystoStrobBar<-ggplot(DaystoStrob, aes(x=Genotype, y=mean, fill=factor(Temp), g
 DaystoStrobBar
 DaystoStrobBar+ggsave("Graphs/FinalGraphs/DaystoStrob.png", width=8, height=5)
 
-#Boxplot
-strob.boxplot<-NoApoData%>%
-  ggplot(aes(x=Genotype, y=Days.to.Strobilation, fill=Temp))+
-  geom_boxplot()+
-  theme_bw()+
-  geom_jitter(color="black", size=0.5, alpha=0.7)+
-  scale_x_discrete(name = "Symbiont Genotype") +
-  scale_y_continuous(name = "Days to Strobilation")+
-  theme(axis.text.x=element_text(color="black", size=11), 
-        axis.text.y=element_text(color="black", size=12), 
-        axis.title.x = element_text(color="black", size=16), 
-        axis.title.y = element_text(color="black", size=16),
-        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
-  labs(fill="Temperature")+
-  scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
-strob.boxplot
-strob.boxplot+ggsave("Graphs/FinalGraphs/DaystoStrob.boxplot.final.png", width=8, height=5)
-
 #Just temp, not geno
 DaystoStrobNoDeadTemp <- NoApoNoDeadData %>%
   group_by(Temp) %>%
@@ -295,6 +285,41 @@ DaysStrobGeno<-ggplot(DaystoStrobNoDeadGeno, aes(x=Genotype, y=mean))+  #basic p
   labs(x="Genotype", y="Days to Strobilation")+  #labels the x and y axes
   ggtitle("Average Days to Strobilation (no dead)")
 DaysStrobGeno+ggsave("Graphs/Polyps/DaystoStrobGeno.png", width=10, height=5)
+
+
+#Time to strobilation Boxplot####
+strob.boxplot<-NoApoData%>%
+  ggplot(aes(x=Genotype, y=Days.to.Strobilation, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
+  scale_x_discrete(name = "Symbiont Genotype") +
+  scale_y_continuous(name = "Days to Strobilation")+
+  theme(axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  labs(fill="Temperature")+
+  scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
+strob.boxplot
+strob.boxplot+ggsave("Graphs/FinalGraphs/DaystoStrob.boxplot.final.png", width=8, height=5)
+#No jitter
+strob.boxplot.nojit<-NoApoData%>%
+  ggplot(aes(x=Genotype, y=Days.to.Strobilation, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  scale_x_discrete(name = "Symbiont Genotype") +
+  scale_y_continuous(name = "Days to Strobilation")+
+  theme(axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  labs(fill="Temperature")+
+  scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
+strob.boxplot.nojit
+strob.boxplot.nojit+ggsave("Graphs/FinalGraphs/DaystoStrob.boxplot.no.jitter.png", width=8, height=5)
 
 
 #Time to inoculation####
@@ -376,7 +401,7 @@ inoc.boxplot<-NoApoData%>%
   ggplot(aes(x=Genotype, y=Days.to.Inoculation, fill=Temp))+
   geom_boxplot()+
   theme_bw()+
-  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
   scale_x_discrete(name = "Symbiont Genotype") +
   scale_y_continuous(name = "Days to Inoculation")+
   theme(axis.text.x=element_text(color="black", size=11), 
@@ -388,6 +413,22 @@ inoc.boxplot<-NoApoData%>%
   scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
 inoc.boxplot
 inoc.boxplot+ggsave("Graphs/FinalGraphs/inoc.boxplot.final.png", width=8, height=5)
+#No jitter
+inoc.boxplot.nojit<-NoApoData%>%
+  ggplot(aes(x=Genotype, y=Days.to.Inoculation, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  scale_x_discrete(name = "Symbiont Genotype") +
+  scale_y_continuous(name = "Days to Inoculation")+
+  theme(axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  labs(fill="Temperature")+
+  scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
+inoc.boxplot.nojit
+inoc.boxplot.nojit+ggsave("Graphs/FinalGraphs/inoc.boxplot.no.jitter.png", width=8, height=5)
 
 #time to ephyra####
 #First, let's see how many even got to strobilation
@@ -432,24 +473,6 @@ DaystoEphyraBar<-ggplot(DaystoEphyra, aes(x=Genotype, y=mean, fill=factor(Temp),
 DaystoEphyraBar
 DaystoEphyraBar+ggsave("Graphs/FinalGraphs/DaystoEphyraBar.final.png", width=8, height=5)
 
-#boxplot
-time.ephyra.boxplot<-NoApoData%>%
-  ggplot(aes(x=Genotype, y=Days.to.Ephyra, fill=Temp))+
-  geom_boxplot()+
-  theme_bw()+
-  geom_jitter(color="black", size=0.5, alpha=0.7)+
-  scale_x_discrete(name = "Symbiont Genotype") +
-  scale_y_continuous(name = "Days to Produce an Ephyra")+
-  theme(axis.text.x=element_text(color="black", size=11), 
-        axis.text.y=element_text(color="black", size=12), 
-        axis.title.x = element_text(color="black", size=16), 
-        axis.title.y = element_text(color="black", size=16),
-        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
-  labs(fill="Temperature")+
-  scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
-time.ephyra.boxplot
-time.ephyra.boxplot+ggsave("Graphs/FinalGraphs/DaystoEphyraBox.final.png", width=8, height=5)
-
 #Just temp, not geno
 DaystoEphyraNoDeadTemp <- NoApoNoDeadData %>%
   group_by(Temp) %>%
@@ -479,6 +502,42 @@ DaysEphyraGeno<-ggplot(DaystoEphyraNoDeadGeno, aes(x=Genotype, y=mean))+  #basic
   labs(x="Temperature", y="Days to ephyra")+  #labels the x and y axes
   ggtitle("Average Days to Ephyra (no dead)")
 DaysEphyraGeno+ggsave("Graphs/Polyps/DaystoEphyraGeno.png", width=10, height=5)
+
+#Time to ephyra boxplot####
+time.ephyra.boxplot<-NoApoData%>%
+  ggplot(aes(x=Genotype, y=Days.to.Ephyra, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
+  scale_x_discrete(name = "Symbiont Genotype") +
+  scale_y_continuous(name = "Days to Produce an Ephyra")+
+  theme(axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  labs(fill="Temperature")+
+  scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
+time.ephyra.boxplot
+time.ephyra.boxplot+ggsave("Graphs/FinalGraphs/DaystoEphyraBox.final.png", width=8, height=5)
+#No jitter
+time.ephyra.nojit<-NoApoData%>%
+  ggplot(aes(x=Genotype, y=Days.to.Ephyra, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  scale_x_discrete(name = "Symbiont Genotype") +
+  scale_y_continuous(name = "Days to Produce an Ephyra")+
+  theme(axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  labs(fill="Temperature")+
+  scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
+time.ephyra.nojit
+time.ephyra.nojit+ggsave("Graphs/FinalGraphs/DaystoEphyraBox.no.jitter.png", width=8, height=5)
+
+
 
 #Survival####
 #I have one weird NA from a spilled one. Just gonna make it a no. 
@@ -541,7 +600,7 @@ Buds.final+ggsave("Graphs/FinalGraphs/Polyp_buds_bar.png", width=8, height=5)
 bud.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=Total.Buds, fill=Temp))+
   geom_boxplot()+
-  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
   scale_x_discrete(name = "Symbiont Genotype") +
   scale_y_continuous(name = "Number of Buds")+
   theme(axis.text.x=element_text(color="black", size=11), 
@@ -553,6 +612,7 @@ bud.boxplot<-mydata%>%
   scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))
 bud.boxplot+ggsave("Graphs/FinalGraphs/Bud.boxplot.final.png", width=8, height=5)
 
+#Boxplot without jitter
 bud.boxplot.nojitter<-mydata%>%
   ggplot(aes(x=Genotype, y=Total.Buds, fill=Temp))+
   geom_boxplot()+
