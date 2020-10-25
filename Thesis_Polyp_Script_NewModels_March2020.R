@@ -12,6 +12,7 @@ library(lmerTest)
 library("lmtest")
 library(MASS)
 library("gmodels")
+library(emmeans)
 
 #Load data
 mydata<-read.csv("Data/Thesis_PolypData_Summary.csv")
@@ -102,67 +103,26 @@ quadrtInocmodel<-lmer(quadrtIDays~Genotype*Temp+(1|Plate), data=InocData)
 qqp(resid(quadrtInocmodel), "norm")
 #Worse
 
-#Running it with the logged data for now
+#Running it with the logged data
 log.Inoc.model.full<-lm(logIDays~Genotype*Temp*Plate, data=InocData)
 Anova(log.Inoc.model.full, type="III")
 #Plate has no effect
 log.Inoc.model2<-lm(logIDays~Genotype*Temp, data=InocData)
 
 lrtest(log.Inoc.model2, log.Inoc.model.full)
+#Sig = use full model, even though plate has no effect. 
 
 AIC(log.Inoc.model) #214
 AIC(log.Inoc.model.full) #125
 AIC(log.Inoc.model2) #162
 
-BIC(log.Inoc.model) #277
-BIC(log.Inoc.model.full) #351
-BIC(log.Inoc.model2) #222
+#Using lmer model to include plate but still be able to determine GxT interaction
 
-
-#Boxcox 
-full.inoc.model<-lm(Days.to.Inoculation ~ Genotype*Temp*Plate, data=InocData)
-step.inoc.model<-stepAIC(full.inoc.model, direction="both", trace = F)
-
-boxcox<-boxcox(step.inoc.model,lambda = seq(-5, 5, 1/1000),plotit = TRUE )
-
-Selected.Power<-boxcox$x[boxcox$y==max(boxcox$y)]
-Selected.Power
-
-InocData<- InocData%>%
-  mutate(tranInoc = Days.to.Inoculation^(-0.484))
-trans.Inoc.model<-lm(tranInoc~Genotype*Temp*Plate, data=InocData)
-qqp(resid(trans.Inoc.model), "norm")
-#Oh, that's worse than log I think
-  
-#Gotta do generalized linear model. 
-#poisson
-poisson <- fitdistr(InocData$Days.to.Inoculation, "Poisson")
-qqp(InocData$Days.to.Inoculation, "pois", poisson$estimate, lambda=8)
-#I think that's the best fit. 
-
-Inoc.model<-glmer(Days.to.Inoculation ~ Genotype*Temp+(1|Plate), data = InocData, family = poisson(link = "log"))
-summary(Inoc.model)
-Anova(Inoc.model, type="III")
-print(summary(Inoc.model), correlation=TRUE)
-
-
-Inoc.model2<-glm(Days.to.Inoculation ~ Genotype*Temp*Plate, data = InocData, family = poisson(link = "log"))
-Anova(Inoc.model2, type="III")
-summary(Inoc.model2)
-
-Inoc.model3<-glm(Days.to.Inoculation ~ Genotype*Temp, data = InocData, family = poisson(link = "log"))
-Anova(Inoc.model3, type="III")
-
-Inoc.model4<-glmer(Days.to.Inoculation ~ Genotype+Temp+(1|Plate), data = InocData, family = poisson(link = "log"))
-Anova(Inoc.model4, type="III")
-
-AIC(Inoc.model) #1601.8
-AIC(Inoc.model2) #1592
-AIC(Inoc.model3) #1601.7
-AIC(Inoc.model4) #1600.9
-lrtest(Inoc.model3, Inoc.model2)
-#Sig diff means I should use full model, but plate doesn't matter, so why?
-#"Problem with likelihood – adding a variable always improves likelihood"
+#emmeans
+emm1 = emmeans(log.Inoc.model, specs= pairwise~Genotype:Temp)
+emm1$emmeans
+#emmean is mean from model (so logged data)
+#SE are calculated from the model as well
 
 #Time to strobilation####
 #Start with log-linear analysis
@@ -391,20 +351,14 @@ plot(sqrtEphyraModel)
 qqp(resid(sqrtEphyraModel), "norm")
 #Beautiful
 
-anova(sqrtEphyraModel)
 summary(sqrtEphyraModel)
 #This is saying that, when taking into account plate, the interaction of Geno*Temp 
 #is significant (P=0.0007557)
 
 #Model selection
 Ephyra.model2<-lm(sqrtTotalEphyra~Genotype*Temp, data=NoApoData)
-anova(Ephyra.model2)
-#Interaction P=0.00096
-
 Ephyra.model3<-lm(sqrtTotalEphyra~Genotype*Temp + Plate, data=NoApoData)
-anova(Ephyra.model3)
 Ephyra.model4<-lm(sqrtTotalEphyra~Genotype*Temp*Plate, data=NoApoData)
-anova(Ephyra.model4)
 
 AIC(sqrtEphyraModel) #395.55
 AIC(Ephyra.model2) #348.4
@@ -412,7 +366,10 @@ AIC(Ephyra.model3) #343.1
 AIC(Ephyra.model4) #342.8
 #Model with all interactions is lowest.
 #But use model with plate as random factor to account for it. 
-Anova(sqrtEphyraModel, type="III")
+Anova(sqrtEphyraModel, type="III") #Inherently doing LRT comparing model without factor and with
+anova(sqrtEphyraModel, type="III")
+
+summary(sqrtEphyraModel)
 
 #Bud production####
 Budmodel<-lmer(Total.Buds~Genotype*Temp+(1|Plate), data=mydata)
