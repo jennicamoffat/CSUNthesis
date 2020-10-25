@@ -214,7 +214,7 @@ boxplot.r<-mydata3%>%
   ggplot(aes(x=Genotype, y=r, fill=Temp))+
   geom_boxplot()+
   theme_bw()+
-  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
   theme(axis.text.x=element_text(color="black", size=11, angle = 30, hjust=1),
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
