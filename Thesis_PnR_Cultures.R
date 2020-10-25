@@ -51,7 +51,7 @@ culture.GP.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=GP, fill=Temperature))+
   geom_boxplot()+
   theme_bw()+
-  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
   theme(axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
@@ -90,7 +90,7 @@ culture.NP.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=NP, fill=Temperature))+
   geom_boxplot()+
   theme_bw()+
-  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
   theme(axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
@@ -127,7 +127,7 @@ culture.Resp.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=Resp, fill=Temperature))+
     geom_boxplot()+
   theme_bw()+
-  geom_jitter(color="black", size=0.5, alpha=0.7)+
+  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
   theme(axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
