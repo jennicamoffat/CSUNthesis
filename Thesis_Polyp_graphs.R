@@ -676,3 +676,38 @@ BudsGeno<-ggplot(BudDataGeno, aes(x=Genotype, y=mean))+  #basic plot
   labs(x="Temperature", y="Number of Buds")+  #labels the x and y axes
   ggtitle("Average Bud Production (no dead)")
 BudsGeno+ggsave("Graphs/Polyps/BudsGeno.png", width=10, height=5)
+
+
+#All stages proportions
+NoApoData$Total.Ephyra.Produced<-as.factor(NoApoData$Total.Ephyra.Produced)
+NoApoData$Total.Ephyra.Produced<-NoApoData$Total.Ephyra.Produced %>% replace_na("0")
+
+stage.data <- Developed.data %>%   
+  mutate(StageReached = case_when(Survive.to.End == 'No' ~ 'Died',
+    Ephyra == 'Yes' ~ 'Produced Ephyra',
+    Ephyra == 'No' & Strob == 'Yes' ~  'Strobilated',
+    Ephyra == 'No' & Strob == 'No' & Inoc == 'Yes' ~ 'Inoculated',
+    Inoc == 'No' ~ 'None'))
+
+stage.data.tally<-stage.data%>%
+  group_by(Temp, Genotype, StageReached)%>%
+  tally()
+stage.data.tally$StageReached<-as.factor(stage.data.tally$StageReached)
+stage.data.tally<-stage.data.tally%>%
+  mutate(StageReached=fct_relevel(StageReached, "Produced Ephyra", "Strobilated", "Inoculated", "None", "Died"))
+
+
+pal<-c("#2c7fb8","#7fcdbb", "#edf8b1") #blue green yellow
+library(PNWColors)
+pal=pnw_palette("Bay")
+stages.bar<-ggplot(stage.data.tally, aes(x=Temp, y=n, fill=StageReached))+  #basic plot
+  theme_minimal()+
+  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
+  geom_bar(position=position_stack(), stat="identity", color="black")+
+  scale_fill_manual(values=pal)+
+  labs(x="Temperature (°C)", y="Number of Polyps", fill="Stage Reached")+#labels the x and y axes
+  scale_y_continuous(expand=c(0,0), limits=c(0,25))+
+  facet_grid(~Genotype)
+stages.bar+ggsave("Graphs/FinalGraphs/Stages.Prop.png", width=8, height=5)
+
+
