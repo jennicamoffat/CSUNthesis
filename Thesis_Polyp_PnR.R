@@ -140,9 +140,10 @@ SummaryResp <- mydata %>%
 
 pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
 Resp.polyp.graph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
-  theme_bw()+ #Removes grey background
   labs(x="Symbiont Genotype", y="Maximum growth rate (r)", fill="Temperature")+#labels the x and y axes
-  theme(axis.text.x=element_text(color="black", size=11), 
+  theme_bw()+ #Removes grey background
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
@@ -160,17 +161,37 @@ polyp.Resp.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=Resp.per.bill.cell, fill=Temp))+
   geom_boxplot()+
   theme_bw()+
-  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
-  theme(axis.text.x=element_text(color="black", size=11), 
+  geom_point(pch=21, position=position_jitterdodge(jitter.width=0.3), size=1)+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
-        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
   labs(fill="Temperature", x="Symbiont Genotype", y=expression(Respiration~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
   ggtitle("Respiration of Holobiont")
 polyp.Resp.boxplot
 polyp.Resp.boxplot+ggsave("Graphs/FinalGraphs/Polyp_Resp_boxplot.png", width=8, height=5)
+
+#Resp boxplot NO JITTER
+pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
+polyp.Resp.boxplot.nojitter<-mydata%>%
+  ggplot(aes(x=Genotype, y=Resp.per.bill.cell, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  labs(fill="Temperature", x="Symbiont Genotype", y=expression(Respiration~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
+  ggtitle("Respiration of Holobiont")
+polyp.Resp.boxplot.nojitter
+polyp.Resp.boxplot.nojitter+ggsave("Graphs/FinalGraphs/Polyp_Resp_boxplot.nojitter.png", width=8, height=5)
+
 
 #GP graphs####
 SummaryGP <- mydata %>%
@@ -180,7 +201,8 @@ SummaryGP <- mydata %>%
 pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
 GP.polyp.graph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(axis.text.x=element_text(color="black", size=11), 
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
@@ -197,17 +219,35 @@ polyp.GP.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=GP.per.bill.cell, fill=Temp))+
   geom_boxplot()+
   theme_bw()+
-  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
-  theme(axis.text.x=element_text(color="black", size=11), 
+  geom_point(pch=21, position=position_jitterdodge(jitter.width=0.3), size=1)+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
-        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
   ggtitle("Grossphotosynthesis of Holobiont")+
   labs(fill="Temperature", x="Symbiont Genotype", y=expression(GP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))
 polyp.GP.boxplot
 polyp.GP.boxplot+ggsave("Graphs/FinalGraphs/Polyp_GP_boxplot.png", width=8, height=5)
+
+#GP boxplot NO JITTER
+polyp.GP.boxplot.nojitter<-mydata%>%
+  ggplot(aes(x=Genotype, y=GP.per.bill.cell, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Grossphotosynthesis of Holobiont")+
+  labs(fill="Temperature", x="Symbiont Genotype", y=expression(GP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))
+polyp.GP.boxplot.nojitter
+polyp.GP.boxplot.nojitter+ggsave("Graphs/FinalGraphs/Polyp_GP_boxplot_nojitter.png", width=8, height=5)
 
 #NP graphs####
 SummaryNP <- mydata %>%
@@ -215,10 +255,10 @@ SummaryNP <- mydata %>%
   summarize(mean=mean(NP.per.bill.cell), SE=sd(NP.per.bill.cell)/sqrt(length(na.omit(NP.per.bill.cell))))
 
 pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
-
 NP.polyp.graph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
-  theme(axis.text.x=element_text(color="black", size=11), 
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
@@ -228,6 +268,7 @@ NP.polyp.graph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temp), gro
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
   labs(x="Symbiont Genotype", y=expression(NP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
   ggtitle("Net Photosynthesis of Holobiont")
+NP.polyp.graph
 NP.polyp.graph+ggsave("Graphs/FinalGraphs/Polyp_NP_bar.png", width=8, height=5)
 
 #NP boxplot
@@ -235,20 +276,38 @@ polyp.NP.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=NP.per.bill.cell, fill=Temp))+
   geom_boxplot()+
   theme_bw()+
-  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
-  theme(axis.text.x=element_text(color="black", size=11), 
+  geom_point(pch=21, position=position_jitterdodge(jitter.width=0.3), size=1)+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
-        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
   labs(fill="Temperature", x="Symbiont Genotype", y=expression(NP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
   ggtitle("Net Photosynthesis of Holobiont")
 polyp.NP.boxplot
 polyp.NP.boxplot+ggsave("Graphs/FinalGraphs/Polyp_NP_box.png", width=8, height=5)
 
+#NP boxplot NO JITTER
+polyp.NP.boxplot.nojitter<-mydata%>%
+  ggplot(aes(x=Genotype, y=NP.per.bill.cell, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  labs(fill="Temperature", x="Symbiont Genotype", y=expression(NP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
+  ggtitle("Net Photosynthesis of Holobiont")
+polyp.NP.boxplot.nojitter
+polyp.NP.boxplot.nojitter+ggsave("Graphs/FinalGraphs/Polyp_NP_box_nojitter.png", width=8, height=5)
 
-#PnR graphs by count/area (density)#####
+
+#PnR graphs by count/polyp area #####
 mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
 mydata$Temp<-as.factor(mydata$Temp)
 
