@@ -15,14 +15,38 @@ library(MASS)
 
 #Combining and cleaning data sets to get PnR data####
 #Load data
-pnr.data<-read.csv("Data/PnR/Jan_Polyp_PnR.csv")
+pnr.data_wrong<-read.csv("Data/PnR/Jan_Polyp_PnR.csv")
 polyp.data<-read.csv("Data/Thesis_PolypData_Summary.csv")
 area.data<-read.csv("Data/PolypAreas.csv")
 
 #Notes: 
 #The values in Respiration, NP, and GP are slope values minus the average of the blank wells (DI)
 #Units: umol O2 per L per minute
-#NP=GP-Resp
+
+#Dec 23, 2020: Turns out I got GP and NP mixed up. 
+#I had the light slopes (after subtracting the blanks and averaging) as GP instead of NP
+#And calculated NP as GP-Resp, and since resp is negative, it was GP+|Resp|
+#But, the light slope should be NP and GP=NP-Resp AKA NP+|Resp| (GP must be greater than NP!)
+#So, I calculated it correctly, NP and GP are just switched. So rather than switching them in the data, I'm gonna switch them here so I know what I did
+pnr.data<-pnr.data_wrong %>% 
+  rename(
+    GrossPhoto_fixed = NetPhoto,
+    NetPhoto_fixed = GrossPhoto
+  )
+#Double checking that I did that correctly.
+summary(pnr.data_wrong$GrossPhoto)
+summary(pnr.data$NetPhoto_fixed)
+#Same. Good. 
+summary(pnr.data_wrong$NetPhoto)
+summary(pnr.data$GrossPhoto_fixed)
+#Same.Good.
+#Going to rename the columns back to just NetPhoto and GrossPhoto
+pnr.data<-pnr.data %>% 
+  rename(
+    GrossPhoto = GrossPhoto_fixed,
+    NetPhoto = NetPhoto_fixed
+  )
+#So GP and NP has been fixed. pnr.data is correct, all the following calculations will now be done with the correct GP and NP.
 
 #I need to combine data sets so that the area, PnR values, and temp/plate number are all together
 #they need to be combined by Polyp ("WellNum")
