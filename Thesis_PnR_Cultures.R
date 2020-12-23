@@ -9,19 +9,46 @@ library(car)
 library(MASS)
 library(RColorBrewer)
 library(broman)
+library(lmtest)
 
 #Load October PnR data (August PnR is BAD data)
-mydata<-read.csv("Data/OctoberPnR_r.csv")
-mydata$Temperature<-as.factor(mydata$Temperature)
-mydata<-mydata%>%
+mydata_wrong<-read.csv("Data/OctoberPnR_r.csv")
+mydata_wrong$Temperature<-as.factor(mydata_wrong$Temperature)
+mydata_wrong<-mydata_wrong%>%
   mutate_if(is.character, as.factor)
 
+#Dec 23, 2020: Turns out I got GP and NP mixed up. 
+#I had the light slopes (after subtracting the blanks and averaging) as GP instead of NP
+#And calculated NP as GP-Resp, and since resp is negative, it was GP+|Resp|
+#But, the light slope should be NP and GP=NP-Resp AKA NP+|Resp| (GP must be greater than NP!)
+#So, I calculated it correctly, NP and GP are just switched. So rather than switching them in the data, I'm gonna switch them here so I know what I did
+mydata<-mydata_wrong %>% 
+  rename(
+    AvgNP_umol_L_min_fixed = AvgGP_umol_L_min,
+    AvgGP_umol_L_min_fixed = AvgNP_umol_L_min,
+    AvgNPPer1000Cell_fixed = AvgGPPer1000Cell,
+    AvgGPPer1000Cell_fixed = AvgNPPer1000Cell
+    )
+#Double checking that I did that correctly.
+summary(mydata_wrong$AvgGP_umol_L_min)
+summary(mydata$AvgNP_umol_L_min_fixed)
+#Same. Good. 
+summary(mydata_wrong$AvgNP_umol_L_min)
+summary(mydata$AvgGP_umol_L_min_fixed)
+#Same
+summary(mydata_wrong$AvgGPPer1000Cell)
+summary(mydata$AvgNPPer1000Cell_fixed)
+#Same
+summary(mydata_wrong$AvgNPPer1000Cell)
+summary(mydata$AvgGPPer1000Cell_fixed)
+#Same. 
+#So GP and NP has been fixed. mydata is correct, all the following calculations will now be done with the correct GP and NP.
 
 #Adding columns for Resp/GP/NP per billion cells####
 #Avg GP/Resp/NP_umol_L_min is average of the two wells minus the average of the control wells (DI)
 #10^9*(value/avg count) = umol O2 per min per billion cells
-mydata <- mutate(mydata, GP = 1000000000*(AvgGP_umol_L_min/CellsPerL),
-                 NP=1000000000*(AvgNP_umol_L_min/CellsPerL),
+mydata <- mutate(mydata, GP = 1000000000*(AvgGP_umol_L_min_fixed/CellsPerL),
+                 NP=1000000000*(AvgNP_umol_L_min_fixed/CellsPerL),
                  Resp=1000000000*(AvgResp_umol_L_min/CellsPerL))
 #GP graphs####
 SummaryGP <- mydata %>%
@@ -31,7 +58,7 @@ SummaryGP <- mydata %>%
 pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
 GPGraph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
-  scale_y_continuous(expand=c(0,0), limits=c(0, 5.5))+
+  scale_y_continuous(expand=c(0,0), limits=c(0, 7))+
   theme(plot.title = element_text(face = "bold", size=16),
         axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
@@ -43,7 +70,7 @@ GPGraph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), gro
   labs(x="Symbiont Genotype", y=expression(GP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
   ggtitle("Gross Photosynthesis of Symbionts in Culture")
-GPGraph+ggsave("Graphs/FinalGraphs/Culture_GPBar_Oct.png",width=8, height=5)
+GPGraph+ggsave("Graphs/FinalGraphs/Culture_GP_Oct_Bar.png",width=8, height=5)
 
 #GP Boxplot
 #boxplot
@@ -51,8 +78,9 @@ culture.GP.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=GP, fill=Temperature))+
   geom_boxplot()+
   theme_bw()+
-  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
-  theme(axis.text.x=element_text(color="black", size=11), 
+  geom_point(pch=21, position=position_jitterdodge(jitter.width=0.3), size=1)+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
@@ -60,7 +88,7 @@ culture.GP.boxplot<-mydata%>%
   scale_fill_manual(values = c("#679A99", "#9DB462", "#E4C7E5"), labels=c("26°C", "30°C","32°C"))+
   labs(fill="Temperature", x="Symbiont Genotype", y=expression(Gross~Photo.~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
   ggtitle("Gross Photosynthesis of Symbionts in Culture")
-culture.GP.boxplot+ggsave("Graphs/FinalGraphs/Culture_GPBox_Oct.png", width=8, height=5)
+culture.GP.boxplot+ggsave("Graphs/FinalGraphs/Culture_GP_Oct_Box.png", width=8, height=5)
 
 #NP graphs####
 #Net Photo. NP = umol O2 per billion cells. 
@@ -72,8 +100,9 @@ pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
 pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
 NPGraph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
-  scale_y_continuous(expand=c(0,0), limits=c(0, 7))+
-  theme(axis.text.x=element_text(color="black", size=11), 
+  scale_y_continuous(expand=c(0,0), limits=c(0, 5.5))+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
@@ -83,15 +112,16 @@ NPGraph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temperature), gro
   scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
   labs(x="Symbiont Genotype", y=expression(NP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+
   ggtitle("Net Photosynthesis of Symbionts in Culture")
-NPGraph+ggsave("Graphs/FinalGraphs/Culture_NPBar_Oct.png",width=8, height=5)
+NPGraph+ggsave("Graphs/FinalGraphs/Culture_NP_Oct_Bar.png",width=8, height=5)
 
 #NP Boxplot
 culture.NP.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=NP, fill=Temperature))+
   geom_boxplot()+
   theme_bw()+
-  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
-  theme(axis.text.x=element_text(color="black", size=11), 
+  geom_point(pch=21, position=position_jitterdodge(jitter.width=0.3), size=1)+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
@@ -99,7 +129,7 @@ culture.NP.boxplot<-mydata%>%
   scale_fill_manual(values = c("#679A99", "#9DB462", "#E4C7E5"), labels=c("26°C", "30°C","32°C"))+
   labs(fill="Temperature", x="Symbiont Genotype", y=expression(Net~Photo.~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
   ggtitle("Net Photosynthesis of Symbionts in Culture")
-culture.NP.boxplot+ggsave("Graphs/FinalGraphs/Culture_NPBox_Oct.png",width=8, height=5)
+culture.NP.boxplot+ggsave("Graphs/FinalGraphs/Culture_NP_Oct_Box.png",width=8, height=5)
 
 #Respiration graphs####
 SummaryResp <- mydata %>%
@@ -110,7 +140,8 @@ pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
 RespGraph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(-1.8,0))+
-  theme(axis.text.x=element_text(color="black", size=11), 
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
@@ -120,15 +151,16 @@ RespGraph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temperature),
   scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
   labs(x="Symbiont Genotype", y=expression(Respiration~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
   ggtitle("Respiration of Symbionts in Culture")
-RespGraph+ggsave("Graphs/FinalGraphs/Culture_RespBar_Oct.png",width=8, height=5)
+RespGraph+ggsave("Graphs/FinalGraphs/Culture_Resp_Oct_Bar.png",width=8, height=5)
 
 #Respiration boxplot
 culture.Resp.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=Resp, fill=Temperature))+
-    geom_boxplot()+
+  geom_boxplot()+
   theme_bw()+
-  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
-  theme(axis.text.x=element_text(color="black", size=11), 
+  geom_point(pch=21, position=position_jitterdodge(jitter.width=0.3), size=1)+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
@@ -136,7 +168,7 @@ culture.Resp.boxplot<-mydata%>%
   scale_fill_manual(values = c("#679A99", "#9DB462", "#E4C7E5"), labels=c("26°C", "30°C","32°C"))+
   labs(fill="Temperature", x="Symbiont Genotype", y=expression(Respiration~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
   ggtitle("Respiration of Symbionts in Culture")
-culture.Resp.boxplot+ggsave("Graphs/FinalGraphs/Culture_RespBox_Oct.png",width=8, height=5)
+culture.Resp.boxplot+ggsave("Graphs/FinalGraphs/Culture_Resp_Oct_Box.png",width=8, height=5)
 
 #October PnR Stats#####
 
@@ -144,14 +176,31 @@ culture.Resp.boxplot+ggsave("Graphs/FinalGraphs/Culture_RespBox_Oct.png",width=8
 #Clear the environment
 rm(list=ls())
 #Load PnR data
-mydata<-read.csv("Data/OctoberPnR_r.csv")
-mydata$Temperature<-as.factor(mydata$Temperature)
+mydata_wrong<-read.csv("Data/OctoberPnR_r.csv")
+mydata_wrong$Temperature<-as.factor(mydata_wrong$Temperature)
+mydata_wrong<-mydata_wrong%>%
+  mutate_if(is.character, as.factor)
 
-mydata <- mutate(mydata, GP = 1000000000*(AvgGP_umol_L_min/CellsPerL),
-                 NP=1000000000*(AvgNP_umol_L_min/CellsPerL),
+#Dec 23, 2020: Turns out I got GP and NP mixed up. 
+#I had the light slopes (after subtracting the blanks and averaging) as GP instead of NP
+#And calculated NP as GP-Resp, and since resp is negative, it was GP+|Resp|
+#But, the light slope should be NP and GP=NP-Resp AKA NP+|Resp| (GP must be greater than NP!)
+#So, I calculated it correctly, NP and GP are just switched. So rather than switching them in the data, I'm gonna switch them here so I know what I did
+mydata<-mydata_wrong %>% 
+  rename(
+    AvgNP_umol_L_min_fixed = AvgGP_umol_L_min,
+    AvgGP_umol_L_min_fixed = AvgNP_umol_L_min,
+    AvgNPPer1000Cell_fixed = AvgGPPer1000Cell,
+    AvgGPPer1000Cell_fixed = AvgNPPer1000Cell
+  )
+
+mydata <- mutate(mydata, GP = 1000000000*(AvgGP_umol_L_min_fixed/CellsPerL),
+                 NP=1000000000*(AvgNP_umol_L_min_fixed/CellsPerL),
                  Resp=1000000000*(AvgResp_umol_L_min/CellsPerL))
 
+#Respiration####
 model1<-lm(Resp~Genotype*Temperature, data=mydata)
+#Bunch of transformations I tried that didn't work for Resp ####
 #Check assumptions
 model1res<-resid(model1)
 qqp(model1res, "norm")
@@ -197,7 +246,7 @@ poisson <- fitdistr(mydata$Resp, "Poisson")
 qqp(InocData$Days.to.Inoculation, "pois", poisson$estimate, lambda=8)
 #Doesn't work with negatives or non-integars
 
-#BoxCox transformation
+#BoxCox transformation for Resp ####
 #Response variable must be positive. Adding 3
 mydata$PosResp<-mydata$Resp+3
 full.resp.model<-lm(PosResp ~ Genotype*Temperature, data = mydata)
@@ -257,8 +306,15 @@ mydata$sqrtGP<-sqrt(mydata$GP)
 sqrtGPmodel<-lm(sqrtGP~Genotype*Temperature, data=mydata)
 qqp(resid(sqrtGPmodel), "norm")
 plot(sqrtGPmodel)
-#That's normal
-Anova(sqrtGPmodel, type="III")
-GP.model.simp<-lm(sqrtGP~Genotype+Temperature, data=mydata)
-lrtest(sqrtGPmodel, GP.model.simp)
+#That's very close
+
+mydata$fourthrtGP<-sqrt(mydata$sqrtGP)
+fourthrtGPmodel<-lm(fourthrtGP~Genotype*Temperature, data=mydata)
+qqp(resid(fourthrtGPmodel), "norm")
+#That's even more normal, so I'll use that. 
+
+GP.model.simp<-lm(fourthrtGP~Genotype+Temperature, data=mydata)
+lrtest(fourthrtGPmodel, GP.model.simp)
 #Sig = use ful model
+
+Anova(fourthrtGPmodel, type="III")
