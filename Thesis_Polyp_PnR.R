@@ -573,8 +573,8 @@ mydata$Plate<-as.factor(mydata$Plate)
 summary(mydata)
 #These ranges are stupid... ugh this data sucks.  
 #Resp: -1121 to 472
-#GP: -788 to 366
-#NP: -703 to 1312
+#NP: -788 to 366
+#GP: -703 to 1312
 
 #Respiration####
 resp.model<-lmer(Resp.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
@@ -603,14 +603,12 @@ Anova(resp.model.simp, type="III")
 resp.model.simp2<-lm(Resp.per.bill.cell~Genotype+Temp, data=mydata)
 plot(resp.model.simp2)
 qqp(resid(resp.model.simp2), "norm")
-Anova(resp.model.simp2, type="III")
-#Well, temp is significant now
 
 AIC(resp.model)#2693
 AIC(resp.model.simp) #2783
 AIC(resp.model.simp2)#2778
 
-lrtest(resp.model.simp2, resp.model.simp)#simpler model is better. But ultimately the lmer is best. 
+lrtest(resp.model.simp2, resp.model.simp)#simplest model is better. But ultimately the lmer is best. 
 
 #GP####
 GP.model<-lmer(GP.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
@@ -619,24 +617,27 @@ plot(GP.model)
 qqp(resid(GP.model), "norm")
 #Not really normal at ends again
 
-mydata$logGP<-log(mydata$GP.per.bill.cell+789)
+mydata$logGP<-log(mydata$GP.per.bill.cell+704)
 logGP.model<-lmer(logGP~Genotype*Temp+(1|Plate), data=mydata)
 plot(logGP.model)
 qqp(resid(logGP.model), "norm")
 
-Anova(GP.model, type="III")
+Anova(logGP.model, type="III")
 #nothing is significant
 
-GP.model.simp<-lm(GP.per.bill.cell~Genotype*Temp, data=mydata)
-GP.model.super.simp<-lm(GP.per.bill.cell~Genotype+Temp, data=mydata)
-
-AIC(GP.model)#2516
-AIC(GP.model.simp)#2594
-AIC(GP.model.super.simp)#2592
-
+GP.model.simp<-lm(logGP~Genotype*Temp, data=mydata)
+GP.model.super.simp<-lm(logGP~Genotype+Temp, data=mydata)
 GP.model.full<-lm(GP.per.bill.cell~Genotype*Plate*Temp, data=mydata)
-AIC(GP.model.full)#2618
 
+AIC(logGP.model)#351
+AIC(GP.model.simp)#300
+AIC(GP.model.super.simp)#294
+AIC(GP.model.full)#2873
+
+#Super simple model is best
+Anova(GP.model.full, type="III")
+#Plate is not sig, so I can take it out
+Anova(GP.model.super.simp, type="III")
 
 #NP####
 NP.model<-lmer(NP.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
@@ -645,7 +646,9 @@ plot(NP.model)
 qqp(resid(NP.model), "norm")
 #Not at ends
 
-mydata$logNP<-log(mydata$NP.per.bill.cell+704)
+#log data
+mydata$logNP<-log(mydata$NP.per.bill.cell+788)
+
 logNP.model<-lmer(logNP~Genotype*Temp+(1|Plate), data=mydata)
 qqp(resid(logNP.model), "norm")
 #Better
@@ -656,23 +659,22 @@ NP.model.full<-lm(logNP~Genotype*Temp*Plate, data=mydata)
 NP.model.simp<-lm(logNP~Genotype*Temp, data=mydata)
 NP.model.super.simp<-lm(logNP~Genotype+Temp, data=mydata)
 
-AIC(logNP.model)#351
-AIC(NP.model.full)#320
-AIC(NP.model.simp)#300
-AIC(NP.model.super.simp)#294
+AIC(logNP.model)#365
+AIC(NP.model.full)#324
+AIC(NP.model.simp)#314
+AIC(NP.model.super.simp)#315
 
 lrtest(NP.model.simp, NP.model.full)
-#Slightly sig (0.045)= bigger model better. But barely...
+#Sig = bigger (full) model better.
 
 lrtest(NP.model.super.simp, NP.model.simp)
 #Not sig=simpler model is better
 
 lrtest(NP.model.super.simp, NP.model.full)
-#Not sig (0.06)- simpler model is better
+#Sig = bigger model is better
 
-Anova(NP.model.full, type="III")#Plate is not sig, so I can use simple model
-Anova(NP.model.super.simp,type="III")
-
+Anova(NP.model.full, type="III")#Plate*Geno is sig, so I need to use mixed effects model
+Anova(logNP.model, type="III")
 
 #Stats slope/(cells/polyp area))####
 mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
