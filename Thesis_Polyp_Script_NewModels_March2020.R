@@ -41,20 +41,6 @@ InocFreq<- Developed.data.df%>%group_by(Genotype, Temp, Plate, Inoc, .drop=FALSE
 full.mod<-glm(Freq ~ Genotype*Temp*Plate*Inoc, 
               data = InocFreq, family = poisson)
 deviance(full.mod)
-Anova(full.mod, type="III")
-anova(full.mod, test="Chisq")
-
-full.mod.order<-glm(Freq ~ Temp*Genotype*Plate*Inoc, 
-              data = InocFreq, family = poisson)
-deviance(full.mod.order)#Same
-anova(full.mod.order, test="Chisq")
-Anova(full.mod.order, type="III")
-#So order matters for little a anova, but not big A anova?
-capture.output(Anova(full.mod, type="III"),file="Inoc.full.mod.typeIII.doc")
-capture.output(anova(full.mod, test="Chisq"),file="Inoc.full.mod.chi.doc")
-capture.output(Anova(full.mod.order, type="III"),file="Inoc.full.mod.order.typeIII.doc")
-capture.output(anova(full.mod.order, test="Chisq"), file="Inoc.full.mod.order.chi.doc")
-#So order matters when I do "test=Chisq" but not Anova, type=III. So I will stick with that.
 
 Anova(full.mod, type="III")
 #Plate doe not matter 
@@ -117,6 +103,7 @@ AIC(log.Inoc.model.full) #125
 AIC(log.Inoc.model2) #162
 
 #Using lmer model to include plate but still be able to determine GxT interaction
+Anova(log.Inoc.model, type="III")
 
 #emmeans
 emm1 = emmeans(log.Inoc.model, specs= pairwise~Genotype:Temp)
@@ -137,7 +124,7 @@ full.mod<-glm(Freq ~ Genotype*Temp*Plate*Strob,
               data = StrobFreq, family = poisson)
 deviance(full.mod)
 Anova(full.mod, type="III")
-#Plate is 0.05 with interaction with Temp
+#Plate is 0.051 with interaction with Temp
 
 mod1<-glm(Freq ~ Genotype*Temp*Strob, 
           data = StrobFreq, family = poisson)
@@ -146,6 +133,7 @@ Anova(mod1, type="III")
 lrtest(mod1, full.mod)
 #I can use the simpler model without plate.
 
+#Linear model
 #I need to remove the NA's
 StrobilatedData <- NoApoData %>%
   filter(Days.to.Strobilation != "NA")
@@ -367,7 +355,6 @@ AIC(Ephyra.model4) #342.8
 #Model with all interactions is lowest.
 #But use model with plate as random factor to account for it. 
 Anova(sqrtEphyraModel, type="III") #Inherently doing LRT comparing model without factor and with
-anova(sqrtEphyraModel, type="III")
 
 summary(sqrtEphyraModel)
 
