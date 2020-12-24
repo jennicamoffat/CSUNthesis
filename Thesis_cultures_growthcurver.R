@@ -182,7 +182,7 @@ rGraph.final<-ggplot(Summary2, aes(x=Genotype, y=mean, fill=factor(Temp), group=
   scale_y_continuous(expand=c(0,0), limits=c(0,1))+
   facet_wrap(  ~ Round)
 rGraph.final
-rGraph.final+ggsave("Graphs/FinalGraphs/culture_growth.png", width=8, height=5)
+rGraph.final+ggsave("Graphs/FinalGraphs/culture_growth_bar.png", width=8, height=5)
 
 #Putting CCMP2464 back in for July
 mydata3<-mydata[-c(13:24),]
@@ -203,9 +203,25 @@ rGraph.final.all<-ggplot(Summary3, aes(x=Genotype, y=mean, fill=factor(Temp), gr
   scale_y_continuous(expand=c(0,0), limits=c(0,1))+
   facet_wrap(  ~ Round)
 rGraph.final.all
-rGraph.final.all+ggsave("Graphs/FinalGraphs/culture_growth.CCMP2464.png", width=8, height=5)
+rGraph.final.all+ggsave("Graphs/FinalGraphs/culture_growth_CCMP2464.png", width=8, height=5)
 
 #Boxplot of r ####
+rm(list=ls())
+mydata<-read.csv("Data/GrowthcurverData_r.csv")
+mydata<-mydata%>%
+  mutate_if(is.character,as.factor)
+mydata$Temp<-as.factor(mydata$Temp)
+#Change name of MayJune to just May
+mydata<-mydata %>%
+  mutate(Round = as.character(Round),
+         Round = if_else(Round == 'MayJune', 'May', Round),
+         Round = as.factor(Round))
+#going to remove CCMP2464 altogether, because  I can't include in stats with Round (aliased coefficients=not equal replication)
+lessdata<-mydata %>%
+  filter(Genotype!="CCMP2464")%>%
+  droplevels()
+#Putting CCMP2464 back in for July
+mydata3<-mydata[-c(13:24),]
 summary(mydata3)
 #Reordering so May comes first
 mydata3$Round <- factor(mydata3$Round,levels = c("May", "July"))
@@ -214,8 +230,9 @@ boxplot.r<-mydata3%>%
   ggplot(aes(x=Genotype, y=r, fill=Temp))+
   geom_boxplot()+
   theme_bw()+
-  geom_point(position=position_jitterdodge(jitter.width=0.3), color="black", size=0.3, alpha=0.5)+
-  theme(axis.text.x=element_text(color="black", size=11, angle = 30, hjust=1),
+  geom_point(pch=21, position=position_jitterdodge(jitter.width=0.1), size=1)+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
@@ -226,6 +243,24 @@ boxplot.r<-mydata3%>%
   labs(fill="Temperature")+
   facet_wrap(  ~ Round)
 boxplot.r+ggsave("Graphs/FinalGraphs/culture_growthrate_box.png", width=8, height=5)
+
+#No jitter
+boxplot.r.nojitter<-mydata3%>%
+  ggplot(aes(x=Genotype, y=r, fill=Temp))+
+  geom_boxplot()+
+  theme_bw()+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  scale_fill_manual(values = c("#ac8eab", "#f2cec7", "#c67b6f"), labels=c("26°C", "30°C","32°C"))+
+  scale_x_discrete(name = "Symbiont Genotype") +
+  scale_y_continuous(name = "Max growth rate (r)")+
+  labs(fill="Temperature")+
+  facet_wrap(  ~ Round)
+boxplot.r.nojitter+ggsave("Graphs/FinalGraphs/culture_growthrate_box_nojitter.png", width=8, height=5)
 
 violinplot<-mydata2%>%
   ggplot(aes(x=Genotype, y=r, fill=Temp))+
