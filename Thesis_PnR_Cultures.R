@@ -89,6 +89,21 @@ culture.GP.boxplot<-mydata%>%
   labs(fill="Temperature", x="Symbiont Genotype", y=expression(Gross~Photo.~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
   ggtitle("Gross Photosynthesis of Symbionts in Culture")
 culture.GP.boxplot+ggsave("Graphs/FinalGraphs/Culture_GP_Oct_Box.png", width=8, height=5)
+#GP Boxplot no jitter
+culture.GP.boxplot.nojitter<-mydata%>%
+  ggplot(aes(x=Genotype, y=GP, fill=Temperature))+
+  geom_boxplot()+
+  theme_bw()+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  scale_fill_manual(values = c("#679A99", "#9DB462", "#E4C7E5"), labels=c("26°C", "30°C","32°C"))+
+  labs(fill="Temperature", x="Symbiont Genotype", y=expression(Gross~Photo.~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
+  ggtitle("Gross Photosynthesis of Symbionts in Culture")
+culture.GP.boxplot.nojitter+ggsave("Graphs/FinalGraphs/Culture_GP_Oct_Box_nojitter.png", width=8, height=5)
 
 #NP graphs####
 #Net Photo. NP = umol O2 per billion cells. 
@@ -130,6 +145,21 @@ culture.NP.boxplot<-mydata%>%
   labs(fill="Temperature", x="Symbiont Genotype", y=expression(Net~Photo.~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
   ggtitle("Net Photosynthesis of Symbionts in Culture")
 culture.NP.boxplot+ggsave("Graphs/FinalGraphs/Culture_NP_Oct_Box.png",width=8, height=5)
+#NP Boxplot NO JITTER
+culture.NP.boxplot.nojitter<-mydata%>%
+  ggplot(aes(x=Genotype, y=NP, fill=Temperature))+
+  geom_boxplot()+
+  theme_bw()+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  scale_fill_manual(values = c("#679A99", "#9DB462", "#E4C7E5"), labels=c("26°C", "30°C","32°C"))+
+  labs(fill="Temperature", x="Symbiont Genotype", y=expression(Net~Photo.~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
+  ggtitle("Net Photosynthesis of Symbionts in Culture")
+culture.NP.boxplot.nojitter+ggsave("Graphs/FinalGraphs/Culture_NP_Oct_Box_nojitter.png",width=8, height=5)
 
 #Respiration graphs####
 SummaryResp <- mydata %>%
@@ -169,6 +199,21 @@ culture.Resp.boxplot<-mydata%>%
   labs(fill="Temperature", x="Symbiont Genotype", y=expression(Respiration~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
   ggtitle("Respiration of Symbionts in Culture")
 culture.Resp.boxplot+ggsave("Graphs/FinalGraphs/Culture_Resp_Oct_Box.png",width=8, height=5)
+#Respiration boxplot no jitter
+culture.Resp.boxplot.nojitter<-mydata%>%
+  ggplot(aes(x=Genotype, y=Resp, fill=Temperature))+
+  geom_boxplot()+
+  theme_bw()+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  scale_fill_manual(values = c("#679A99", "#9DB462", "#E4C7E5"), labels=c("26°C", "30°C","32°C"))+
+  labs(fill="Temperature", x="Symbiont Genotype", y=expression(Respiration~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))+
+  ggtitle("Respiration of Symbionts in Culture")
+culture.Resp.boxplot.nojitter+ggsave("Graphs/FinalGraphs/Culture_Resp_Oct_Box_nojitter.png",width=8, height=5)
 
 #October PnR Stats#####
 
