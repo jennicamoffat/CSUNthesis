@@ -318,6 +318,14 @@ cubed.resp.model.simp<-lm(cubedResp~Genotype+Temperature, data = mydata)
 lrtest(cubed.resp.model, cubed.resp.model.simp)
 #Sig=use full model
 
+#mean values
+SummaryResp <- mydata %>%
+  group_by(Genotype, Temperature) %>%
+  summarize(mean=mean(Resp, na.rm=TRUE), SE=sd(Resp, na.rm=TRUE)/sqrt(length(na.omit(Resp))))
+emm.resp = emmeans(cubed.resp.model, specs= pairwise~Genotype:Temperature)
+emm.resp.data<-as.data.frame(emm.resp$emmeans)
+emm.resp$emmeans
+
 #Net Photo. NP = umol O2 per billion cells. ####
 
 NP.model<-lm(NP~Genotype*Temperature, data=mydata)
@@ -341,6 +349,13 @@ NP.model.simp<-lm(fourthrtNP~Genotype+Temperature, data=mydata)
 lrtest(quadrt.NP.model, NP.model.simp)
 #Sig=use full model
 
+#mean values
+SummaryNP <- mydata %>%
+  group_by(Genotype, Temperature) %>%
+  summarize(mean=mean(NP, na.rm=TRUE), SE=sd(NP, na.rm=TRUE)/sqrt(length(na.omit(NP))))
+emm.NP = emmeans(quadrt.NP.model, specs= pairwise~Genotype:Temperature)
+emm.NP$emmeans
+
 #Gross photosynthesis. GP = gross photo umol O2 per billion cells####
 model1<-lm(GP~Genotype*Temperature, data=mydata)
 #Check assumptions
@@ -360,6 +375,31 @@ qqp(resid(fourthrtGPmodel), "norm")
 
 GP.model.simp<-lm(fourthrtGP~Genotype+Temperature, data=mydata)
 lrtest(fourthrtGPmodel, GP.model.simp)
-#Sig = use ful model
+#Sig = use full model
 
 Anova(fourthrtGPmodel, type="III")
+#mean values
+SummaryGP <- mydata %>%
+  group_by(Genotype, Temperature) %>%
+  summarize(mean=mean(GP, na.rm=TRUE), SE=sd(GP, na.rm=TRUE)/sqrt(length(na.omit(GP))))
+emm.GP = emmeans(fourthrtGPmodel, specs= pairwise~Genotype:Temperature)
+emm.GP.data<-as.data.frame(emm.GP$emmeans)
+
+#GP emmean bargraph backtransformed
+pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
+GPGraph<-ggplot(emm.GP.data, aes(x=Genotype, y=emmean^4, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  scale_y_continuous(expand=c(0,0), limits=c(0, 7))+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16),
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6, color="black") + #determines the bar width
+  geom_errorbar(aes(ymax=(upper.CL^4), ymin=(lower.CL^4)), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Symbiont Genotype", y=expression(GP~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+  #labels the x and y axes
+  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  ggtitle("Gross Photosynthesis of Symbionts in Culture")
+GPGraph
+
