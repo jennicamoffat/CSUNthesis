@@ -422,7 +422,7 @@ emm.july$emmeans
 #emmean is mean from model (so double logged)
 #SE are calculated from the model as well
 
-#Bargraph with model SE bars####
+#Bargraph of model data####
 rm(list=ls())
 mydata<-read.csv("Data/GrowthcurverData_r.csv")
 mydata$Temp<-as.factor(mydata$Temp)
@@ -446,6 +446,19 @@ emm.may = emmeans(May.model, specs= pairwise~Genotype:Temp)
 May.emmeans<-as.data.frame(emm.may$emmeans)
 May.emmeans<-May.emmeans %>% add_column(Round="May")
 
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f")
+growthrate.may.emmeans<-ggplot (May.emmeans, aes(x=Genotype, y=emmean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  labs(x="Symbiont Genotype", y="Maximum growth rate (r)", fill="Temperature")+#labels the x and y axes
+  theme(axis.text.x=element_text(color="black", size=11, angle = 30, hjust=1), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=upper.CL, ymin=lower.CL), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
+  scale_y_continuous(expand=c(0,0), limits=c(0,1))+
+  facet_wrap(  ~ Round)
+growthrate.may.emmeans+ggsave("Graphs/FinalGraphs/culture_growth_May_emmeans_bar.png", width=5.5, height=5)
+
+
 #July data
 JulyData<-mydata%>%
   filter(Round=="July")%>%
@@ -463,7 +476,6 @@ July.emmeans<-July.emmeans %>% add_column(Round = "July")
 Summary <- data.noMay2464 %>%
   group_by(Genotype, Temp, Round) %>%
   summarize(mean=mean(r, na.rm=TRUE))
-Summary3$Round <- factor(Summary3$Round,levels = c("May", "July"))
 
 #Joining datasets
 MayJuly.emmeans<-full_join(May.emmeans, July.emmeans, copy = FALSE)
@@ -485,6 +497,9 @@ growthrate.emmeans<-ggplot (graph.summary, aes(x=Genotype, y=mean, fill=factor(T
   scale_y_continuous(expand=c(0,0), limits=c(0,1))+
   facet_wrap(  ~ Round)
 growthrate.emmeans
+
+
+
 
 #Bargraph of just July growthcurver (old)####
 JulyData <- mydata %>%
