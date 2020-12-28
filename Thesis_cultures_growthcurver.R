@@ -11,6 +11,7 @@ library(purrr)
 library(lme4)
 library(lmerTest)
 library("lmtest")
+library(emmeans)
 
 #Clear the environment
 rm(list=ls())
@@ -361,7 +362,18 @@ qqp(resid(May.model), "norm")
 #Normal, yay!
 plot(May.model)
 Anova(May.model, type="III")
+summary(May.model)
 
+#emmeans
+emm.may = emmeans(May.model, specs= pairwise~Genotype:Temp)
+emm.may$emmeans
+#emmean is mean from model 
+#SE are calculated from the model as well
+
+#Summary of raw data
+SummaryMay <- MayJuneData %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(r, na.rm=TRUE), SE=sd(r, na.rm=TRUE)/sqrt(length(na.omit(r))))
 
 #July
 JulyData<-mydata%>%
@@ -398,6 +410,81 @@ qqp(resid(transf.model), "norm")
 
 #Using double log
 Anova(loglogJuly.model, type="III")
+
+#july summary
+SummaryJuly <- JulyData %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(r, na.rm=TRUE), SE=sd(r, na.rm=TRUE)/sqrt(length(na.omit(r))))
+#July model summary
+#emmeans
+emm.july = emmeans(loglogJuly.model, specs= pairwise~Genotype:Temp)
+emm.july$emmeans
+#emmean is mean from model (so double logged)
+#SE are calculated from the model as well
+
+#Bargraph with model SE bars####
+rm(list=ls())
+mydata<-read.csv("Data/GrowthcurverData_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
+
+#Change name of MayJune to just May
+mydata<-mydata %>%
+  mutate(Round = as.character(Round),
+         Round = if_else(Round == 'MayJune', 'May', Round),
+         Round = as.factor(Round))
+#May (no CCMP2464)
+data.noMay2464<-mydata[-c(13:24),]
+#May data, just may, no CCMP2464
+MayData<-data.noMay2464%>%
+  filter(Round=="May")%>%
+  droplevels()
+#May model
+May.model<-lm(r~Genotype*Temp, data=MayData)
+#May emmeans
+emm.may = emmeans(May.model, specs= pairwise~Genotype:Temp)
+May.emmeans<-as.data.frame(emm.may$emmeans)
+May.emmeans<-May.emmeans %>% add_column(Round="May")
+
+#July data
+JulyData<-mydata%>%
+  filter(Round=="July")%>%
+  droplevels()
+#July model
+JulyData$logr<-log(JulyData$r)
+JulyData$loglogr<-log(JulyData$logr+3)
+loglogJuly.model<-lm(loglogr~Genotype*Temp, data=JulyData)
+#July emmeans
+emm.july = emmeans(loglogJuly.model, specs= pairwise~Genotype:Temp)
+July.emmeans<-as.data.frame(emm.july$emmeans)
+July.emmeans<-July.emmeans %>% add_column(Round = "July")
+
+#Means from data
+Summary <- data.noMay2464 %>%
+  group_by(Genotype, Temp, Round) %>%
+  summarize(mean=mean(r, na.rm=TRUE))
+Summary3$Round <- factor(Summary3$Round,levels = c("May", "July"))
+
+#Joining datasets
+MayJuly.emmeans<-full_join(May.emmeans, July.emmeans, copy = FALSE)
+full.data<-full_join(MayJuly.emmeans, Summary, copy=FALSE)
+
+graph.summary<-full.data%>%
+  group_by(Genotype, Temp, Round)%>%
+  summarize(mean=mean, upperCI=upper.CL, lowerCI=lower.CL, SE=SE)
+graph.summary$Round <- factor(graph.summary$Round,levels = c("May", "July"))
+
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f")
+growthrate.emmeans<-ggplot (graph.summary, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  labs(x="Symbiont Genotype", y="Maximum growth rate (r)", fill="Temperature")+#labels the x and y axes
+  theme(axis.text.x=element_text(color="black", size=11, angle = 30, hjust=1), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
+  scale_y_continuous(expand=c(0,0), limits=c(0,1))+
+  facet_wrap(  ~ Round)
+growthrate.emmeans
 
 #Bargraph of just July growthcurver (old)####
 JulyData <- mydata %>%
