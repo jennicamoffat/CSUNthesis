@@ -111,6 +111,12 @@ emm1$emmeans
 #emmean is mean from model (so logged data)
 #SE are calculated from the model as well
 
+#Time to inoc mean
+inoc.summary<-mydata%>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(Days.to.Inoculation, na.rm=TRUE), SE=sd(Days.to.Inoculation, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Inoculation))))
+
+
 #Time to strobilation####
 #Start with log-linear analysis
 #Columns: Geno, Temp, Plate, inoc (yes or no), and Frequency (count of that combo)
@@ -358,6 +364,13 @@ Anova(sqrtEphyraModel, type="III") #Inherently doing LRT comparing model without
 
 summary(sqrtEphyraModel)
 
+#Ephyra mean
+ephyra.summary<-mydata%>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(Total.Ephyra.Produced, na.rm=TRUE), SE=sd(Total.Ephyra.Produced, na.rm=TRUE)/sqrt(length(na.omit(Total.Ephyra.Produced))))
+emm.GP = emmeans(sqrtEphyraModel, specs= pairwise~Genotype:Temp)
+emm.GP$emmeans
+
 #Bud production####
 Budmodel<-lmer(Total.Buds~Genotype*Temp+(1|Plate), data=mydata)
 plot(Budmodel)
@@ -428,3 +441,24 @@ fit.1 <- glm(Inoc == "yes" ~ Genotype+Temp, data = Developed.data, family = bino
 summary(fit.1)
 summary(Developed.data)
 
+#Correlations
+library(hrbrthemes)
+
+ggplot(NoApoData, aes(x=Days.to.Ephyra, y=Total.Buds, color=Genotype, shape=Temp)) + 
+  geom_point(size=2, alpha=3)+
+  theme_minimal()
+
+ggplot(NoApoData, aes(x=Total.Buds, y=Total.Ephyra.Produced, color=Genotype)) + 
+  geom_point(size=3, position=position_jitterdodge(jitter.width=0.05), alpha=3)+
+  theme_minimal()
+#For Spearman's rho
+BudEphyracorr.spear<-cor.test(NoApoData$Total.Buds, NoApoData$Total.Ephyra.Produced, method="spearman", na.rm=TRUE)
+BudEphyracorr.spear
+#Pearson's
+BudEphyracorr.pear<-cor.test(NoApoData$Total.Buds, NoApoData$Total.Ephyra.Produced, method="pearson", na.rm=TRUE)
+BudEphyracorr.pear
+#Kendall tau
+BudEphyracorr.ken<-cor.test(NoApoData$Total.Buds, NoApoData$Total.Ephyra.Produced, method="kendall", na.rm=TRUE)
+BudEphyracorr.ken
+summary(BudEphyracorr.ken)
+summary(BudEphyracorr.pear)
