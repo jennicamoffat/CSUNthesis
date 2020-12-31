@@ -11,6 +11,7 @@ library(lme4)
 library(lmerTest)
 library(emmeans)
 library(MASS)
+library(lmtest)
 
 
 #Combining and cleaning data sets to get PnR data####
@@ -566,115 +567,306 @@ polyp.NP.boxplot+ggsave("Graphs/PnR/PolypPnR/PolypNPbyArea.boxplot.png", width=1
 #Polyp PnR Stats####
 
 #Stats with slopes/cell count####
+rm(list=ls())
 mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
 mydata<-mydata%>%
   mutate_if(is.character, as.factor)
 mydata$Plate<-as.factor(mydata$Plate)
+mydata$Temp<-as.factor(mydata$Temp)
+
 summary(mydata)
 #These ranges are stupid... ugh this data sucks.  
 #Resp: -1121 to 472
 #NP: -788 to 366
 #GP: -703 to 1312
 
-#Respiration####
-resp.model<-lmer(Resp.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
-#Check assumptions
+#Outlier test####
+# Outlier removal by the Tukey rules on quartiles +/- 1.5 IQR
+# 2017 Klodian Dhana
+
+
+outlierKD <- function(dt, var) {
+  var_name <- eval(substitute(var),eval(dt))
+  tot <- sum(!is.na(var_name))
+  na1 <- sum(is.na(var_name))
+  m1 <- mean(var_name, na.rm = T)
+  par(mfrow=c(2, 2), oma=c(0,0,3,0))
+  boxplot(var_name, main="With outliers")
+  hist(var_name, main="With outliers", xlab=NA, ylab=NA)
+  outlier <- boxplot.stats(var_name)$out
+  mo <- mean(outlier)
+  var_name <- ifelse(var_name %in% outlier, NA, var_name)
+  boxplot(var_name, main="Without outliers")
+  hist(var_name, main="Without outliers", xlab=NA, ylab=NA)
+  title("Outlier Check", outer=TRUE)
+  na2 <- sum(is.na(var_name))
+  message("Outliers identified: ", na2 - na1, " from ", tot, " observations")
+  message("Proportion (%) of outliers: ", (na2 - na1) / tot*100)
+  message("Mean of the outliers: ", mo)
+  m2 <- mean(var_name, na.rm = T)
+  message("Mean without removing outliers: ", m1)
+  message("Mean if we remove outliers: ", m2)
+  response <- readline(prompt="Do you want to remove outliers and to replace with NA? [yes/no]: ")
+  if(response == "y" | response == "yes"){
+    dt[as.character(substitute(var))] <- invisible(var_name)
+    assign(as.character(as.list(match.call())$dt), dt, envir = .GlobalEnv)
+    message("Outliers successfully removed", "\n")
+    return(invisible(dt))
+  } else{
+    message("Nothing changed", "\n")
+    return(invisible(var_name))
+  }
+}
+outlierKD(mydata, Resp.per.bill.cell)
+outlierKD(mydata, NP.per.bill.cell)
+outlierKD(mydata, GP.per.bill.cell)
+mydata2<-mydata %>% drop_na()
+summary<-mydata2%>%
+  group_by(Genotype, Temp)%>%
+  count()
+summary(mydata2)
+#resp: -193-1123
+#gp: -145-217
+#np: -143-130
+mydata2$logResp<-log(mydata2$Resp.per.bill.cell+194)
+mydata2$logGP<-log(mydata2$GP.per.bill.cell+146)
+mydata2$logNP<-log(mydata2$NP.per.bill.cell+144)
+resp.model<-lm(Resp.per.bill.cell~Genotype*Temp, data=mydata2)
 plot(resp.model)
 qqp(resid(resp.model), "norm")
-#Not really normal at ends (surprise, surprise). But actually a little closer to normal than I expected. 
-
-#I want to log transform
-mydata$logResp<-log(mydata$Resp.per.bill.cell+1121)
-logresp.model<-lmer(logResp~Genotype*Temp+(1|Plate), data=mydata)
-#Check assumptions
-plot(logresp.model)
-qqp(resid(logresp.model), "norm")
-#Outliers: 154, 143
-#It's a horizontal line now. 
- 
 Anova(resp.model, type="III")
-#Nothing significant. What a surprise. 
+GP.model<-lm(GP.per.bill.cell~Genotype*Temp, data=mydata2)
+plot(GP.model)
+Anova(GP.model, type="III")
+NP.model<-lm(NP.per.bill.cell~Genotype*Temp, data=mydata2)
+plot(NP.model)
+Anova(NP.model, type="III")
 
-resp.model.simp<-lm(Resp.per.bill.cell~Genotype*Temp, data=mydata)
-plot(resp.model.simp)
-qqp(resid(resp.model.simp), "norm")
-Anova(resp.model.simp, type="III")
+#Respiration####
+resp.model.full<-lm(Resp.per.bill.cell~Genotype*Temp*Plate, data=mydata)
+#Check assumptions
+plot(resp.model.full)
+qqp(resid(resp.model.full), "norm")
+#Not really normal at ends (surprise, surprise). But actually a little closer to normal than I expected. 
+#154, 156, 157 outliers
+df2 <- mydata %>% slice(-c(143, 154))
+full.model.df2<-lm(Resp.per.bill.cell~Genotype*Temp*Plate, data=df2)
+plot(full.model.df2)
+qqp(resid(full.model.df2))
+#New outliers pop up, and still just as not normal. 
 
-resp.model.simp2<-lm(Resp.per.bill.cell~Genotype+Temp, data=mydata)
-plot(resp.model.simp2)
-qqp(resid(resp.model.simp2), "norm")
+resp.model.mixed<-lmer(Resp.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
+resp.model.simple<-lm(Resp.per.bill.cell~Genotype*Temp, data=mydata)
+resp.model.super.simple<-lm(Resp.per.bill.cell~Genotype+Temp, data=mydata)
 
-AIC(resp.model)#2693
-AIC(resp.model.simp) #2783
-AIC(resp.model.simp2)#2778
+lrtest(resp.model.full, resp.model.simple)
+#Sig = use full model
+AIC(resp.model.full)#2820
+AIC(resp.model.simple)#2792
+AIC(resp.model.super.simple)#2780
+AIC(resp.model.mixed)#2621
 
-lrtest(resp.model.simp2, resp.model.simp)#simplest model is better. But ultimately the lmer is best. 
+Anova(resp.model.mixed, type="III")
+Anova(resp.model.full, type="III")
+
+#BoxCox Respiration####
+#Response variable must be positive. Adding 1122
+mydata$PosResp<-mydata$Resp.per.bill.cell+1122
+full.resp.model<-lm(PosResp ~ Genotype*Temp*Plate, data=mydata)
+step.resp.model<-stepAIC(full.resp.model, direction="both", trace = F)
+
+boxcox<-boxcox(step.resp.model,lambda = seq(-5, 5, 1/1000),plotit = TRUE )
+
+Selected.Power<-boxcox$x[boxcox$y==max(boxcox$y)]
+Selected.Power
+#2.28
+mydata$boxresp<-mydata$PosResp^2.28
+box.model.resp<-lm(boxresp~Genotype*Temp*Plate, data=mydata)
+plot(box.model.resp)
+qqp(resid(box.model.resp), "norm")
+#Not really normal, but at least the variances are much better. 
+
+mydata$logboxresp<-log(mydata$boxresp)
+log.box.model.resp<-lm(logboxresp~Genotype*Temp*Plate, data=mydata)
+qqp(resid(log.box.model.resp), "norm")
+plot(log.box.model.resp)
+#So logging it actually really messes it up a lot. 
+
+box.resp.model.simp<-lm(boxresp~Genotype*Temp, data=mydata)
+box.resp.model.super.simp<-lm(boxresp~Genotype+Temp, data=mydata)
+box.resp.mixed.model<-lmer(boxresp~Genotype*Temp+(1|Plate), data=mydata)
+#eigenvalue close to zero, so model doesn't converge. 
+
+AIC(box.model.resp)#6832
+AIC(box.resp.model.simp)#6818
+AIC(box.resp.model.super.simp)#6807
+AIC(box.resp.mixed.model)#6305
+
+lrtest(box.resp.model.simp, box.model.resp)
+#Sig = use bigger model
+lrtest(box.resp.model.super.simp, box.resp.model.simp)
+#Not sig - use simpler model. So confused. 
+lrtest(box.resp.model.super.simp, box.model.resp)
+#Sig=use full model
+
+Anova(box.model.resp, type="III")
+Anova(box.resp.model.simp, type="III")
+Anova(box.resp.model.super.simp, type="III")
+Anova(box.resp.mixed.model, type="III")
+
+#log respiration####
+#I want to log transform
+mydata$logResp<-log(mydata$Resp.per.bill.cell+1122)
+logresp.model.full<-lm(logResp~Genotype*Temp*Plate, data=mydata)
+#Check assumptions
+plot(logresp.model.full)
+qqp(resid(logresp.model.full), "norm")
+
+logresp.model.simp<-lm(logResp~Genotype*Temp, data=mydata)
+plot(logresp.model.simp)
+qqp(resid(logresp.model.simp), "norm")
+
+logresp.model.super.simp<-lm(logResp~Genotype+Temp, data=mydata)
+plot(logresp.model.super.simp)
+qqp(resid(logresp.model.super.simp), "norm")
+
+logresp.model.mixed<-lmer(logResp~Genotype*Temp+(1|Plate), data=mydata)
+
+AIC(logresp.model.mixed) #425
+AIC(logresp.model.full)#432
+AIC(logresp.model.simp) #393
+AIC(logresp.model.super.simp)#380
+
+Anova(logresp.model.full, type="III")
+
+lrtest(logresp.model.simp, logresp.model.full)
+#Not sig (but close to sig) = smaller model better.
+
+lrtest(logresp.model.super.simp, logresp.model.simp)
+#Not sig=simpler model is better
+
+lrtest(logresp.model.super.simp, logresp.model.full)
+#Not sig=simpler model is better
+
+Anova(logresp.model.full, type="III") #Plate is not significant in any interaction, so can remove
+Anova(logresp.model.super.simp, type="III") 
+Anova(logresp.model.simp, type="III")
+Anova(logresp.model.mixed, type="III")
+#No matter what, nothing is significant. So I'm just gonna do the logged data 
+
+
+#mean values Respiration####
+Summary.resp <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(Resp.per.bill.cell, na.rm=TRUE), SE=sd(Resp.per.bill.cell, na.rm=TRUE)/sqrt(length(na.omit(Resp.per.bill.cell))))
+emm.resp = emmeans(resp.model, specs= pairwise~Genotype:Temp)
+emm.resp<-as.data.frame(emm.resp$emmeans)
+emm.resp$emmeans
+summary(mydata)
+
 
 #GP####
-GP.model<-lmer(GP.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
+GP.model.mixed<-lmer(GP.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
 #Check assumptions
-plot(GP.model)
-qqp(resid(GP.model), "norm")
+plot(GP.model.mixed)
+qqp(resid(GP.model.mixed), "norm")
 #Not really normal at ends again
 
 mydata$logGP<-log(mydata$GP.per.bill.cell+704)
-logGP.model<-lmer(logGP~Genotype*Temp+(1|Plate), data=mydata)
-plot(logGP.model)
-qqp(resid(logGP.model), "norm")
+logGP.model.mixed<-lmer(logGP~Genotype*Temp+(1|Plate), data=mydata)
+plot(logGP.model.mixed)
+qqp(resid(logGP.model.mixed), "norm")
 
-Anova(logGP.model, type="III")
-#nothing is significant
 
-GP.model.simp<-lm(logGP~Genotype*Temp, data=mydata)
-GP.model.super.simp<-lm(logGP~Genotype+Temp, data=mydata)
-GP.model.full<-lm(GP.per.bill.cell~Genotype*Plate*Temp, data=mydata)
+logGP.model.simp<-lm(logGP~Genotype*Temp, data=mydata)
+logGP.model.super.simp<-lm(logGP~Genotype+Temp, data=mydata)
+logGP.model.full<-lm(logGP~Genotype*Plate*Temp, data=mydata)
+plot(logGP.model.full)
+qqp(resid(logGP.model.full), "norm")
+#199, 195, 197 outliers
 
-AIC(logGP.model)#351
-AIC(GP.model.simp)#300
-AIC(GP.model.super.simp)#294
-AIC(GP.model.full)#2873
+AIC(logGP.model.mixed)#347
+AIC(logGP.model.simp)#307
+AIC(logGP.model.super.simp)#296
+AIC(logGP.model.full)#336
 
 #Super simple model is best
-Anova(GP.model.full, type="III")
+Anova(logGP.model.full, type="III")
 #Plate is not sig, so I can take it out
-Anova(GP.model.super.simp, type="III")
+Anova(logGP.model.super.simp, type="III")
+Anova(logGP.model.mixed, type="III")
+Anova(logGP.model.simp, type="III")
+#AIC says to use super simple model. 
+lrtest(logGP.model.super.simp, logGP.model.simp)#not sig
+
+#Mean values GP
+Summary.GP <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(GP.per.bill.cell, na.rm=TRUE), SE=sd(GP.per.bill.cell, na.rm=TRUE)/sqrt(length(na.omit(GP.per.bill.cell))))
+emm.GP = emmeans(logGP.model.super.simp, specs= pairwise~Genotype:Temp)
+emm.GP$emmeans
 
 #NP####
-NP.model<-lmer(NP.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
+NP.model.mixed<-lmer(NP.per.bill.cell~Genotype*Temp+(1|Plate), data=mydata)
 #Check assumptions
-plot(NP.model)
-qqp(resid(NP.model), "norm")
-#Not at ends
+plot(NP.model.mixed)
+qqp(resid(NP.model.mixed), "norm")
+#Not at ends, although it is very close
+NP.model.full<-lm(NP.per.bill.cell~Genotype*Temp*Plate, data=mydata)
+plot(NP.model.full)
 
-#log data
+NP.model.simp<-lm(NP.per.bill.cell~Genotype*Temp, data=mydata)
+NP.model.super.simp<-lm(NP.per.bill.cell~Genotype+Temp, data=mydata)
+
+AIC(NP.model.full)#2640
+AIC(NP.model.simp)#2602
+AIC(NP.model.super.simp)#2593
+AIC(NP.model.mixed)#2448
+
+#log NP####
 mydata$logNP<-log(mydata$NP.per.bill.cell+788)
 
-logNP.model<-lmer(logNP~Genotype*Temp+(1|Plate), data=mydata)
-qqp(resid(logNP.model), "norm")
+logNP.model.full<-lm(logNP~Genotype*Temp*Plate, data=mydata)
+plot(logNP.model.full)
+qqp(resid(logNP.model.full), "norm")
 #Better
-Anova(logNP.model, type="III")
-#Nothing significant
 
-NP.model.full<-lm(logNP~Genotype*Temp*Plate, data=mydata)
-NP.model.simp<-lm(logNP~Genotype*Temp, data=mydata)
-NP.model.super.simp<-lm(logNP~Genotype+Temp, data=mydata)
+logNP.model.full<-lm(logNP~Genotype*Temp*Plate, data=mydata)
+qqp(resid(logNP.model.full), "norm")
+plot(logNP.model.full)
 
-AIC(logNP.model)#365
-AIC(NP.model.full)#324
-AIC(NP.model.simp)#314
-AIC(NP.model.super.simp)#315
+logNP.model.simp<-lm(logNP~Genotype*Temp, data=mydata)
+logNP.model.super.simp<-lm(logNP~Genotype+Temp, data=mydata)
+logNP.model.mixed<-lmer(logNP~Genotype*Temp+(1|Plate), data=mydata)
+
+
+AIC(logNP.model.full)#364
+AIC(logNP.model.simp)#324
+AIC(logNP.model.super.simp)#316
+AIC(logNP.model.mixed)#363
 
 lrtest(NP.model.simp, NP.model.full)
-#Sig = bigger (full) model better.
+#Not quite sig = smaller model better.
 
 lrtest(NP.model.super.simp, NP.model.simp)
 #Not sig=simpler model is better
 
 lrtest(NP.model.super.simp, NP.model.full)
-#Sig = bigger model is better
+#Not quite sig = smaller model is better
 
-Anova(NP.model.full, type="III")#Plate*Geno is sig, so I need to use mixed effects model
-Anova(logNP.model, type="III")
+Anova(logNP.model.full, type="III")#Plate*Geno is sig
+Anova(logNP.model.mixed, type="III")
+#But AIC and lrtest tells me to use simplest model
+
+Anova(logNP.model.super.simp, type="III") #Neither are sig
+Anova(logNP.model.simp, type="III") #Genotype is sig...
+#I do say I use AIC to pick model. So all PnR results say to use simplest model. So I guess I'll do that
+
+#Mean NP
+Summary.NP <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(NP.per.bill.cell, na.rm=TRUE), SE=sd(NP.per.bill.cell, na.rm=TRUE)/sqrt(length(na.omit(NP.per.bill.cell))))
+
 
 #Stats slope/(cells/polyp area))####
 mydata<-read.csv("Data/Polyp_PnR_data_cleaned.csv")
