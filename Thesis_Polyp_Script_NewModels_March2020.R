@@ -218,7 +218,13 @@ Anova(trans.strob.model, type="III")
 #error about aliased coefficients in the model. It's because some plates only had one well strobilate. 
 trans.strob.model2<-lmer(Strob.trans~Genotype*Temp+(1|Plate), data=StrobilatedData)
 Anova(trans.strob.model2, type="III")
-  
+
+#mean time to strobilation
+Summary.strob <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(Days.to.Strobilation, na.rm=TRUE), SE=sd(Days.to.Strobilation, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Strobilation))))
+
+
 #Time to ephyra####
 #Start with log-linear analysis
 #Columns: Geno, Temp, Plate, inoc (yes or no), and Frequency (count of that combo)
@@ -320,6 +326,11 @@ AIC(trans.TE.model3) #-978
 lrtest(trans.TE.model3, trans.TE.model2)
 #Sig LRT test = use bigger model
 
+#Mean days to ephyra
+Summary.days.ephyra <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(Days.to.Ephyra, na.rm=TRUE), SE=sd(Days.to.Ephyra, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Ephyra))))
+
 
 #Total average ephyra production####
 
@@ -391,6 +402,9 @@ AIC(Budmodel4)#1631
 Anova(Budmodel2, type="III")
 #Interaction: P=0.002318
 
+Summary.buds <- mydata %>%
+  group_by(Genotype, Temp) %>%
+  summarize(mean=mean(Total.Buds, na.rm=TRUE), SE=sd(Total.Buds, na.rm=TRUE)/sqrt(length(na.omit(Total.Buds))))
 
 #Survival####
 #To do log-linear analysis, I need a new dataframe
