@@ -69,7 +69,7 @@ InocData$logIDays<-log(InocData$Days.to.Inoculation)
 log.Inoc.model<-lmer(logIDays~Genotype*Temp+(1|Plate), data=InocData)
 logInocmodelres<-resid(log.Inoc.model)
 qqp(resid(log.Inoc.model), "norm")
-#Better, but not good enough. 
+#Pretty close. 
 
 #double log
 InocData$loglogIDays<-log(InocData$logIDays)
@@ -116,6 +116,12 @@ inoc.summary<-mydata%>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Days.to.Inoculation, na.rm=TRUE), SE=sd(Days.to.Inoculation, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Inoculation))))
 
+inoc.tukey<-emmeans(log.Inoc.model, pairwise ~ Temp | Genotype)
+inoc.tukey$contrasts
+
+#Graph to visualize means across temp by genotype
+emmeans.inoc<-emmip(log.Inoc.model, Genotype~Temp)
+emmeans.inoc
 
 #Time to strobilation####
 #Start with log-linear analysis
@@ -224,6 +230,13 @@ Summary.strob <- mydata %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Days.to.Strobilation, na.rm=TRUE), SE=sd(Days.to.Strobilation, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Strobilation))))
 
+#tukey
+strob.tukey<-emmeans(trans.strob.model2, pairwise ~ Temp | Genotype)
+strob.tukey$contrasts
+
+#Graph to visualize means across temp by genotype
+emmeans.strob<-emmip(trans.strob.model2, Genotype~Temp)
+emmeans.strob
 
 #Time to ephyra####
 #Start with log-linear analysis
@@ -330,7 +343,12 @@ lrtest(trans.TE.model3, trans.TE.model2)
 Summary.days.ephyra <- mydata %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Days.to.Ephyra, na.rm=TRUE), SE=sd(Days.to.Ephyra, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Ephyra))))
-
+#Tukey
+TE.tukey<-emmeans(trans.TE.model2, pairwise ~ Temp | Genotype)
+TE.tukey$contrasts
+#Graph to visualize means across temp by genotype
+emmeans.TE<-emmip(trans.TE.model2, Genotype~Temp)
+emmeans.TE
 
 #Total average ephyra production####
 
@@ -382,6 +400,13 @@ ephyra.summary<-mydata%>%
 emm.GP = emmeans(sqrtEphyraModel, specs= pairwise~Genotype:Temp)
 emm.GP$emmeans
 
+#Tukey
+Ephyra.tukey<-emmeans(sqrtEphyraModel, pairwise ~ Temp | Genotype)
+Ephyra.tukey$contrasts
+#Graph to visualize means across temp by genotype
+emmeans.ephyra<-emmip(sqrtEphyraModel, Genotype~Temp)
+emmeans.ephyra
+
 #Bud production####
 Budmodel<-lmer(Total.Buds~Genotype*Temp+(1|Plate), data=mydata)
 plot(Budmodel)
@@ -405,6 +430,14 @@ Anova(Budmodel2, type="III")
 Summary.buds <- mydata %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Total.Buds, na.rm=TRUE), SE=sd(Total.Buds, na.rm=TRUE)/sqrt(length(na.omit(Total.Buds))))
+
+#Tukey
+#Tukey
+Bud.tukey<-emmeans(Budmodel2, pairwise ~ Temp | Genotype)
+Bud.tukey$contrasts
+#Graph to visualize means across temp by genotype
+emmeans.buds<-emmip(Budmodel2, Genotype~Temp)
+emmeans.buds
 
 #Survival####
 #To do log-linear analysis, I need a new dataframe
