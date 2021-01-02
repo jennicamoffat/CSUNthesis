@@ -40,8 +40,6 @@ MayJuneData<-MayJuneGrowthData2 %>%
   spread(var, val)
 #IT WOOOOOOOOORKED
 
-ggplot(data=MayJuneData,aes(x = time, y=CCMP2464_1_32))+geom_point()
-
 #Need to rename "Day" column to "time" for the package. 
 names(MayJuneData)[1]<-"time"
 
@@ -51,11 +49,14 @@ gc_out <- SummarizeGrowthByPlate(MayJuneData, plot_fit = TRUE, plot_file="MayJun
 head(gc_out)
 View(gc_out)
 #CCMP data are the only data that can't be fit, cuz it didn't grow.
+#Separating sample ID into three columns
+May.gc <- gc_out %>%
+  separate(sample, into = c("Genotype", "Flask", "Temp"), sep = "_")
 
 #Export to excel file
 library("xlsx")
-write.xlsx(gc_out, file = "GrowthcurverData.xlsx",
-           sheetName = "MayJune", append = FALSE)
+write.xlsx(May.gc, file = "GrowthcurverData.updated.xlsx",
+           sheetName = "May", append = FALSE)
 
 #Going to try to run the model for one replicate
 model.FLCass_1_26 <- SummarizeGrowth(MayJuneData$time, MayJuneData$FLCass_1_26)
@@ -103,10 +104,15 @@ names(JulyData)[1]<-"time"
 gc_out2 <- SummarizeGrowthByPlate(JulyData, plot_fit = TRUE, plot_file="JulyGrowthValues.pdf")
 head(gc_out2)
 View(gc_out2)
-#Export to same excel file
-write.xlsx(gc_out2, file = "GrowthcurverData.xlsx",
-           sheetName = "July", append = TRUE)
 
+July.gc <- gc_out2 %>%
+  separate(sample, into = c("Genotype", "Flask", "Temp"), sep = "_")
+
+#Export to same excel file
+write.xlsx(July.gc, file = "GrowthcurverData.updated.xlsx",
+           sheetName = "July", append = TRUE)
+#It's on two sheets, so I combined them into one sheet in excel and converted to CSV. Called "GrowthcurverData_r.csv"
+#Redid with updated version of growth curver, nothing changed (phew). So the updated and not updated datasheets are exactly the same. 
 
 #Sigma from growthcurver#####
 rm(list=ls())
