@@ -504,10 +504,86 @@ growthrate.emmeans<-ggplot (graph.summary, aes(x=Genotype, y=mean, fill=factor(T
   facet_wrap(  ~ Round)
 growthrate.emmeans
 
+#Growth rate graphs####
+rm(list=ls())
+mydata<-read.csv("GrowthDataCombined_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
 
+#Change name of MayJune to just May
+mydata<-mydata %>%
+  mutate(Round = as.character(Round),
+         Round = if_else(Round == 'MayJune', 'May', Round),
+         Round = as.factor(Round))
+#averaging count data
+mean.counts<-mydata%>%
+  group_by(Genotype, Temp, Round, Day)%>%
+  summarize(avg=mean(Densityx10000, na.rm=TRUE), SE=sd(Densityx10000, na.rm=TRUE)/sqrt(length(na.omit(Densityx10000))))
+mean.counts$upper<-mean.counts$avg+mean.counts$SE
+mean.counts$lower<-mean.counts$avg-mean.counts$SE
 
+#removing ccmp2464 may
+May.means<-mean.counts%>%
+  filter(Round=="May")
+May.means.no2464<-May.means%>%
+  filter(Genotype!="CCMP2464")
 
-#Bargraph of just July growthcurver (old)####
+July.means<-mean.counts%>%
+  filter(Round=="July")
+#Joining back together
+mean.counts.noMay2464<-full_join(May.means.no2464, July.means, copy = FALSE)
+#Reordering so May is first in legend
+mean.counts.noMay2464$Round <- factor(mean.counts.noMay2464$Round,levels = c("May", "July"))
+
+pal<-c("#ac8eab", "#F7B8AC", "#c67b6f")
+#SE ribbon
+avg.growth.SEribbon<-ggplot(mean.counts.noMay2464, aes(x=Day, y=avg, color=Temp, shape=Round))+
+  geom_line(size=1) +
+  geom_point()+
+  geom_ribbon(aes(x=Day, ymin=lower, ymax=upper), linetype=1, alpha=0.1)+
+  xlab("Day")+
+  ylab("Density (10,000 cells/mL)")+
+  ggtitle("Growth Curves")+
+  scale_x_continuous(breaks = c(0,10,20))+
+  theme_minimal()+
+  scale_color_manual(values=pal)+
+  scale_shape_manual(values=c(1, 16))+
+  theme(plot.title = element_text(hjust = 0.5, size = 14))+
+  facet_wrap(~Genotype)
+avg.growth.SEribbon+ggsave("Graphs/FinalGraphs/growth_curves_SEribbon.png", width=8, height=5)
+
+#Just SE bars
+avg.growth.SEbars<-ggplot(mean.counts.noMay2464, aes(x=Day, y=avg, color=Temp, shape=Round))+
+  geom_line(size=0.75) +
+  geom_point()+
+  geom_errorbar(aes(ymin=lower, ymax=upper), width=.2)+
+  xlab("Day")+
+  ylab("Density (10,000 cells/mL)")+
+  ggtitle("Growth Curves")+
+  scale_x_continuous(breaks = c(0,10,20))+
+  theme_minimal()+
+  scale_color_manual(values=pal)+
+  scale_shape_manual(values=c(1, 16))+
+  theme(plot.title = element_text(hjust = 0.5, size = 14))+
+  facet_wrap(~Genotype)
+avg.growth.SEbars+ggsave("Graphs/FinalGraphs/growth_curves_SEbars.png", width=8, height=5)
+
+#No SE
+avg.growth.noSE<-ggplot(mean.counts.noMay2464, aes(x=Day, y=avg, color=Temp, shape=Round))+
+  geom_line(size=0.75) +
+  geom_point()+
+  xlab("Day")+
+  ylab("Density (10,000 cells/mL)")+
+  ggtitle("Growth Curves")+
+  scale_x_continuous(breaks = c(0,10,20))+
+  theme_minimal()+
+  scale_color_manual(values=pal)+
+  scale_shape_manual(values=c(1, 16))+
+  theme(plot.title = element_text(hjust = 0.5, size = 14))+
+  facet_wrap(~Genotype)
+avg.growth.noSE+ggsave("Graphs/FinalGraphs/growth_curves_noSE.png", width=8, height=5)
+
+#
+#Bargraph of just July growthcurver (old graph formatting)####
 JulyData <- mydata %>%
   filter(Round == "July") %>%
   droplevels
