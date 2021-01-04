@@ -208,7 +208,9 @@ rGraph.final.all<-ggplot(Summary3, aes(x=Genotype, y=mean, fill=factor(Temp), gr
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
   scale_y_continuous(expand=c(0,0), limits=c(0,1))+
-  facet_wrap(  ~ Round)
+  facet_wrap(  ~ Round, labeller = labeller(Round = 
+                                              c("May" = "Round 1",
+                                                "July" = "Round 2")))
 rGraph.final.all
 rGraph.final.all+ggsave("Graphs/FinalGraphs/culture_growth_CCMP2464.png", width=8, height=5)
 
@@ -239,7 +241,7 @@ boxplot.r<-mydata3%>%
   theme_bw()+
   geom_point(pch=21, position=position_jitterdodge(jitter.width=0.1), size=1)+
   theme(plot.title = element_text(face = "bold", size=16),
-        axis.text.x=element_text(color="black", size=11), 
+        axis.text.x=element_text(color="black", size=11, angle = 30, hjust=1), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
@@ -248,7 +250,9 @@ boxplot.r<-mydata3%>%
   scale_x_discrete(name = "Symbiont Genotype") +
   scale_y_continuous(name = "Max growth rate (r)")+
   labs(fill="Temperature")+
-  facet_wrap(  ~ Round)
+  facet_wrap(  ~ Round, labeller = labeller(Round = 
+                                              c("May" = "Round 1",
+                                                "July" = "Round 2")))
 boxplot.r+ggsave("Graphs/FinalGraphs/culture_growthrate_box.png", width=8, height=5)
 
 #No jitter
@@ -257,7 +261,7 @@ boxplot.r.nojitter<-mydata3%>%
   geom_boxplot()+
   theme_bw()+
   theme(plot.title = element_text(face = "bold", size=16),
-        axis.text.x=element_text(color="black", size=11), 
+        axis.text.x=element_text(color="black", size=11, angle=30, hjust=1), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
@@ -266,29 +270,10 @@ boxplot.r.nojitter<-mydata3%>%
   scale_x_discrete(name = "Symbiont Genotype") +
   scale_y_continuous(name = "Max growth rate (r)")+
   labs(fill="Temperature")+
-  facet_wrap(  ~ Round)
+  facet_wrap(  ~ Round, labeller = labeller(Round = 
+                                              c("May" = "Round 1",
+                                                "July" = "Round 2")))
 boxplot.r.nojitter+ggsave("Graphs/FinalGraphs/culture_growthrate_box_nojitter.png", width=8, height=5)
-
-violinplot<-mydata2%>%
-  ggplot(aes(x=Genotype, y=r, fill=Temp))+
-  geom_violin()+
-  facet_wrap( ~Round)
-violinplot
-
-data %>%
-  ggplot( aes(x=name, y=value, fill=name)) +
-  geom_boxplot() +
-  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
-  geom_jitter(color="black", size=0.4, alpha=0.9) +
-  theme_ipsum() +
-  theme(
-    legend.position="none",
-    plot.title = element_text(size=11)
-  ) +
-  ggtitle("A boxplot with jitter") +
-  xlab("")
-
-
 
 
 #Stats for r####
