@@ -439,6 +439,23 @@ Bud.tukey$contrasts
 emmeans.buds<-emmip(Budmodel2, Genotype~Temp)
 emmeans.buds
 
+#Without Apo
+Budmodel2.full<-lm(Total.Buds~Genotype*Temp*Plate, data=NoApoData)
+plot(Budmodel2.full)
+qqp(resid(Budmodel2.full), "norm")
+#Normal
+
+Budmodel2.mixed<-lmer(Total.Buds~Genotype*Temp+(1|Plate), data=NoApoData)
+Budmodel2.simp<-lm(Total.Buds~Genotype*Temp, data=NoApoData)
+Budmodel2.supersimp<-lm(Total.Buds~Genotype+Temp, data=NoApoData)
+Anova(Budmodel2.full, type="III") #No effect of plate. 
+Anova(Budmodel2.simp, type="III") #G*T P=0.0059
+
+lrtest(Budmodel2.simp, Budmodel2.full)
+lrtest(Budmodel2.supersimp,Budmodel2.simp)
+#LRT says to use Budmodel2.simp
+#Still a sig interaction, even without Apo
+
 #Survival####
 #To do log-linear analysis, I need a new dataframe
 #Columns: Geno, Temp, Plate, Survived (yes or no), and Frequency (count of that combo)
