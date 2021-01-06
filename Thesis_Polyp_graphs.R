@@ -185,6 +185,32 @@ total.ephyra.prop.bar<-ggplot(total.ephyra.prop, aes(x=Temp, y=n, fill=Total.Eph
   facet_grid(~Genotype)
 total.ephyra.prop.bar+ggsave("Graphs/FinalGraphs/TotalEphyraProportion.png", width=8, height=5)
 
+#Ephyra over time####
+rm(list=ls())
+mydata2<-read.csv("Data/Thesis_polyp_ephyra_every_day.csv")
+mydata2$Temp<-as.factor(mydata2$Temp)
+NoApoData <- mydata2 %>%
+  filter(Genotype != "Aposymbiotic") %>%
+  droplevels
+NoApoData$Genotype<-as.factor(NoApoData$Genotype)
+
+Ephyra<-NoApoData%>%
+  group_by(Genotype, Temp, Day)%>%
+  summarize(count=sum(Ephyra.produced., na.rm=TRUE))
+
+
+ephyra.over.time<-ggplot(Ephyra, aes(x=Day, y=count, color=Genotype, linetype=Temp))+
+  geom_line(size=0.75) +
+  geom_point()+
+  xlab("Day")+
+  ylab("Ephyra")+
+  ggtitle("Ephyra over time")+
+  theme_minimal()+
+  scale_linetype_manual(values=c("solid","longdash", "dotted")) +
+  theme(plot.title = element_text(hjust = 0.5, size = 14))
+ephyra.over.time
+
+
 #Time to strobilation####
 
 #First, let's see how many even got to strobilation
