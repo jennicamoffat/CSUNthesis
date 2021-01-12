@@ -198,18 +198,93 @@ Ephyra<-NoApoData%>%
   group_by(Genotype, Temp, Day)%>%
   summarize(count=sum(Ephyra.produced., na.rm=TRUE))
 
-
+#Hex codes from diagram
+#CCMP2464 #9DC1E5
+#CCMP2458 #FFDA66
+#FLCass #A8D18C
+#KB8 #ADACD5
+#RT362 #F05F62
+pal<-c("#81A7C6", "#D6B65C", "#8BA874", "#7C7CA0", "#F05F62")
 ephyra.over.time<-ggplot(Ephyra, aes(x=Day, y=count, color=Genotype, linetype=Temp))+
-  geom_line(size=0.75) +
+  geom_line(size=1) +
   geom_point()+
   xlab("Day")+
   ylab("Ephyra")+
-  ggtitle("Ephyra over time")+
   theme_minimal()+
+  scale_y_continuous(expand=c(0,0), limits=c(0,35))+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16))+
   scale_linetype_manual(values=c("solid","longdash", "dotted")) +
-  theme(plot.title = element_text(hjust = 0.5, size = 14))
-ephyra.over.time
+  theme(plot.title = element_text(hjust = 0.5, size = 14))+
+  scale_color_manual(values = pal)
+ephyra.over.time+ggsave("Graphs/FinalGraphs/ephyra_over_time.png", width=8, height=5)
 
+ephyra26<-NoApoData%>%
+  filter(Temp=="26")%>%
+  group_by(Genotype, Day)%>%
+  summarize(count=sum(Ephyra.produced., na.rm=TRUE))
+
+ephyra30<-NoApoData%>%
+  filter(Temp == "30")%>%
+  group_by(Genotype, Day)%>%
+  summarize(count=sum(Ephyra.produced., na.rm=TRUE))
+
+ephyra32<-NoApoData%>%
+  filter(Temp == "32")%>%
+  group_by(Genotype, Day)%>%
+  summarize(count=sum(Ephyra.produced., na.rm=TRUE))
+  
+  
+ephyra.over.time26<-ggplot(ephyra26, aes(x=Day, y=count, color=Genotype))+
+  geom_line(size=1, linetype="solid") +
+  geom_point()+
+  xlab("Day")+
+  ylab("Ephyra")+
+  theme_minimal()+
+  scale_y_continuous(expand=c(0,0), limits=c(0,35))+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16))+
+  theme(plot.title = element_text(hjust = 0.5, size = 14))+
+  scale_color_manual(values = pal)
+ephyra.over.time26+ggsave("Graphs/FinalGraphs/ephyra_over_time_26.png", width=8, height=5)
+
+ephyra.over.time30<-ggplot(ephyra30, aes(x=Day, y=count, color=Genotype))+
+  geom_line(size=1, linetype="longdash") +
+  geom_point()+
+  xlab("Day")+
+  ylab("Ephyra")+
+  theme_minimal()+
+  scale_y_continuous(expand=c(0,0), limits=c(0,35))+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16))+
+  theme(plot.title = element_text(hjust = 0.5, size = 14))+
+  scale_color_manual(values = pal)
+ephyra.over.time30+ggsave("Graphs/FinalGraphs/ephyra_over_time_30.png", width=8, height=5)
+
+ephyra.over.time32<-ggplot(ephyra32, aes(x=Day, y=count, color=Genotype))+
+  geom_line(size=1, linetype="dotted") +
+  geom_point()+
+  xlab("Day")+
+  ylab("Ephyra")+
+  theme_minimal()+
+  scale_y_continuous(expand=c(0,0), limits=c(0,35))+
+  theme(plot.title = element_text(face = "bold", size=16),
+        axis.text.x=element_text(color="black", size=11), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_text(color="black", size=16), 
+        axis.title.y = element_text(color="black", size=16))+
+  theme(plot.title = element_text(hjust = 0.5, size = 14))+
+  scale_color_manual(values = pal)
+ephyra.over.time32+ggsave("Graphs/FinalGraphs/ephyra_over_time_32.png", width=8, height=5)
 
 #Time to strobilation####
 
