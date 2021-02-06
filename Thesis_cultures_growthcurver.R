@@ -85,7 +85,6 @@ JulyGrowthData<-pivot_wider(JulyData, id_cols = NULL, names_from = c(Genotype,Fl
                             values_from = Density_cellspermL, values_fill = NULL, values_fn = NULL)
 #removing unnecessary columns
 JulyGrowthData <- JulyGrowthData[ -c(1,2,4:18) ]
-View(JulyGrowthData)
 #Getting rid of NA's
 #From stack overflow response "Here it, first, performs a wide-to-long data-transformation, excluding the "A" column and removing the missing values. Second, it groups by "A" column and the variable names. Third, it removes the duplicate values. Finally, it returns the data to its original wide format."
 JulyData<-JulyGrowthData %>%
@@ -93,7 +92,6 @@ JulyData<-JulyGrowthData %>%
   group_by(Day, var) %>%
   distinct(val) %>%
   spread(var, val)
-View(JulyData)
 #IT WOOOOOOOOORKED
 
 #Need to rename "Day" column to "time" for the package. 
@@ -103,7 +101,6 @@ names(JulyData)[1]<-"time"
 # plate using the default background correction method ("min").
 gc_out2 <- SummarizeGrowthByPlate(JulyData, plot_fit = TRUE, plot_file="JulyGrowthValues.pdf")
 head(gc_out2)
-View(gc_out2)
 
 July.gc <- gc_out2 %>%
   separate(sample, into = c("Genotype", "Flask", "Temp"), sep = "_")
@@ -111,6 +108,7 @@ July.gc <- gc_out2 %>%
 #Export to same excel file
 write.xlsx(July.gc, file = "GrowthcurverData.updated.xlsx",
            sheetName = "July", append = TRUE)
+
 #It's on two sheets, so I combined them into one sheet in excel and converted to CSV. Called "GrowthcurverData_r.csv"
 #Redid with updated version of growth curver, nothing changed (phew). So the updated and not updated datasheets are exactly the same. 
 
@@ -591,3 +589,83 @@ July.growthcurver.r.graph<-ggplot(JulySummary, aes(x=Genotype, y=mean, fill=fact
 July.growthcurver.r.graph
 July.growthcurver.r.graph+ggsave("Graphs/Growth/July.growthcurver.r.png", width=8, height=5)
 
+
+#Stats with only first three weeks of May data####
+rm(list=ls())
+mydata<-read.csv("GrowthDataCombined_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
+
+#Getting rid of NA's, but can only do one round at a time.
+MayJuneDat<-subset(mydata, Round=="MayJune")
+#Pivoting data to use growthcurver package
+#Value for each new cell is cell density from average (cells/mL)
+MayJuneGrowthData<-pivot_wider(MayJuneDat, id_cols = NULL, names_from = c(Genotype,Flask,Temp),
+                               names_prefix = "", names_repair = "check_unique",
+                               values_from = Density_cellspermL, values_fill = NULL, values_fn = NULL)
+#removing unnecessary columns (round, method, calculations, individual counts)
+MayJuneGrowthData2 <- MayJuneGrowthData[ -c(1,2,4:18) ]
+#Getting rid of NA's
+#From stack overflow response "Here it, first, performs a wide-to-long data-transformation, excluding the "A" column and removing the missing values. Second, it groups by "A" column and the variable names. Third, it removes the duplicate values. Finally, it returns the data to its original wide format."
+MayJuneData<-MayJuneGrowthData2 %>%
+  gather(var, val, -Day, na.rm = TRUE) %>%
+  group_by(Day, var) %>%
+  distinct(val) %>%
+  spread(var, val)
+#IT WOOOOOOOOORKED
+
+#Need to rename "Day" column to "time" for the package. 
+names(MayJuneData)[1]<-"time"
+
+#Removing last three counts
+MayJuneData3<-MayJuneData%>%
+  filter(time<20)
+gc_out3<-SummarizeGrowthByPlate(MayJuneData3, plot_fit = TRUE, plot_file="MayJuneGrowthValues3week.pdf")
+head(gc_out3)
+View(gc_out3)
+May.gc.3week <- gc_out3 %>%
+  separate(sample, into = c("Genotype", "Flask", "Temp"), sep = "_")
+#Export to excel file
+library("xlsx")
+write.xlsx(May.gc.3week, file = "GrowthcurverData.May3week.xlsx",
+           sheetName = "May3week", append = FALSE)
+#Added july growth data to excel file
+
+#stats
+rm(list=ls())
+mydata<-read.csv("Data/GrowthcurverData.May3week.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
+mydata3<-mydata[-c(13:24),]
+
+#Removing CCMP2464 altogether
+lessdata<-subset(mydata3, Genotype !="CCMP2464")
+
+No2464.model<-lm(r~Genotype*Temp*Round, data=lessdata)
+qqp(resid(No2464.model), "norm")
+
+logNo2464.model<-lm(logr~Genotype*Temp*Round, data=lessdata)
+qqp(resid(logNo2464.model), "norm")
+#Good
+Anova(logNo2464.model, type="III")
+#Yes, round is significant even without CCMP2464
+
+#Plot
+Summary3 <- mydata3 %>%
+  group_by(Genotype, Temp, Round) %>%
+  summarize(mean=mean(r, na.rm=TRUE), SE=sd(r, na.rm=TRUE)/sqrt(length(na.omit(r))))
+Summary3$Round <- factor(Summary3$Round,levels = c("May", "July"))
+
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f")
+rGraph.final.all<-ggplot(Summary3, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  labs(x="Symbiont Genotype", y="Maximum growth rate (r)", fill="Temperature")+#labels the x and y axes
+  theme(axis.text.x=element_text(color="black", size=11, angle = 30, hjust=1), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
+  scale_y_continuous(expand=c(0,0), limits=c(0,1))+
+  facet_wrap(  ~ Round, labeller = labeller(Round = 
+                                              c("May" = "Round 1",
+                                                "July" = "Round 2")))
+rGraph.final.all
