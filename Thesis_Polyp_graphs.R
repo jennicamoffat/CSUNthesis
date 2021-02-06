@@ -222,6 +222,7 @@ ephyra.over.time<-ggplot(Ephyra, aes(x=Day, y=count, color=Genotype, linetype=Te
   scale_color_manual(values = pal)
 ephyra.over.time+ggsave("Graphs/FinalGraphs/ephyra_over_time.png", width=8, height=5)
 
+#Now separated by temps so i can bring them in one at a time
 ephyra26<-NoApoData%>%
   filter(Temp=="26")%>%
   group_by(Genotype, Day)%>%
@@ -769,9 +770,12 @@ BudsGeno<-ggplot(BudDataGeno, aes(x=Genotype, y=mean))+  #basic plot
 BudsGeno+ggsave("Graphs/Polyps/BudsGeno.png", width=10, height=5)
 
 
-#All stages proportions
+#All stages proportions####
 NoApoData$Total.Ephyra.Produced<-as.factor(NoApoData$Total.Ephyra.Produced)
 NoApoData$Total.Ephyra.Produced<-NoApoData$Total.Ephyra.Produced %>% replace_na("0")
+
+Dead.data<-Developed.data%>%
+  filter(Survive.to.End == "No")
 
 stage.data <- Developed.data %>%   
   mutate(StageReached = case_when(Survive.to.End == 'No' ~ 'Died',
@@ -780,18 +784,30 @@ stage.data <- Developed.data %>%
     Ephyra == 'No' & Strob == 'No' & Inoc == 'Yes' ~ 'Inoculated',
     Inoc == 'No' ~ 'None'))
 
-stage.data.tally<-stage.data%>%
-  group_by(Temp, Genotype, StageReached)%>%
+stage.data2 <- Developed.data %>%   
+  mutate(StageReached = case_when(Ephyra == 'Yes' ~ 'Produced Ephyra',
+                                  Ephyra == 'No' & Strob == 'Yes' ~  'Strobilated',
+                                  Ephyra == 'No' & Strob == 'No' & Inoc == 'Yes' ~ 'Inoculated',
+                                  Inoc == 'No' ~ 'None'))
+#So what I want instead is that of that "none" category, how many died. 
+stage.data3<-stage.data2%>%
+  mutate(StageReached2 = case_when(Survive.to.End == 'No' & StageReached == 'None' ~ 'Died',
+                                   Ephyra == 'Yes' ~ 'Produced Ephyra',
+                                   Ephyra == 'No' & Strob == 'Yes' ~  'Strobilated',
+                                   Ephyra == 'No' & Strob == 'No' & Inoc == 'Yes' ~ 'Inoculated',
+                                   Inoc == 'No' ~ 'None'))
+
+stage.data.tally<-stage.data3%>%
+  group_by(Temp, Genotype, StageReached2)%>%
   tally()
-stage.data.tally$StageReached<-as.factor(stage.data.tally$StageReached)
+stage.data.tally$StageReached2<-as.factor(stage.data.tally$StageReached2)
+#Organize it into the proper order
 stage.data.tally<-stage.data.tally%>%
-  mutate(StageReached=fct_relevel(StageReached, "Produced Ephyra", "Strobilated", "Inoculated", "None", "Died"))
+  mutate(StageReached2=fct_relevel(StageReached2, "Produced Ephyra", "Strobilated", "Inoculated", "None", "Died"))
 
-
-pal<-c("#2c7fb8","#7fcdbb", "#edf8b1") #blue green yellow
 library(PNWColors)
 pal=pnw_palette("Bay")
-stages.bar<-ggplot(stage.data.tally, aes(x=Temp, y=n, fill=StageReached))+  #basic plot
+stages.bar<-ggplot(stage.data.tally, aes(x=Temp, y=n, fill=StageReached2))+  #basic plot
   theme_minimal()+
   theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
   geom_bar(position=position_stack(), stat="identity", color="black")+
