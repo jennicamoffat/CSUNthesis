@@ -657,14 +657,15 @@ survival.prop+ggsave("Graphs/FinalGraphs/Survival.final.png", width=8, height=5)
 survival.temp<-mydata%>%
   group_by(Temp, Survive.to.End)%>%
   tally()
+survival.temp$prop<-survival.temp$n/144
 pal<-c("#2c7fb8","#7fcdbb") #blue green
-survival.temp.plot<-ggplot(survival.temp, aes(x=Temp, y=n, fill=Survive.to.End))+  #basic plot
+survival.temp.plot<-ggplot(survival.temp, aes(x=Temp, y=prop, fill=Survive.to.End))+  #basic plot
   theme_minimal()+
-  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
+  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"), axis.title.y = element_text(color="black", size=13))+
   geom_bar(color="black", position=position_stack(), stat="identity", width=0.6)+
   scale_fill_manual(values=pal)+
-  labs(x="Temperature (°C)", y="Number of Polyps", fill="Survived")+#labels the x and y axes
-  scale_y_continuous(expand=c(0,0), limits=c(0,145))
+  labs(x="Temperature (°C)", y="Proportion of Polyps", fill="Survived")+#labels the x and y axes
+  scale_y_continuous(expand=c(0,0), limits=c(0,1))
 survival.temp.plot+ggsave("Graphs/FinalGraphs/Survival.temp.final.png", width=8, height=5)
 
 #Bud production####
@@ -800,6 +801,7 @@ stage.data3<-stage.data2%>%
 stage.data.tally<-stage.data3%>%
   group_by(Temp, Genotype, StageReached2)%>%
   tally()
+stage.data.tally$proportion<-stage.data.tally$n/24
 stage.data.tally$StageReached2<-as.factor(stage.data.tally$StageReached2)
 #Organize it into the proper order
 stage.data.tally<-stage.data.tally%>%
@@ -807,13 +809,13 @@ stage.data.tally<-stage.data.tally%>%
 
 library(PNWColors)
 pal=pnw_palette("Bay")
-stages.bar<-ggplot(stage.data.tally, aes(x=Temp, y=n, fill=StageReached2))+  #basic plot
+stages.bar<-ggplot(stage.data.tally, aes(x=Temp, y=proportion, fill=StageReached2))+  #basic plot
   theme_minimal()+
-  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
+  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"), axis.title.y = element_text(color="black", size=13))+
   geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
-  labs(x="Temperature (°C)", y="Number of Polyps", fill="Stage Reached")+#labels the x and y axes
-  scale_y_continuous(expand=c(0,0), limits=c(0,25))+
+  labs(x="Temperature (°C)", y="Proportion of Polyps", fill="Stage Reached")+#labels the x and y axes
+  scale_y_continuous(expand=c(0,0), limits=c(0,1))+
   facet_grid(~Genotype)
 stages.bar+ggsave("Graphs/FinalGraphs/Stages.Prop.png", width=8, height=5)
 
