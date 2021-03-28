@@ -39,18 +39,24 @@ TotalEphyra <- NoApoData %>%
 pal<-c("#79CFDB", "#859A51", "#DFADE1") #blue, green, pink (not colorblind friendly)
 pal<-c("#2c7fb8", "#7fcdbb", "#edf8b1") #blue greens
 pal<-c("#88CCEE", "#DDCC77", "#CC6677") #blue, yellow, orange
-pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
 
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
 Ephyra.final<-ggplot(TotalEphyra, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
   labs(x="Symbiont Genotype", y="Ephyra Produced", fill="Temperature")+#labels the x and y axes
-  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  theme(axis.text.x=element_text(color="black", size=13), 
+        axis.text.y=element_text(color="black", size=11), 
+        axis.title.x = element_text(color="black", size=16),
+        axis.title.y = element_text(color="black", size=16), 
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 13), 
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
   scale_y_continuous(expand=c(0,0), limits=c(0,1.6))
 Ephyra.final
-Ephyra.final+ggsave("Graphs/FinalGraphs/polyp_totalephyra.png", width=8, height=5)
+Ephyra.final+ggsave("Graphs/FinalGraphs/TotalEphyra_bar.png", width=8, height=5)
 
 #Just temp, not geno
 TotalEphyraTemp <- NoApoData %>%
@@ -174,10 +180,17 @@ total.ephyra.prop<-NoApoData%>%
   group_by(Genotype,Temp, Total.Ephyra.Produced)%>%
   tally()
 
+
 pal<-c("#2c7fb8","#7fcdbb", "#edf8b1") #blue green yellow
 total.ephyra.prop.bar<-ggplot(total.ephyra.prop, aes(x=Temp, y=n, fill=Total.Ephyra.Produced))+  #basic plot
   theme_minimal()+
-  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
+  theme(axis.text.x=element_text(color="black", size=13), 
+        axis.text.y=element_text(color="black", size=11), 
+        axis.title.x = element_text(color="black", size=16),
+        strip.text.x = element_text(size = 13, colour = "black"), 
+        axis.title.y = element_text(color="black", size=16), 
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 13))+
   geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
   labs(x="Temperature (°C)", y="Number of Polyps", fill="Total Ephyra\nper Polyp")+#labels the x and y axes
@@ -299,7 +312,13 @@ pal<-c("#DFADE1", "#2c7fb8")
 pal<-c("#2c7fb8","#7fcdbb") #blue green
 strob.prop<-ggplot(total.strob, aes(x=Temp, y=n, fill=Strob))+  #basic plot
   theme_minimal()+
-  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
+  theme(axis.text.x=element_text(color="black", size=13), 
+        axis.text.y=element_text(color="black", size=11), 
+        axis.title.x = element_text(color="black", size=16),
+        strip.text.x = element_text(size = 13, colour = "black"), 
+        axis.title.y = element_text(color="black", size=16), 
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 13))+
   geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
   labs(x="Temperature (°C)", y="Number of Polyps", fill="Strobilated")+#labels the x and y axes
@@ -326,10 +345,12 @@ pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
 DaystoStrobBar<-ggplot(DaystoStrob, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(0, 25))+
-  theme(axis.text.x=element_text(color="black", size=11), 
-        axis.text.y=element_text(color="black", size=12), 
-        axis.title.x = element_text(color="black", size=16), 
-        axis.title.y = element_text(color="black", size=16),
+  theme(axis.text.x=element_text(color="black", size=13), 
+        axis.text.y=element_text(color="black", size=11), 
+        axis.title.x = element_text(color="black", size=16),
+        axis.title.y = element_text(color="black", size=16), 
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 13),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
@@ -420,7 +441,13 @@ ggplot(total.inoc, aes(fill=Inoc, y=n, x=Temp))+
 pal<-c("#2c7fb8","#7fcdbb") #blue green
 inoc.prop<-ggplot(total.inoc, aes(x=Temp, y=n, fill=Inoc))+  #basic plot
   theme_minimal()+
-  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
+  theme(axis.text.x=element_text(color="black", size=13), 
+        axis.text.y=element_text(color="black", size=11), 
+        axis.title.x = element_text(color="black", size=16),
+        strip.text.x = element_text(size = 13, colour = "black"), 
+        axis.title.y = element_text(color="black", size=16), 
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 13))+
   geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
   labs(x="Temperature (°C)", y="Number of Polyps", fill="Inoculated")+#labels the x and y axes
@@ -438,10 +465,13 @@ pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
 DaystoInocBar<-ggplot(DaystoInoc, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(0, 25))+
-  theme(axis.text.x=element_text(color="black", size=11), 
-        axis.text.y=element_text(color="black", size=12), 
-        axis.title.x = element_text(color="black", size=16), 
-        axis.title.y = element_text(color="black", size=16),
+  theme(axis.text.x=element_text(color="black", size=13), 
+        axis.text.y=element_text(color="black", size=11), 
+        axis.title.x = element_text(color="black", size=16),
+        strip.text.x = element_text(size = 13, colour = "black"), 
+        axis.title.y = element_text(color="black", size=16), 
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 13),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
@@ -529,7 +559,13 @@ ggplot(time.ephyra.total, aes(fill=Ephyra, y=n, x=Temp))+
 pal<-c("#2c7fb8","#7fcdbb") #blue green
 ephyra.prop<-ggplot(time.ephyra.total, aes(x=Temp, y=n, fill=Ephyra))+  #basic plot
   theme_minimal()+
-  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"))+
+  theme(axis.text.x=element_text(color="black", size=13), 
+        axis.text.y=element_text(color="black", size=11), 
+        axis.title.x = element_text(color="black", size=16),
+        strip.text.x = element_text(size = 13, colour = "black"), 
+        axis.title.y = element_text(color="black", size=16), 
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 13))+
   geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
   labs(x="Temperature (°C)", y="Number of Polyps", fill="Produced\nan Ephyra")+#labels the x and y axes
@@ -548,10 +584,12 @@ pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
 DaystoEphyraBar<-ggplot(DaystoEphyra, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(0, 27))+
-  theme(axis.text.x=element_text(color="black", size=11), 
-        axis.text.y=element_text(color="black", size=12), 
-        axis.title.x = element_text(color="black", size=16), 
-        axis.title.y = element_text(color="black", size=16),
+  theme(axis.text.x=element_text(color="black", size=13), 
+        axis.text.y=element_text(color="black", size=11), 
+        axis.title.x = element_text(color="black", size=16),
+        axis.title.y = element_text(color="black", size=16), 
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 13),
         panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
@@ -658,10 +696,17 @@ survival.temp<-mydata%>%
   group_by(Temp, Survive.to.End)%>%
   tally()
 survival.temp$prop<-survival.temp$n/144
+
 pal<-c("#2c7fb8","#7fcdbb") #blue green
 survival.temp.plot<-ggplot(survival.temp, aes(x=Temp, y=prop, fill=Survive.to.End))+  #basic plot
   theme_minimal()+
-  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"), axis.title.y = element_text(color="black", size=13))+
+  theme(axis.text.x=element_text(color="black", size=13), 
+        axis.text.y=element_text(color="black", size=11), 
+        axis.title.x = element_text(color="black", size=16),
+        strip.text.x = element_text(size = 13, colour = "black"), 
+        axis.title.y = element_text(color="black", size=16), 
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 13))+
   geom_bar(color="black", position=position_stack(), stat="identity", width=0.6)+
   scale_fill_manual(values=pal)+
   labs(x="Temperature (°C)", y="Proportion of Polyps", fill="Survived")+#labels the x and y axes
@@ -677,13 +722,19 @@ pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
 Buds.final<-ggplot(BudData, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
   labs(x="Symbiont Genotype", y="Number of Buds", fill="Temperature")+#labels the x and y axes
-  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  theme(axis.text.x=element_text(color="black", size=12), 
+        axis.text.y=element_text(color="black", size=11), 
+        axis.title.x = element_text(color="black", size=16),
+        axis.title.y = element_text(color="black", size=16), 
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 13), 
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+  
   geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
   scale_y_continuous(expand=c(0,0), limits=c(0,5.1))
 Buds.final
-Buds.final+ggsave("Graphs/FinalGraphs/Polyp_buds_bar.png", width=8, height=5)
+Buds.final+ggsave("Graphs/FinalGraphs/Buds_bar.png", width=8, height=5)
 
 
 #Boxplot
@@ -811,7 +862,13 @@ library(PNWColors)
 pal=pnw_palette("Bay")
 stages.bar<-ggplot(stage.data.tally, aes(x=Temp, y=proportion, fill=StageReached2))+  #basic plot
   theme_minimal()+
-  theme(axis.text.x=element_text(color="black", size=11), axis.text.y=element_text(color="black", size=11), axis.title.x = element_text(color="black", size=13),strip.text.x = element_text(size = 11, colour = "black"), axis.title.y = element_text(color="black", size=13))+
+  theme(axis.text.x=element_text(color="black", size=13), 
+        axis.text.y=element_text(color="black", size=11), 
+        axis.title.x = element_text(color="black", size=16),
+        strip.text.x = element_text(size = 13, colour = "black"), 
+        axis.title.y = element_text(color="black", size=16), 
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 13))+
   geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
   labs(x="Temperature (°C)", y="Proportion of Polyps", fill="Stage Reached")+#labels the x and y axes
