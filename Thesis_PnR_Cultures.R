@@ -269,9 +269,6 @@ Resp2<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temperature), gro
   scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
   labs(x="Symbiont Genotype", y="Respiration", fill="Temperature")  #labels the x and y axes
 
-patchwork<-GP2/NP2/Resp2+plot_layout(guides = 'collect')
-patchwork+ggsave("Graphs/FinalGraphs/cultures_PnR_patchwork.png",width=8, height=12)
-
 pw<-GP2/NP2/Resp2+plot_layout(guides = 'collect')+plot_annotation(tag_levels = 'a', tag_prefix = '(',tag_suffix = ')')
 pw+ggsave("Graphs/FinalGraphs/cultures_PnR_patchwork.png",width=8, height=12)
 
