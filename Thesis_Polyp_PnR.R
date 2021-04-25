@@ -159,7 +159,7 @@ Resp.polyp.graph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temp),
 Resp.polyp.graph
 ggsave("Graphs/FinalGraphs/Polyp_Resp_Bar.png", width=8, height=5)
 
-#Resp boxplot
+#Resp boxplot####
 pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
 polyp.Resp.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=Resp.per.bill.cell, fill=Temp))+
@@ -220,7 +220,7 @@ GP.polyp.graph<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temp), gro
 GP.polyp.graph
 ggsave("Graphs/FinalGraphs/Polyp_GP_bargraph.png", width=8, height=5)
 
-#GP boxplot
+#GP boxplot####
 polyp.GP.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=GP.per.bill.cell, fill=Temp))+
   geom_boxplot()+
@@ -278,7 +278,7 @@ NP.polyp.graph<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temp), gro
 NP.polyp.graph
 NP.polyp.graph+ggsave("Graphs/FinalGraphs/Polyp_NP_bar.png", width=8, height=5)
 
-#NP boxplot
+#NP boxplot####
 polyp.NP.boxplot<-mydata%>%
   ggplot(aes(x=Genotype, y=NP.per.bill.cell, fill=Temp))+
   geom_boxplot()+
@@ -314,53 +314,51 @@ polyp.NP.boxplot.nojitter
 polyp.NP.boxplot.nojitter+ggsave("Graphs/FinalGraphs/Polyp_NP_box_nojitter.png", width=8, height=5)
 
 #Patchwork PnR plots####
-#Making plots simplified. Removing titles, x-axis from GP and NP, and units on y-axis
+#Making plots simplified. Removing titles, x-axis from Resp and NP
 Resp2<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
-  labs(x="Symbiont Genotype", y="Maximum growth rate (r)", fill="Temperature")+#labels the x and y axes
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_blank(), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(color="black", size=16), 
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 14), 
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
+  labs(y=expression(atop("Respiration", paste((µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))), fill="Temperature")
+
+
+GP2<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
   theme(axis.text.x=element_text(color="black", size=12), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16),
         axis.title.y = element_text(color="black", size=16), 
         legend.title = element_text(size = 14),
-        legend.text = element_text(size = 13), 
+        legend.text = element_text(size = 14), 
         panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
-  labs(x="Symbiont Genotype", y="Respiration", fill="Temperature")  #labels the x and y axes
-
-GP2<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
-  theme_bw()+ #Removes grey background
-  theme(axis.text.x=element_blank(), 
-        axis.text.y=element_text(color="black", size=12), 
-        axis.title.x = element_text(color="black", size=16),
-        axis.title.y = element_text(color="black", size=16), 
-        legend.title = element_text(size = 14),
-        legend.text = element_text(size = 13), 
-        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
-  geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
-  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
-  labs(x="", y="Gross Photosynthesis", fill="Temperature")  #labels the x and y axes
-GP2
+  labs(x="Symbiont Genotype", y=expression(atop("Gross Photosynthesis", paste((µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))), fill="Temperature")
 
 NP2<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
   theme(axis.text.x=element_blank(), 
         axis.text.y=element_text(color="black", size=12), 
-        axis.title.x = element_text(color="black", size=16),
+        axis.title.x = element_blank(),
         axis.title.y = element_text(color="black", size=16), 
         legend.title = element_text(size = 14),
-        legend.text = element_text(size = 13), 
+        legend.text = element_text(size = 14), 
         panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
-  labs(x="", y="Net Photosynthesis", fill="Temperature")
-NP2
+  labs(y=expression(atop("Net Photosynthesis", paste((µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))), fill="Temperature")
 
-pw<-GP2/NP2/Resp2+plot_layout(guides = 'collect')+plot_annotation(tag_levels = 'a', tag_prefix = '(',tag_suffix = ')')
+pw<-Resp2/NP2/GP2+plot_layout(guides = 'collect')+plot_annotation(tag_levels = 'a', tag_prefix = '(',tag_suffix = ')')
 pw+ggsave("Graphs/FinalGraphs/polyps_PnR_patchwork.png",width=9, height=12)
 
 #
