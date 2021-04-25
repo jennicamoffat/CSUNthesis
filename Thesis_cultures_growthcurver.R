@@ -669,3 +669,51 @@ rGraph.final.all<-ggplot(Summary3, aes(x=Genotype, y=mean, fill=factor(Temp), gr
                                               c("May" = "Round 1",
                                                 "July" = "Round 2")))
 rGraph.final.all
+
+#stats for Sigma (goodness of fit of models)####
+rm(list=ls())
+mydata<-read.csv("Data/GrowthcurverData_r.csv")
+mydata$Temp<-as.factor(mydata$Temp)
+mydata$Flask<-as.factor(mydata$Flask)
+mydata3<-mydata[-c(13:24),]
+
+model1<-lm(sigma~Genotype*Temp*Round, data=mydata3)
+model1res<-resid(model1)
+qqp(model1res, "norm")
+#It's normal
+Anova(model1, type="III")
+#aliased coefficients, because CCMpP2464 was removed from round 1 but not round 2
+
+#Removing CCMP2464 altogether
+lessdata<-subset(mydata3, Genotype !="CCMP2464")
+
+No2464.model<-lm(sigma~Genotype*Temp*Round, data=lessdata)
+qqp(resid(No2464.model), "norm")
+#normal
+
+Anova(No2464.model, type="III")
+#Sig round*temp interaction and temp*geno interaction. So round does kinda have an effect? 
+#Going to graph to look at it
+
+simple.model<-lm(sigma~Round, data=lessdata)
+Anova(simple.model, type="III")
+
+simple.model2<-lm(sigma~Temp*Round, data=lessdata)
+Anova(simple.model2, type="III")
+
+Summary.sigma <- lessdata %>%
+  group_by(Genotype, Temp, Round) %>%
+  summarize(mean=mean(sigma, na.rm=TRUE), SE=sd(sigma, na.rm=TRUE)/sqrt(length(na.omit(sigma))))
+Summary.sigma$Round <- factor(Summary.sigma$Round,levels = c("MayJune", "July"))
+
+pal<-c("#ac8eab", "#f2cec7", "#c67b6f")
+sigmaGraph<-ggplot(Summary.sigma, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  theme(axis.text.x=element_text(color="black", size=12), axis.text.y=element_text(color="black", size=12), axis.title.x = element_text(color="black", size=16), axis.title.y = element_text(color="black", size=16),panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
+  geom_bar(stat="identity", position="dodge", size=0.6) + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  labs(x="Symbiont Genotype", y="Sigma", fill="Temperature")+#labels the x and y axes
+  scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
+  ggtitle("sigma from growthcurver package")+
+  facet_wrap(  ~ Round)
+sigmaGraph
