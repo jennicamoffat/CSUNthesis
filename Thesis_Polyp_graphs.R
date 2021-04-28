@@ -44,6 +44,7 @@ pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
 Ephyra.final<-ggplot(TotalEphyra, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
   labs(x="Symbiont Genotype", y="Ephyra Produced", fill="Temperature")+#labels the x and y axes
+  scale_x_discrete(labels = c('CCMP2458\nGulf of Aqaba', 'CCMP2464\nFlorida', 'FLCass\nFlorida', 'KB8\nHawaii', 'RT362\nGulf of Aqaba'))+
   theme(axis.text.x=element_text(color="black", size=13), 
         axis.text.y=element_text(color="black", size=11), 
         axis.title.x = element_text(color="black", size=16),
@@ -56,7 +57,7 @@ Ephyra.final<-ggplot(TotalEphyra, aes(x=Genotype, y=mean, fill=factor(Temp), gro
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
   scale_y_continuous(expand=c(0,0), limits=c(0,1.6))
 Ephyra.final
-Ephyra.final+ggsave("Graphs/FinalGraphs/TotalEphyra_bar.png", width=8, height=5)
+Ephyra.final+ggsave("Graphs/FinalGraphs/TotalEphyra_bar_locationlabels.png", width=8, height=5)
 
 #Just temp, not geno
 TotalEphyraTemp <- NoApoData %>%
@@ -196,7 +197,8 @@ total.ephyra.prop.bar<-ggplot(total.ephyra.prop, aes(x=Temp, y=n, fill=Total.Eph
   labs(x="Temperature (°C)", y="Number of Polyps", fill="Total Ephyra\nper Polyp")+#labels the x and y axes
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
   facet_grid(~Genotype)
-total.ephyra.prop.bar+ggsave("Graphs/FinalGraphs/TotalEphyraProportion.png", width=8, height=5)
+total.ephyra.prop.bar
+ggsave("Graphs/FinalGraphs/TotalEphyraProportion.png", width=8, height=5)
 
 #Ephyra over time####
 rm(list=ls())
@@ -345,6 +347,7 @@ pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
 DaystoStrobBar<-ggplot(DaystoStrob, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(0, 25))+
+  scale_x_discrete(labels = c('CCMP2458\nGulf of Aqaba', 'CCMP2464\nFlorida', 'FLCass\nFlorida', 'KB8\nHawaii', 'RT362\nGulf of Aqaba'))+
   theme(axis.text.x=element_text(color="black", size=13), 
         axis.text.y=element_text(color="black", size=11), 
         axis.title.x = element_text(color="black", size=16),
@@ -357,7 +360,7 @@ DaystoStrobBar<-ggplot(DaystoStrob, aes(x=Genotype, y=mean, fill=factor(Temp), g
   labs(x="Symbiont Genotype", y="Days to Strobilation", fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))
 DaystoStrobBar
-DaystoStrobBar+ggsave("Graphs/FinalGraphs/DaystoStrob.png", width=8, height=5)
+DaystoStrobBar+ggsave("Graphs/FinalGraphs/DaystoStrob_locationlabels.png", width=8, height=5)
 
 #Just temp, not geno
 DaystoStrobNoDeadTemp <- NoApoNoDeadData %>%
@@ -465,6 +468,7 @@ pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
 DaystoInocBar<-ggplot(DaystoInoc, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(0, 25))+
+  scale_x_discrete(labels = c('CCMP2458\nGulf of Aqaba', 'CCMP2464\nFlorida', 'FLCass\nFlorida', 'KB8\nHawaii', 'RT362\nGulf of Aqaba'))+
   theme(axis.text.x=element_text(color="black", size=13), 
         axis.text.y=element_text(color="black", size=11), 
         axis.title.x = element_text(color="black", size=16),
@@ -478,7 +482,7 @@ DaystoInocBar<-ggplot(DaystoInoc, aes(x=Genotype, y=mean, fill=factor(Temp), gro
   labs(x="Symbiont Genotype", y="Days to Inoculation", fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))
 DaystoInocBar
-DaystoInocBar+ggsave("Graphs/FinalGraphs/DaystoInoc.final.png", width=8, height=5)
+DaystoInocBar+ggsave("Graphs/FinalGraphs/DaystoInoc.final_locationlabels.png", width=8, height=5)
 
 #Just temp, not geno
 DaystoInocNoDeadTemp <- NoApoNoDeadData %>%
@@ -584,6 +588,7 @@ pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
 DaystoEphyraBar<-ggplot(DaystoEphyra, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(0, 27))+
+  scale_x_discrete(labels = c('CCMP2458\nGulf of Aqaba', 'CCMP2464\nFlorida', 'FLCass\nFlorida', 'KB8\nHawaii', 'RT362\nGulf of Aqaba'))+
   theme(axis.text.x=element_text(color="black", size=13), 
         axis.text.y=element_text(color="black", size=11), 
         axis.title.x = element_text(color="black", size=16),
@@ -596,7 +601,7 @@ DaystoEphyraBar<-ggplot(DaystoEphyra, aes(x=Genotype, y=mean, fill=factor(Temp),
   labs(x="Symbiont Genotype", y="Days to Ephyra Release", fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))
 DaystoEphyraBar
-DaystoEphyraBar+ggsave("Graphs/FinalGraphs/DaystoEphyra_bar.png", width=8, height=5)
+DaystoEphyraBar+ggsave("Graphs/FinalGraphs/DaystoEphyra_bar_locationlabels.png", width=8, height=5)
 
 #Just temp, not geno
 DaystoEphyraNoDeadTemp <- NoApoNoDeadData %>%
@@ -722,6 +727,7 @@ pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
 Buds.final<-ggplot(BudData, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
   labs(x="Symbiont Genotype", y="Number of Buds", fill="Temperature")+#labels the x and y axes
+  scale_x_discrete(labels = c('Aposymbiotic', 'CCMP2458\nGulf of Aqaba', 'CCMP2464\nFlorida', 'FLCass\nFlorida', 'KB8\nHawaii', 'RT362\nGulf of Aqaba'))+
   theme(axis.text.x=element_text(color="black", size=12), 
         axis.text.y=element_text(color="black", size=11), 
         axis.title.x = element_text(color="black", size=16),
@@ -734,7 +740,7 @@ Buds.final<-ggplot(BudData, aes(x=Genotype, y=mean, fill=factor(Temp), group=fac
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
   scale_y_continuous(expand=c(0,0), limits=c(0,5.1))
 Buds.final
-Buds.final+ggsave("Graphs/FinalGraphs/Buds_bar.png", width=8, height=5)
+Buds.final+ggsave("Graphs/FinalGraphs/Buds_bar_locationlabels.png", width=8, height=5)
 
 
 #Boxplot
