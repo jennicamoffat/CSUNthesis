@@ -315,6 +315,7 @@ polyp.NP.boxplot.nojitter+ggsave("Graphs/FinalGraphs/Polyp_NP_box_nojitter.png",
 
 #Patchwork PnR plots####
 #Making plots simplified. Removing titles, x-axis from Resp and NP
+pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
 Resp2<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
   theme(axis.text.x=element_blank(), 
@@ -340,7 +341,7 @@ GP2<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(T
         legend.text = element_text(size = 14), 
         panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   scale_x_discrete(name = 'Symbiont Genotype', 
-                   labels = c('CCMP2458\nGulf of Aqaba', 'CCMP2464\nFlorida', 'FLCass\nFlorida', 'KB8\nHawaii', 'RT362\nGulf of Aqaba'))+
+                   labels = c('Aposymbiotic', 'CCMP2458\nGulf of Aqaba', 'CCMP2464\nFlorida', 'FLCass\nFlorida', 'KB8\nHawaii', 'RT362\nGulf of Aqaba'))+
   geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+

@@ -231,7 +231,7 @@ pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
 GP2<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(0, 7))+
-  scale_x_discrete(name = 'Symbiont.Genotype', 
+  scale_x_discrete(name = 'Symbiont Genotype', 
                    labels = c('CCMP2458\nGulf of Aqaba', 'CCMP2464\nFlorida', 'FLCass\nFlorida', 'KB8\nHawaii', 'RT362\nGulf of Aqaba'))+
   theme(axis.text.x=element_text(color="black", size=12), 
         axis.text.y=element_text(color="black", size=12), 
