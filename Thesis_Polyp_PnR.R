@@ -339,6 +339,8 @@ GP2<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(T
         legend.title = element_text(size = 14),
         legend.text = element_text(size = 14), 
         panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  scale_x_discrete(name = 'Symbiont Genotype', 
+                   labels = c('CCMP2458\nGulf of Aqaba', 'CCMP2464\nFlorida', 'FLCass\nFlorida', 'KB8\nHawaii', 'RT362\nGulf of Aqaba'))+
   geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
