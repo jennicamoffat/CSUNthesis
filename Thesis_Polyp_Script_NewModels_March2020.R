@@ -23,27 +23,30 @@ NoApoData <- mydata %>%
   droplevels
 #Adding columns for each developmental stage to see percentage that actually reached that stage in 28 days
 Developed.data<-NoApoData%>%
-  mutate(Inoc = ifelse(is.na(Days.to.Inoculation), "No", "Yes"),
-         Strob=ifelse(is.na(Days.to.Strobilation), "No", "Yes"),
-         Ephyra=ifelse(is.na(Days.to.Ephyra), "No", "Yes"))
+  mutate(Inoc = ifelse(is.na(Days.to.Inoculation), "0", "1"), #0=event did not occur, 1=event occurred
+         Strob=ifelse(is.na(Days.to.Strobilation), "0", "1"),
+         Ephyra=ifelse(is.na(Days.to.Ephyra), "0", "1"))
 
 #Genotype (fixed) and Temperature (fixed) on dependent variables 
 
 #Time to inoculation####
 #Start with log-linear analysis
+
+#Poisson #WRONG STATS - UPDATED 1/30/22 TO USE BINOMIAL DISTRIBUTION, SEE BELOW
 #Columns: Geno, Temp, Plate, inoc (yes or no), and Frequency (count of that combo)
 Developed.data.df <- Developed.data %>% modify_if(is.character, as.factor)
 InocFreq<- Developed.data.df%>%group_by(Genotype, Temp, Plate, Inoc, .drop=FALSE)%>%
-  tally(name="Freq")
+  tally(name="Count")
 #.drop=FALSE makes df keep tallies of 0's
 #Different code for Chi-squared test
+InocFreq<-  mutate(InocFreq, Freq=(Count/6))
 
-full.mod<-glm(Freq ~ Genotype*Temp*Plate*Inoc, 
-              data = InocFreq, family = poisson)
+full.mod<-glm(Count ~ Genotype*Temp*Plate*Inoc, 
+              data = InocFreq, family = poisson())
 deviance(full.mod)
 
 Anova(full.mod, type="III")
-#Plate doe not matter 
+#Plate does not matter 
 
 mod1<-glm(Freq ~ Genotype*Temp*Inoc, 
           data = InocFreq, family = poisson)
@@ -52,8 +55,18 @@ Anova(mod1, type="III")
 lrtest(mod1, full.mod)
 #Definitely use the simpler model without plate. 
 
+#Inoc Binomial####
+full.mod<-glm(Inoc ~ Genotype*Temp*Plate, 
+              data = Developed.data.df, family = binomial)
+mod1<-glm(Inoc ~ Genotype*Temp, 
+          data = Developed.data.df, family = binomial)
+Anova(full.mod, type="III") #plate not significant
+Anova(mod1, type="III")
 
-#General linear model with those that did inoculate
+lrtest(mod1, full.mod) #p=0.36, use simpler model
+
+
+#General linear model with those that did inoculate####
 #I need to remove the NA's
 InocData<-NoApoData%>%
   filter(!is.na(Days.to.Inoculation ))
@@ -124,7 +137,9 @@ emmeans.inoc<-emmip(log.Inoc.model, Genotype~Temp)
 emmeans.inoc
 
 #Time to strobilation####
+
 #Start with log-linear analysis
+#Poisson - WRONG STATS, UPDATED 1/30/22 TO USE BINOMIAL, SEE BELOW####
 #Columns: Geno, Temp, Plate, inoc (yes or no), and Frequency (count of that combo)
 Developed.data.df <- Developed.data %>% modify_if(is.character, as.factor)
 StrobFreq<- Developed.data.df%>%group_by(Genotype, Temp, Plate, Strob, .drop=FALSE)%>%
@@ -145,7 +160,18 @@ Anova(mod1, type="III")
 lrtest(mod1, full.mod)
 #I can use the simpler model without plate.
 
-#Linear model
+#Strob binomial####
+full.mod<-glm(Strob ~ Genotype*Temp*Plate, 
+              data = Developed.data.df, family = binomial)
+mod1<-glm(Strob ~ Genotype*Temp, 
+          data = Developed.data.df, family = binomial)
+Anova(full.mod, type="III") #plate not significant
+Anova(mod1, type="III")
+
+lrtest(mod1, full.mod) #p=0.009, use full model
+Developed.data.df$y_pred = predict(full.mod, Developed.data.df, type="response")
+
+#Linear model strob####
 #I need to remove the NA's
 StrobilatedData <- NoApoData %>%
   filter(Days.to.Strobilation != "NA")
@@ -240,6 +266,8 @@ emmeans.strob
 
 #Time to ephyra####
 #Start with log-linear analysis
+
+#Poisson - WRONG STATS, UPDATED 1/30/22 TO USE BINOMIAL. SEE BELOW. ####
 #Columns: Geno, Temp, Plate, inoc (yes or no), and Frequency (count of that combo)
 Developed.data.df <- Developed.data %>% modify_if(is.character, as.factor)
 EphyraFreq<- Developed.data.df%>%group_by(Genotype, Temp, Plate, Ephyra, .drop=FALSE)%>%
@@ -258,7 +286,19 @@ Anova(mod1, type="III")
 lrtest(mod1, full.mod)
 #I can use the simpler model without plate.
 
-#General linear model
+#Produced ephyra binomial
+full.mod<-glm(Ephyra ~ Genotype*Temp*Plate, 
+              data = Developed.data.df, family = binomial)
+mod1<-glm(Ephyra ~ Genotype*Temp, 
+          data = Developed.data.df, family = binomial)
+Anova(full.mod, type="III") #plate not significant, same warning as strob
+Anova(mod1, type="III")
+
+lrtest(mod1, full.mod) #p=0.013, use full model
+Developed.data.df$y_pred = predict(full.mod, Developed.data.df, type="response")
+
+
+#General linear model time to ephyra####
 #I need to remove the NA's
 TEData <- NoApoData %>%
   filter(Days.to.Ephyra != "NA")
@@ -457,7 +497,7 @@ lrtest(Budmodel2.supersimp,Budmodel2.simp)
 #Still a sig interaction, even without Apo
 
 #Survival####
-#To do log-linear analysis, I need a new dataframe
+#WRONG STATS - UPDATED 1/30/22 TO USE BINOMIAL - To do log-linear analysis, I need a new dataframe####
 #Columns: Geno, Temp, Plate, Survived (yes or no), and Frequency (count of that combo)
 Survival<- mydata%>%group_by(Genotype, Temp, Plate, Survive.to.End)%>%
   tally(Survive.to.End == "Yes")
@@ -500,6 +540,25 @@ lrtest(mod3, mod2)
 #mod3 better than mod2
 lrtest(mod4, mod3)
 #mod4 better than mod3
+
+#Survival binomial####
+#I have one NA for survial b/c I spilled it and lost it. Just gonna remove it. 
+mydata2<-mydata%>%
+  filter(Survive.to.End != "NA")
+mydata2$Survive.to.End<-as.factor(mydata2$Survive.to.End)
+Survive.data<-mutate(mydata2, Survived = ifelse(Survive.to.End=="No", "0", "1"))#0=event did not occur, 1=event occurred
+Survive.data$Survived<-as.factor(Survive.data$Survived)
+
+full.mod<-glm(Survived ~ Genotype*Temp*Plate, 
+              data = Survive.data, family = binomial)
+mod1<-glm(Survived ~ Genotype*Temp, 
+          data = Survive.data, family = binomial)
+Anova(full.mod, type="III") #plate not significant
+Anova(mod1, type="III")
+
+lrtest(mod1, full.mod) #p=0.8, use simple model
+
+
 #Trying other things####
 fit.1 <- glm(Inoc == "yes" ~ Genotype+Temp, data = Developed.data, family = binomial)
 summary(fit.1)
