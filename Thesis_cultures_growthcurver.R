@@ -541,11 +541,13 @@ avg.growth.SEribbon<-ggplot(mean.counts.noMay2464, aes(x=Day, y=avg, color=Temp,
   scale_shape_manual(values=c(1, 16))+
   theme(plot.title = element_text(hjust = 0.5, size = 14))+
   facet_wrap(~Genotype)
-avg.growth.SEribbon+ggsave("Graphs/FinalGraphs/growth_curves_SEribbon.png", width=8, height=5)
+avg.growth.SEribbon
+ggsave("Graphs/FinalGraphs/growth_curves_SEribbon.png", width=8, height=5)
 
 #Just SE bars
-avg.growth.SEbars<-ggplot(mean.counts.noMay2464, aes(x=Day, y=avg, color=Temp, shape=Round))+
-  geom_line(size=0.75) +
+avg.growth.SEbars<-ggplot(mean.counts.noMay2464, aes(x=Day, y=avg, color=Temp))+
+  geom_line(aes(linetype=Round)) +
+  scale_linetype_manual(values=c("solid", "dashed"), labels=c("Round 1", "Round 2"))+
   geom_point()+
   geom_errorbar(aes(ymin=lower, ymax=upper), width=.2)+
   xlab("Day")+
@@ -554,10 +556,9 @@ avg.growth.SEbars<-ggplot(mean.counts.noMay2464, aes(x=Day, y=avg, color=Temp, s
   scale_x_continuous(breaks = c(0,10,20))+
   theme_minimal()+
   scale_color_manual(values=pal)+
-  scale_shape_manual(values=c(1, 16))+
   theme(plot.title = element_text(hjust = 0.5, size = 14))+
   facet_wrap(~Genotype)
-avg.growth.SEbars+ggsave("Graphs/FinalGraphs/growth_curves_SEbars.png", width=8, height=5)
+avg.growth.SEbars+ggsave("Graphs/FinalGraphs/growth_curves_SEbars.png", width=8, height=6)
 
 #No SE
 avg.growth.noSE<-ggplot(mean.counts.noMay2464, aes(x=Day, y=avg, color=Temp, shape=Round))+
