@@ -231,6 +231,21 @@ pal<-c("#679A99", "#9DB462", "#E4C7E5") #blue, green, pink
 GP2<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
   scale_y_continuous(expand=c(0,0), limits=c(0, 7))+
+  theme(axis.text.x=element_blank(), 
+        axis.text.y=element_text(color="black", size=12), 
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(color="black", size=16), 
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 14), 
+        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
+  geom_bar(stat="identity", position="dodge", size=0.6, color="black") + #determines the bar width
+  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
+  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  labs(y=expression(atop("Gross Photosynthesis", paste((µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))), fill="Temperature")
+
+NP2<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
+  theme_bw()+ #Removes grey background
+  scale_y_continuous(expand=c(0,0), limits=c(0, 5.5))+
   scale_x_discrete(name = 'Symbiont Genotype', 
                    labels = c('CCMP2458\nGulf of Aqaba', 'CCMP2464\nFlorida', 'FLCass\nFlorida', 'KB8\nHawaii', 'RT362\nGulf of Aqaba'))+
   theme(axis.text.x=element_text(color="black", size=12), 
@@ -242,23 +257,9 @@ GP2<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=f
         panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   geom_bar(stat="identity", position="dodge", size=0.6, color="black") + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  scale_fill_manual(values = pal, labels=c("26Â°C", "30Â°C","32Â°C"))+
-  labs(x="Symbiont Genotype", y=expression(atop("Gross Photosynthesis", paste((Âµmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))), fill="Temperature")
-
-NP2<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
-  theme_bw()+ #Removes grey background
-  scale_y_continuous(expand=c(0,0), limits=c(0, 5.5))+
-  theme(axis.text.x=element_blank(), 
-        axis.text.y=element_text(color="black", size=12), 
-        axis.title.x = element_blank(),
-        axis.title.y = element_text(color="black", size=16), 
-        legend.title = element_text(size = 14),
-        legend.text = element_text(size = 14), 
-        panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
-  geom_bar(stat="identity", position="dodge", size=0.6, color="black") + #determines the bar width
-  geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  scale_fill_manual(values = pal, labels=c("26Â°C", "30Â°C","32Â°C"))+
-  labs(y=expression(atop("Net Photosynthesis", paste((Âµmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))), fill="Temperature")
+  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  labs(x="Symbiont Genotype", y=expression(atop("Net Photosynthesis", paste((µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))), fill="Temperature")
+NP2
 
 Resp2<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
@@ -272,10 +273,11 @@ Resp2<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temperature), gro
         panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   geom_bar(stat="identity", position="dodge", size=0.6, color="black") + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  scale_fill_manual(values = pal, labels=c("26Â°C", "30Â°C","32Â°C"))+
-  labs(y=expression(atop("Respiration", paste((Âµmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))), fill="Temperature")
+  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
+  labs(y=expression(atop("Respiration", paste((µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))), fill="Temperature")
 
-pw<-Resp2/NP2/GP2+plot_layout(guides = 'collect')+plot_annotation(tag_levels = 'a', tag_prefix = '(',tag_suffix = ')')
+pw<-Resp2/GP2/NP2+plot_layout(guides = 'collect')+plot_annotation(tag_levels = 'a', tag_prefix = '(',tag_suffix = ')')
+pw
 pw+ggsave("Graphs/FinalGraphs/cultures_PnR_patchwork.png",width=8, height=12)
 
 #
