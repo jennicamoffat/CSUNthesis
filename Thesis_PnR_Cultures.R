@@ -240,8 +240,8 @@ GP2<-ggplot(SummaryGP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=f
         panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   geom_bar(stat="identity", position="dodge", size=0.6, color="black") + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
-  labs(y=expression(atop("Gross Photosynthesis", paste((µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))), fill="Temperature")
+  scale_fill_manual(values = pal, labels=c("26Â°C", "30Â°C","32Â°C"))+
+  labs(y=expression(atop("Gross Photosynthesis", paste((?mol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))), fill="Temperature")
 
 NP2<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
   theme_bw()+ #Removes grey background
@@ -257,8 +257,8 @@ NP2<-ggplot(SummaryNP, aes(x=Genotype, y=mean, fill=factor(Temperature), group=f
         panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   geom_bar(stat="identity", position="dodge", size=0.6, color="black") + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
-  labs(x="Symbiont Genotype", y=expression(atop("Net Photosynthesis", paste((µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))), fill="Temperature")
+  scale_fill_manual(values = pal, labels=c("26?C", "30?C","32?C"))+
+  labs(x="Symbiont Genotype", y=expression(atop("Net Photosynthesis", paste((?mol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))), fill="Temperature")
 NP2
 
 Resp2<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temperature), group=factor(Temperature)))+  #basic plot
@@ -273,8 +273,8 @@ Resp2<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temperature), gro
         panel.grid.major=element_blank(), panel.grid.minor=element_blank())+
   geom_bar(stat="identity", position="dodge", size=0.6, color="black") + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
-  labs(y=expression(atop("Respiration", paste((µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))), fill="Temperature")
+  scale_fill_manual(values = pal, labels=c("26?C", "30?C","32?C"))+
+  labs(y=expression(atop("Respiration", paste((?mol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})))), fill="Temperature")
 
 pw<-Resp2/GP2/NP2+plot_layout(guides = 'collect')+plot_annotation(tag_levels = 'a', tag_prefix = '(',tag_suffix = ')')
 pw
