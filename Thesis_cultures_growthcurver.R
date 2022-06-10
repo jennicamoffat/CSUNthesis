@@ -201,7 +201,9 @@ pal<-c("#ac8eab", "#f2cec7", "#c67b6f")
 rGraph.final.all<-ggplot(Summary3, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
   theme_bw()+ #Removes grey background
   labs(x="Symbiont Genotype", y="Maximum growth rate (r)", fill="Temperature")+#labels the x and y axes
-  theme(axis.text.x=element_text(color="black", size=11, angle = 30, hjust=1), 
+  scale_x_discrete(name = 'Symbiont Genotype', 
+                   labels = c('CCMP2458\nGulf of Aqaba', 'CCMP2464\nFlorida', 'FLCass\nFlorida', 'KB8\nHawaii', 'RT362\nGulf of Aqaba'))+
+  theme(axis.text.x=element_text(color="black", size=12), 
         axis.text.y=element_text(color="black", size=12), 
         axis.title.x = element_text(color="black", size=16), 
         axis.title.y = element_text(color="black", size=16),
@@ -213,11 +215,11 @@ rGraph.final.all<-ggplot(Summary3, aes(x=Genotype, y=mean, fill=factor(Temp), gr
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
   scale_y_continuous(expand=c(0,0), limits=c(0,1))+
-  facet_wrap(  ~ Round, labeller = labeller(Round = 
+  facet_wrap(  ~ Round, ncol=1, labeller = labeller(Round = 
                                               c("May" = "Round 1",
                                                 "July" = "Round 2")))
 rGraph.final.all
-rGraph.final.all+ggsave("Graphs/FinalGraphs/culture_growth_CCMP2464.png", width=8, height=5)
+rGraph.final.all+ggsave("Graphs/FinalGraphs/culture_growth_FINAL.png", width=8, height=8)
 
 #Boxplot of r ####
 rm(list=ls())
