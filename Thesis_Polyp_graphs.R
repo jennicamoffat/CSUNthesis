@@ -453,11 +453,11 @@ inoc.prop<-ggplot(total.inoc, aes(x=Temp, y=n, fill=Inoc))+  #basic plot
         legend.text = element_text(size = 13))+
   geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
-  labs(x="Temperature (°C)", y="Number of Polyps", fill="Inoculated")+#labels the x and y axes
+  labs(x="Temperature (°C)", y="Number of Polyps", fill="Infected")+#labels the x and y axes
   scale_y_continuous(expand=c(0,0), limits=c(0,25))+
   facet_grid(~Genotype)
 inoc.prop
-inoc.prop+ggsave("Graphs/FinalGraphs/Inoc.prop.png", width=8, height=5)
+inoc.prop+ggsave("Graphs/FinalGraphs/Infected.prop.png", width=8, height=5)
 
 #Bargraph
 DaystoInoc <- NoApoData %>%
@@ -479,10 +479,10 @@ DaystoInocBar<-ggplot(DaystoInoc, aes(x=Genotype, y=mean, fill=factor(Temp), gro
         panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
   geom_bar(color="black", stat="identity", position="dodge", size=0.6) + #determines the bar width
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
-  labs(x="Symbiont Genotype", y="Days to Inoculation", fill="Temperature")+  #labels the x and y axes
+  labs(x="Symbiont Genotype", y="Days to Infection", fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))
 DaystoInocBar
-DaystoInocBar+ggsave("Graphs/FinalGraphs/DaystoInoc.final_locationlabels.png", width=8, height=5)
+DaystoInocBar+ggsave("Graphs/FinalGraphs/DaystoInfection.final_locationlabels.png", width=8, height=5)
 
 #Just temp, not geno
 DaystoInocNoDeadTemp <- NoApoNoDeadData %>%
@@ -839,21 +839,21 @@ stage.data <- Developed.data %>%
   mutate(StageReached = case_when(Survive.to.End == 'No' ~ 'Died',
     Ephyra == 'Yes' ~ 'Produced Ephyra',
     Ephyra == 'No' & Strob == 'Yes' ~  'Strobilated',
-    Ephyra == 'No' & Strob == 'No' & Inoc == 'Yes' ~ 'Inoculated',
-    Inoc == 'No' ~ 'None'))
+    Ephyra == 'No' & Strob == 'No' & Inoc == 'Yes' ~ 'Infected',
+    Inoc == 'No' ~ 'Uninfected'))
 
 stage.data2 <- Developed.data %>%   
   mutate(StageReached = case_when(Ephyra == 'Yes' ~ 'Produced Ephyra',
                                   Ephyra == 'No' & Strob == 'Yes' ~  'Strobilated',
-                                  Ephyra == 'No' & Strob == 'No' & Inoc == 'Yes' ~ 'Inoculated',
-                                  Inoc == 'No' ~ 'None'))
-#So what I want instead is that of that "none" category, how many died. 
+                                  Ephyra == 'No' & Strob == 'No' & Inoc == 'Yes' ~ 'Infected',
+                                  Inoc == 'No' ~ 'Uninfected'))
+#So what I want instead is that of that "Uninfected" category, how many died. 
 stage.data3<-stage.data2%>%
-  mutate(StageReached2 = case_when(Survive.to.End == 'No' & StageReached == 'None' ~ 'Died',
+  mutate(StageReached2 = case_when(Survive.to.End == 'No' & StageReached == 'Uninfected' ~ 'Died',
                                    Ephyra == 'Yes' ~ 'Produced Ephyra',
                                    Ephyra == 'No' & Strob == 'Yes' ~  'Strobilated',
-                                   Ephyra == 'No' & Strob == 'No' & Inoc == 'Yes' ~ 'Inoculated',
-                                   Inoc == 'No' ~ 'None'))
+                                   Ephyra == 'No' & Strob == 'No' & Inoc == 'Yes' ~ 'Infected',
+                                   Inoc == 'No' ~ 'Uninfected'))
 
 stage.data.tally<-stage.data3%>%
   group_by(Temp, Genotype, StageReached2)%>%
@@ -862,25 +862,34 @@ stage.data.tally$proportion<-stage.data.tally$n/24
 stage.data.tally$StageReached2<-as.factor(stage.data.tally$StageReached2)
 #Organize it into the proper order
 stage.data.tally<-stage.data.tally%>%
-  mutate(StageReached2=fct_relevel(StageReached2, "Produced Ephyra", "Strobilated", "Inoculated", "None", "Died"))
+  mutate(StageReached2=fct_relevel(StageReached2, "Produced Ephyra", "Strobilated", "Infected", "Uninfected", "Died"))
 
 library(PNWColors)
 pal=pnw_palette("Bay")
+
+#Creating label for genotype locations to add to facet_grid
+genotype_names <- c(
+  'CCMP2458' = "CCMP2458\nGulf of Aqaba",
+  'CCMP2464' = "CCMP2464\nFlorida",
+  'FLCass' = "FLCass\nFlorida",
+  'KB8' = "KB8\nHawaii",
+  'RT362' = "RT362\nGulf of Aqaba")
+#Graph
 stages.bar<-ggplot(stage.data.tally, aes(x=Temp, y=proportion, fill=StageReached2))+  #basic plot
   theme_minimal()+
   theme(axis.text.x=element_text(color="black", size=13), 
         axis.text.y=element_text(color="black", size=11), 
-        axis.title.x = element_text(color="black", size=16),
+        axis.title.x = element_text(color="black", size=15),
         strip.text.x = element_text(size = 13, colour = "black"), 
         axis.title.y = element_text(color="black", size=16), 
         legend.title = element_text(size = 14),
         legend.text = element_text(size = 13))+
   geom_bar(position=position_stack(), stat="identity", color="black")+
   scale_fill_manual(values=pal)+
-  labs(x="Temperature (°C)", y="Proportion of Polyps", fill="Stage Reached")+#labels the x and y axes
+  labs(x="Temperature (°C)", y="Proportion of Polyps", fill="Stage Reached")+
   scale_y_continuous(expand=c(0,0), limits=c(0,1))+
-  facet_grid(~Genotype)
-stages.bar+ggsave("Graphs/FinalGraphs/Stages.Prop.png", width=8, height=5)
+  facet_grid(~Genotype, labeller = as_labeller(genotype_names))
+stages.bar+ggsave("Graphs/FinalGraphs/Stages.Prop.png", width=9, height=5)
 
 
 #Correlation of buds to timing####
