@@ -541,7 +541,7 @@ lrtest(mod3, mod2)
 lrtest(mod4, mod3)
 #mod4 better than mod3
 
-#Survival binomial####
+#RIGHT STATS - Survival binomial####
 #I have one NA for survial b/c I spilled it and lost it. Just gonna remove it. 
 mydata2<-mydata%>%
   filter(Survive.to.End != "NA")
@@ -558,6 +558,26 @@ Anova(mod1, type="III")
 
 lrtest(mod1, full.mod) #p=0.8, use simple model
 
+#Survived to end or only died after producing an ephyra
+mydata3<-mydata%>%
+  filter(Survive.to.Ephyra != "NA")
+mydata3$Survive.to.Ephyra<-as.factor(mydata2$Survive.to.Ephyra)
+Survive.ephyra.data<-mutate(mydata3, Survived.ephyra = ifelse(Survive.to.Ephyra=="No", "0", "1"))#0=event did not occur, 1=event occurred
+Survive.ephyra.data$Survived.ephyra<-as.factor(Survive.ephyra.data$Survived.ephyra)
+
+full.mod<-glm(Survived.ephyra ~ Genotype*Temp*Plate, 
+              data = Survive.ephyra.data, family = binomial)
+mod1<-glm(Survived.ephyra ~ Genotype*Temp, 
+          data = Survive.ephyra.data, family = binomial)
+Anova(full.mod, type="III") #plate not significant. nothing significant
+Anova(mod1, type="III") #Nothing significant
+
+lrtest(mod1, full.mod) #p=0.998, use simple model
+
+summary(Survive.ephyra.data$Survive.to.Ephyra)
+#10 polyps "prematurely" died (before the end without producing an ephyra)
+summary(Survive.data$Survive.to.End)
+#23 polyps died before the end of the 28 days, but 13 of those died after producing an ephyra, which is normal
 
 #Trying other things####
 fit.1 <- glm(Inoc == "yes" ~ Genotype+Temp, data = Developed.data, family = binomial)
