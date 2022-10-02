@@ -32,7 +32,7 @@ Developed.data<-NoApoData%>%
 #Time to inoculation####
 #Start with log-linear analysis
 
-#Poisson #WRONG STATS - UPDATED 1/30/22 TO USE BINOMIAL DISTRIBUTION, SEE BELOW
+#Poisson #WRONG STATS - UPDATED 1/30/22 TO USE BINOMIAL DISTRIBUTION, SEE "Inoc Binomial" BELOW AND IGNORE THIS SECTION
 #Columns: Geno, Temp, Plate, inoc (yes or no), and Frequency (count of that combo)
 Developed.data.df <- Developed.data %>% modify_if(is.character, as.factor)
 InocFreq<- Developed.data.df%>%group_by(Genotype, Temp, Plate, Inoc, .drop=FALSE)%>%

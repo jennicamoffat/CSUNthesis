@@ -20,7 +20,7 @@ NoApoData <- mydata %>%
   filter(Genotype != "Aposymbiotic") %>%
   droplevels
 #Apo and dead removed 
-NoApoNoDeadData <- subset(NoApoData, Survive.to.End == "Yes")
+NoApoNoDeadData <- subset(NoApoData, Survive.to.Ephyra == "Yes")
 
 #Adding columns for each developmental stage to see percentage that actually reached that stage in 28 days
 Developed.data<-NoApoData%>%
