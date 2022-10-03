@@ -34,6 +34,7 @@ Developed.data<-NoApoData%>%
 TotalEphyra <- NoApoData %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Total.Ephyra.Produced, na.rm=TRUE), SE=sd(Total.Ephyra.Produced, na.rm=TRUE)/sqrt(length(na.omit(Total.Ephyra.Produced))))
+TotalEphyra$roundedmean<-round(TotalEphyra$mean, digits=2)
 
 #Total Ephyra final plot
 pal<-c("#79CFDB", "#859A51", "#DFADE1") #blue, green, pink (not colorblind friendly)
@@ -56,7 +57,7 @@ Ephyra.final<-ggplot(TotalEphyra, aes(x=Genotype, y=mean, fill=factor(Temp), gro
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
   scale_y_continuous(expand=c(0,0), limits=c(0,1.6))
-Ephyra.final
+Ephyra.final+geom_text(aes(label=roundedmean), position=position_dodge(width=0.9), vjust=-3.5)
 Ephyra.final+ggsave("Graphs/FinalGraphs/TotalEphyra_bar_locationlabels.png", width=8, height=5)
 
 #Just temp, not geno
@@ -342,6 +343,7 @@ strob.prop2
 DaystoStrob <- NoApoData %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Days.to.Strobilation, na.rm=TRUE), SE=sd(Days.to.Strobilation, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Strobilation))))
+DaystoStrob$roundedmean<-round(DaystoStrob$mean, digit=2)
 
 pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
 DaystoStrobBar<-ggplot(DaystoStrob, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
@@ -359,7 +361,7 @@ DaystoStrobBar<-ggplot(DaystoStrob, aes(x=Genotype, y=mean, fill=factor(Temp), g
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Symbiont Genotype", y="Days to Strobilation", fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))
-DaystoStrobBar
+DaystoStrobBar+geom_text(aes(label=roundedmean), position=position_dodge(width=0.9), vjust=-3.5)
 DaystoStrobBar+ggsave("Graphs/FinalGraphs/DaystoStrob_locationlabels.png", width=8, height=5)
 
 #Just temp, not geno
@@ -463,6 +465,7 @@ inoc.prop+ggsave("Graphs/FinalGraphs/Infected.prop.png", width=8, height=5)
 DaystoInoc <- NoApoData %>%
   group_by(Genotype, Temp) %>%
   summarize(mean=mean(Days.to.Inoculation, na.rm=TRUE), SE=sd(Days.to.Inoculation, na.rm=TRUE)/sqrt(length(na.omit(Days.to.Inoculation))))
+DaystoInoc$roundedmean<-round(DaystoInoc$mean, digits = 1)
 
 pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
 DaystoInocBar<-ggplot(DaystoInoc, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
@@ -481,7 +484,7 @@ DaystoInocBar<-ggplot(DaystoInoc, aes(x=Genotype, y=mean, fill=factor(Temp), gro
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   labs(x="Symbiont Genotype", y="Days to Infection", fill="Temperature")+  #labels the x and y axes
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))
-DaystoInocBar
+DaystoInocBar+geom_text(aes(label=roundedmean), position=position_dodge(width=0.9), vjust=-3)
 DaystoInocBar+ggsave("Graphs/FinalGraphs/DaystoInfection.final_locationlabels.png", width=8, height=5)
 
 #Just temp, not geno
@@ -722,6 +725,7 @@ survival.temp.plot+ggsave("Graphs/FinalGraphs/Survival.temp.final.png", width=8,
 BudData<-mydata%>%
   group_by(Genotype, Temp)%>%
   summarize(mean=mean(Total.Buds, na.rm=TRUE), SE=sd(Total.Buds, na.rm=TRUE)/sqrt(length(na.omit(Total.Buds))))
+BudData$roundedmean<-round(BudData$mean, 2)
 
 pal<-c("#ac8eab", "#f2cec7", "#c67b6f") #purples
 Buds.final<-ggplot(BudData, aes(x=Genotype, y=mean, fill=factor(Temp), group=factor(Temp)))+  #basic plot
@@ -739,7 +743,7 @@ Buds.final<-ggplot(BudData, aes(x=Genotype, y=mean, fill=factor(Temp), group=fac
   geom_errorbar(aes(ymax=mean+SE, ymin=mean-SE), stat="identity", position=position_dodge(width=0.9), width=0.1)+  #adds error bars
   scale_fill_manual(values=pal, labels = c("26°C", "30°C", "32°C"))+
   scale_y_continuous(expand=c(0,0), limits=c(0,5.1))
-Buds.final
+Buds.final+geom_text(aes(label=roundedmean), position=position_dodge(width=0.9), vjust=-3.5)
 Buds.final+ggsave("Graphs/FinalGraphs/Buds_bar_locationlabels.png", width=8, height=5)
 
 

@@ -188,7 +188,7 @@ RespGraph<-ggplot(SummaryResp, aes(x=Genotype, y=mean, fill=factor(Temperature),
   scale_fill_manual(values = pal, labels=c("26°C", "30°C","32°C"))+
   labs(x="Symbiont Genotype", y=expression(Respiration~(µmol~O[2]~min^{"-1"}~10^{"9"}~cells^{"-1"})), fill="Temperature")+
   ggtitle("Respiration of Symbionts in Culture")
-RespGraph
+RespGraph+geom_text(aes(label=mean), vjust=1.5)
 ggsave("Graphs/FinalGraphs/Culture_Resp_Oct_Bar.png",width=8, height=5)
 
 #Respiration boxplot####
